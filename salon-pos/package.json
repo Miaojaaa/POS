@@ -1,0 +1,42 @@
+{
+  "name": "salon-pos",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "seed": "ts-node --project tsconfig.json -e \"require('dotenv/config')\" prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "npx ts-node prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.13",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.9.0",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.4.2",
+    "next": "16.2.4",
+    "next-auth": "^5.0.0-beta.31",
+    "prisma": "^7.8.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

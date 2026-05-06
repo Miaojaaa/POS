@@ -1,0 +1,297 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ordersAsTech         Order[]         @relation("TechnicianOrders")
+  ordersAsAssist       OrderAssistant[]
+  auditLogs            AuditLog[]
+  payrollItems         PayrollItem[]
+  stockTransfersApproved StockTransfer[] @relation("ApprovedBy")
+  stockTransfersCreated  StockTransfer[] @relation("CreatedBy")
+  discountApprovals    DiscountLog[]
+  expenses             Expense[]
+  walletAdjustments    WalletTransaction[]
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  name           String
+  phone          String   @unique
+  birthdate      String?
+  allergyHistory String?
+  walletBalance  Float    @default(0)
+  memberLevel    String   @default("BASIC")
+  lineUserId     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orders         Order[]
+  walletTxns     WalletTransaction[]
+  tickets        CustomerTicket[]
+  serviceHistory ServiceHistory[]
+}
+
+model ServiceCategory {
+  id       String    @id @default(cuid())
+  name     String
+  icon     String?
+  services Service[]
+}
+
+model Service {
+  id         String          @id @default(cuid())
+  name       String
+  price      Float
+  duration   Int             @default(60)
+  categoryId String
+  isActive   Boolean         @default(true)
+  category   ServiceCategory @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+  ticketDefs TicketDefinition[]
+}
+
+model Product {
+  id           String  @id @default(cuid())
+  name         String
+  unitVolumeMg Int
+  costPerUnit  Float
+  reorderPoint Int     @default(0)
+  isActive     Boolean @default(true)
+  createdAt    DateTime @default(now())
+
+  mainStock          MainStock?
+  subStock           SubStock?
+  orderChemicals     OrderChemical[]
+  stockTransferItems StockTransferItem[]
+}
+
+model MainStock {
+  id        String  @id @default(cuid())
+  productId String  @unique
+  quantity  Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model SubStock {
+  id              String  @id @default(cuid())
+  productId       String  @unique
+  quantity        Int     @default(0)
+  currentVolumeMg Int     @default(0)
+  product         Product @relation(fields: [productId], references: [id])
+}
+
+model Order {
+  id             String   @id @default(cuid())
+  customerId     String?
+  customerName   String
+  customerPhone  String?
+  technicianId   String
+  status         String   @default("WAITING")
+  notes          String?
+  subtotal       Float    @default(0)
+  discountAmount Float    @default(0)
+  discountPct    Float    @default(0)
+  total          Float    @default(0)
+  chemicalCost   Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  completedAt    DateTime?
+
+  customer       Customer?        @relation(fields: [customerId], references: [id])
+  technician     User             @relation("TechnicianOrders", fields: [technicianId], references: [id])
+  assistants     OrderAssistant[]
+  items          OrderItem[]
+  chemicals      OrderChemical[]
+  payments       Payment[]
+  discountLogs   DiscountLog[]
+  serviceHistory ServiceHistory[]
+}
+
+model OrderAssistant {
+  id      String @id @default(cuid())
+  orderId String
+  userId  String
+  order   Order  @relation(fields: [orderId], references: [id])
+  user    User   @relation(fields: [userId], references: [id])
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  serviceId  String
+  price      Float
+  ticketUsed Boolean @default(false)
+  order      Order   @relation(fields: [orderId], references: [id])
+  service    Service @relation(fields: [serviceId], references: [id])
+}
+
+model OrderChemical {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  amountMg  Int
+  costPerMg Float
+  totalCost Float
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  orderId   String
+  method    String
+  amount    Float
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id])
+}
+
+model WalletTransaction {
+  id         String   @id @default(cuid())
+  customerId String
+  amount     Float
+  type       String
+  note       String?
+  operatorId String?
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id])
+  operator   User?    @relation(fields: [operatorId], references: [id])
+}
+
+model TicketDefinition {
+  id          String  @id @default(cuid())
+  name        String
+  type        String
+  serviceId   String?
+  discountPct Float?
+  service     Service? @relation(fields: [serviceId], references: [id])
+  issued      CustomerTicket[]
+}
+
+model CustomerTicket {
+  id          String   @id @default(cuid())
+  customerId  String
+  ticketDefId String
+  isUsed      Boolean  @default(false)
+  usedOrderId String?
+  issuedAt    DateTime @default(now())
+  usedAt      DateTime?
+  issuedById  String?
+  customer    Customer         @relation(fields: [customerId], references: [id])
+  ticketDef   TicketDefinition @relation(fields: [ticketDefId], references: [id])
+}
+
+model ServiceHistory {
+  id         String   @id @default(cuid())
+  customerId String
+  orderId    String
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id])
+  order      Order    @relation(fields: [orderId], references: [id])
+}
+
+model StockTransfer {
+  id           String   @id @default(cuid())
+  status       String   @default("PENDING")
+  createdById  String
+  approvedById String?
+  note         String?
+  createdAt    DateTime @default(now())
+  approvedAt   DateTime?
+  items        StockTransferItem[]
+  createdBy    User     @relation("CreatedBy", fields: [createdById], references: [id])
+  approvedBy   User?    @relation("ApprovedBy", fields: [approvedById], references: [id])
+}
+
+model StockTransferItem {
+  id         String        @id @default(cuid())
+  transferId String
+  productId  String
+  quantity   Int
+  transfer   StockTransfer @relation(fields: [transferId], references: [id])
+  product    Product       @relation(fields: [productId], references: [id])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  category    String
+  description String
+  amount      Float
+  date        String
+  createdById String
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation(fields: [createdById], references: [id])
+}
+
+model CommissionPool {
+  id         String  @id @default(cuid())
+  name       String
+  role       String
+  percentage Float
+  isActive   Boolean @default(true)
+}
+
+model PayrollRun {
+  id        String       @id @default(cuid())
+  month     Int
+  year      Int
+  status    String       @default("DRAFT")
+  createdAt DateTime     @default(now())
+  items     PayrollItem[]
+}
+
+model PayrollItem {
+  id               String     @id @default(cuid())
+  payrollRunId     String
+  userId           String
+  baseSalary       Float      @default(0)
+  poolCommission   Float      @default(0)
+  retailCommission Float      @default(0)
+  totalAmount      Float      @default(0)
+  orderCount       Int        @default(0)
+  payrollRun       PayrollRun @relation(fields: [payrollRunId], references: [id])
+  user             User       @relation(fields: [userId], references: [id])
+}
+
+model DiscountLog {
+  id           String   @id @default(cuid())
+  orderId      String
+  approvedById String
+  amount       Float
+  pct          Float
+  createdAt    DateTime @default(now())
+  order        Order    @relation(fields: [orderId], references: [id])
+  approvedBy   User     @relation(fields: [approvedById], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  detail    String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model SystemConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}

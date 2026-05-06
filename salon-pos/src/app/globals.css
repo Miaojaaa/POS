@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+:root {
+  --olive: #6B7C45;
+  --olive-light: #8FA65A;
+  --beige: #F5F0E8;
+  --beige-dark: #E8E0CE;
+  --text-dark: #2C2C2C;
+  --alert-red: #D94F4F;
+  --success-green: #4CAF50;
+}
+
+@theme inline {
+  --color-olive: var(--olive);
+  --color-olive-light: var(--olive-light);
+  --color-beige: var(--beige);
+  --color-beige-dark: var(--beige-dark);
+  --color-text-dark: var(--text-dark);
+  --color-alert: var(--alert-red);
+  --color-success: var(--success-green);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--beige);
+  color: var(--text-dark);
+  font-family: 'Sarabun', 'Noto Sans Thai', Arial, sans-serif;
+  margin: 0;
+}
+
+.btn-primary {
+  background: var(--olive);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--olive-light);
+}
+
+.btn-secondary {
+  background: var(--beige-dark);
+  color: var(--text-dark);
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #d5cdb8;
+}
+
+.btn-danger {
+  background: var(--alert-red);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.input {
+  border: 1px solid var(--beige-dark);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  width: 100%;
+  outline: none;
+  background: white;
+}
+
+.input:focus {
+  border-color: var(--olive);
+  box-shadow: 0 0 0 2px rgba(107,124,69,0.15);
+}
+
+.label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.badge-waiting { background: #FFF3CD; color: #856404; }
+.badge-in-progress { background: #CCE5FF; color: #004085; }
+.badge-done { background: #D4EDDA; color: #155724; }
+.badge-cancelled { background: #F8D7DA; color: #721c24; }
+
+.badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.allergy-alert {
+  background: #FFF0F0;
+  border-left: 4px solid var(--alert-red);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  color: var(--alert-red);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.85);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.15s;
+}
+
+.sidebar-item:hover {
+  background: rgba(255,255,255,0.12);
+  color: white;
+}
+
+.sidebar-item.active {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  font-weight: 600;
+}

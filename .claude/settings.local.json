@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest salon-pos --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack)",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(npx ts-node *)",
+      "Bash(mkdir \"c:/Users/dudek/OneDrive/Desktop/POS/salon-pos/src/app/api/orders/[id]\")",
+      "Bash(mkdir \"c:/Users/dudek/OneDrive/Desktop/POS/salon-pos/src/app/api/customers/[phone]\")",
+      "Bash(npx next *)",
+      "Bash(del \"c:/Users/dudek/OneDrive/Desktop/POS/salon-pos/src/middleware.ts\")",
+      "Bash(npm run *)"
+    ]
+  }
+}

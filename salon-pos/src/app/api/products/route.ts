@@ -1,0 +1,31 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/session";
+
+export async function GET() {
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    include: { mainStock: true, subStock: true },
+    orderBy: { name: "asc" },
+  });
+  return NextResponse.json(products);
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getSession();
+  if (!session || !["OWNER", "MANAGER"].includes(session.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+  const body = await req.json();
+  const product = await prisma.product.create({
+    data: {
+      name: body.name,
+      unitVolumeMg: body.unitVolumeMg,
+      costPerUnit: body.costPerUnit,
+      reorderPoint: body.reorderPoint || 0,
+      mainStock: { create: { quantity: body.initialMain || 0 } },
+      subStock: { create: { quantity: body.initialSub || 0, currentVolumeMg: body.unitVolumeMg } },
+    },
+  });
+  return NextResponse.json(product);
+}
