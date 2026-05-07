@@ -127,7 +127,7 @@ export default function QueuePage() {
     const res = await fetch(`/api/orders/${orderId}`);
     const order: OrderDetail = await res.json();
     setCheckoutOrder(order);
-    setPayments([{ method: "CASH", amount: order.subtotal }]);
+    setPayments([{ method: "TRANSFER", amount: order.subtotal + Math.round(order.subtotal * 0.07) }]);
     setDiscountAmount(0);
     setDiscountPct(0);
     setApprovedById(null);
@@ -145,13 +145,28 @@ export default function QueuePage() {
   /* ── discount ── */
   function handleDiscountChange(val: number, type: "amount" | "pct") {
     if (!checkoutOrder) return;
+    let newDiscount = 0;
     if (type === "amount") {
+      newDiscount = val;
       setDiscountAmount(val);
       setDiscountPct(checkoutOrder.subtotal > 0 ? (val / checkoutOrder.subtotal) * 100 : 0);
     } else {
+      newDiscount = (checkoutOrder.subtotal * val) / 100;
       setDiscountPct(val);
-      setDiscountAmount((checkoutOrder.subtotal * val) / 100);
+      setDiscountAmount(newDiscount);
     }
+
+    setPayments(prev => {
+      if (prev.length === 1) {
+        const base = Math.max(0, checkoutOrder.subtotal - newDiscount);
+        const hasCC = prev[0].method === "CREDIT_CARD";
+        const sc = hasCC ? Math.round(base * 0.03) : 0;
+        const v = Math.round((base + sc) * 0.07);
+        return [{ ...prev[0], amount: base + sc + v }];
+      }
+      return prev;
+    });
+
     if (val > 0 && !approvedById) {
       setShowPinModal(true);
     }
@@ -173,7 +188,12 @@ export default function QueuePage() {
   }
 
   /* ── checkout submit ── */
-  const finalTotal = checkoutOrder ? Math.max(0, checkoutOrder.subtotal - discountAmount) : 0;
+  const baseTotal = checkoutOrder ? Math.max(0, checkoutOrder.subtotal - discountAmount) : 0;
+  const hasCreditCard = payments.some(p => p.method === "CREDIT_CARD");
+  const serviceCharge = hasCreditCard ? Math.round(baseTotal * 0.03) : 0;
+  const vat = Math.round((baseTotal + serviceCharge) * 0.07);
+
+  const finalTotal = baseTotal + serviceCharge + vat;
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
   const change = totalPaid - finalTotal;
 
@@ -186,6 +206,7 @@ export default function QueuePage() {
       body: JSON.stringify({
         payments: payments.filter(p => p.amount > 0),
         discountAmount, discountPct, approvedById,
+        serviceCharge, vat,
       }),
     });
     if (res.ok) {
@@ -359,7 +380,15 @@ export default function QueuePage() {
                       <span>ส่วนลด</span><span>-฿{discountAmount.toLocaleString()}</span>
                     </div>
                   )}
-                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.1rem", color: "var(--olive)" }}>
+                  {hasCreditCard && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginTop: 4 }}>
+                      <span>Service Charge (3%)</span><span>฿{serviceCharge.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginTop: 2 }}>
+                    <span>VAT (7%)</span><span>฿{vat.toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.1rem", color: "var(--olive)", marginTop: 6 }}>
                     <span>ยอดสุทธิ</span><span>฿{finalTotal.toLocaleString()}</span>
                   </div>
                 </div>
@@ -377,11 +406,23 @@ export default function QueuePage() {
                 {payments.map((pay, i) => (
                   <div key={i} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem", alignItems: "center" }}>
                     <select className="input" style={{ flex: 1, marginBottom: 0 }} value={pay.method}
-                      onChange={e => setPayments(prev => prev.map((p, j) => j === i ? { ...p, method: e.target.value } : p))}>
+                      onChange={e => {
+                        const newMethod = e.target.value;
+                        setPayments(prev => {
+                          const newPayments = prev.map((p, j) => j === i ? { ...p, method: newMethod } : p);
+                          if (newPayments.length === 1) {
+                            const hasCC = newMethod === "CREDIT_CARD";
+                            const sc = hasCC ? Math.round(baseTotal * 0.03) : 0;
+                            const v = Math.round((baseTotal + sc) * 0.07);
+                            newPayments[0].amount = baseTotal + sc + v;
+                          }
+                          return newPayments;
+                        });
+                      }}>
                       <option value="CASH">เงินสด</option>
                       <option value="TRANSFER">โอนเงิน (QR)</option>
+                      <option value="CREDIT_CARD">บัตรเครดิต</option>
                       <option value="WALLET">Wallet</option>
-                      <option value="TICKET">Ticket/คูปอง</option>
                     </select>
                     <input type="number" className="input" style={{ width: 110, marginBottom: 0 }} value={pay.amount || ""}
                       onChange={e => setPayments(prev => prev.map((p, j) => j === i ? { ...p, amount: Number(e.target.value) } : p))} />
@@ -392,7 +433,7 @@ export default function QueuePage() {
                   </div>
                 ))}
                 <button className="btn-secondary" style={{ fontSize: "0.8rem", marginBottom: "0.75rem" }}
-                  onClick={() => setPayments(prev => [...prev, { method: "CASH", amount: 0 }])}>
+                  onClick={() => setPayments(prev => [...prev, { method: "TRANSFER", amount: 0 }])}>
                   + เพิ่มช่องทาง
                 </button>
 
