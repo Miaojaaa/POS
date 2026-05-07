@@ -3,6 +3,20 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+type CustomerTicket = {
+  id: string;
+  isUsed: boolean;
+  ticketDef: {
+    id: string;
+    name: string;
+    type: string;
+    serviceId?: string | null;
+    discountPct?: number | null;
+    fixedValue?: number | null;
+    service?: { name: string } | null;
+  };
+};
+
 type Order = {
   id: string;
   customerName: string;
@@ -12,7 +26,7 @@ type Order = {
   total: number;
   discountAmount: number;
   status: string;
-  items: { id: string; service: { name: string }; price: number }[];
+  items: { id: string; serviceId: string; service: { id: string; name: string }; price: number }[];
   chemicals: { product: { name: string }; amountMg: number; totalCost: number }[];
   technician: { name: string };
 };
@@ -32,9 +46,11 @@ function CheckoutContent() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
-  const [pendingApproval, setPendingApproval] = useState(false);
   const [approvedById, setApprovedById] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+
+  const [customerTickets, setCustomerTickets] = useState<CustomerTicket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<CustomerTicket | null>(null);
 
   useEffect(() => {
     fetch("/api/orders?status=DONE").then(r => r.json()).then(setOrders);
@@ -47,21 +63,66 @@ function CheckoutContent() {
     }
   }, [orderId, orders]);
 
-  function selectOrder(order: Order) {
+  async function selectOrder(order: Order) {
     setSelectedOrder(order);
-    setPayments([{ method: "TRANSFER", amount: order.subtotal + Math.round(order.subtotal * 0.07) }]);
     setDiscountAmount(0);
     setDiscountPct(0);
+    setApprovedById(null);
+    setSelectedTicket(null);
+    setCustomerTickets([]);
+
+    const base = order.subtotal;
+    const v = Math.round(base * 0.07);
+    setPayments([{ method: "TRANSFER", amount: base + v }]);
+
+    if (order.customerId) {
+      const res = await fetch(`/api/tickets?customerId=${order.customerId}`);
+      const all: CustomerTicket[] = await res.json();
+      setCustomerTickets(all.filter(t => !t.isUsed));
+    }
   }
 
-  const baseTotal = selectedOrder ? Math.max(0, selectedOrder.subtotal - discountAmount) : 0;
+  function getTicketDiscount(ticket: CustomerTicket | null, order: Order | null): number {
+    if (!ticket || !order) return 0;
+    const def = ticket.ticketDef;
+    if (def.type === "FIXED") return def.fixedValue || 0;
+    if (def.type === "SERVICE" && def.serviceId) {
+      const item = order.items.find(i => i.serviceId === def.serviceId);
+      return item ? item.price * ((def.discountPct ?? 100) / 100) : 0;
+    }
+    return 0;
+  }
+
+  const ticketDiscount = getTicketDiscount(selectedTicket, selectedOrder);
+
+  const applicableTickets = customerTickets.filter(t => {
+    if (t.ticketDef.type === "FIXED") return true;
+    if (t.ticketDef.type === "SERVICE" && t.ticketDef.serviceId) {
+      return selectedOrder?.items.some(i => i.serviceId === t.ticketDef.serviceId);
+    }
+    return false;
+  });
+
+  const baseTotal = selectedOrder ? Math.max(0, selectedOrder.subtotal - discountAmount - ticketDiscount) : 0;
   const hasCreditCard = payments.some(p => p.method === "CREDIT_CARD");
   const serviceCharge = hasCreditCard ? Math.round(baseTotal * 0.03) : 0;
   const vat = Math.round((baseTotal + serviceCharge) * 0.07);
-  
   const finalTotal = baseTotal + serviceCharge + vat;
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
   const change = totalPaid - finalTotal;
+
+  function recalcSinglePayment(manualDiscount: number, tDiscount: number, overrideMethod?: string) {
+    if (!selectedOrder) return;
+    setPayments(prev => {
+      if (prev.length !== 1) return prev;
+      const base = Math.max(0, selectedOrder.subtotal - manualDiscount - tDiscount);
+      const method = overrideMethod ?? prev[0].method;
+      const hasCC = method === "CREDIT_CARD";
+      const sc = hasCC ? Math.round(base * 0.03) : 0;
+      const v = Math.round((base + sc) * 0.07);
+      return [{ ...prev[0], amount: base + sc + v }];
+    });
+  }
 
   function handleDiscountChange(val: number, type: "amount" | "pct") {
     if (!selectedOrder) return;
@@ -75,22 +136,21 @@ function CheckoutContent() {
       setDiscountPct(val);
       setDiscountAmount(newDiscount);
     }
-
-    setPayments(prev => {
-      if (prev.length === 1) {
-        const base = Math.max(0, selectedOrder.subtotal - newDiscount);
-        const hasCC = prev[0].method === "CREDIT_CARD";
-        const sc = hasCC ? Math.round(base * 0.03) : 0;
-        const v = Math.round((base + sc) * 0.07);
-        return [{ ...prev[0], amount: base + sc + v }];
-      }
-      return prev;
-    });
-
+    recalcSinglePayment(newDiscount, ticketDiscount);
     if (val > 0 && !approvedById) {
-      setPendingApproval(true);
       setShowPinModal(true);
     }
+  }
+
+  function applyTicket(ticket: CustomerTicket) {
+    setSelectedTicket(ticket);
+    const tDiscount = getTicketDiscount(ticket, selectedOrder);
+    recalcSinglePayment(discountAmount, tDiscount);
+  }
+
+  function removeTicket() {
+    setSelectedTicket(null);
+    recalcSinglePayment(discountAmount, 0);
   }
 
   async function verifyPin() {
@@ -104,7 +164,6 @@ function CheckoutContent() {
     if (data.ok) {
       setApprovedById("manager");
       setShowPinModal(false);
-      setPendingApproval(false);
       setPin("");
     } else {
       setPinError("PIN ไม่ถูกต้อง");
@@ -128,6 +187,8 @@ function CheckoutContent() {
         approvedById,
         serviceCharge,
         vat,
+        ticketId: selectedTicket?.id ?? null,
+        ticketDiscount,
       }),
     });
     if (res.ok) {
@@ -137,6 +198,12 @@ function CheckoutContent() {
       alert("เกิดข้อผิดพลาด");
     }
     setProcessing(false);
+  }
+
+  function ticketDefLabel(def: CustomerTicket["ticketDef"]) {
+    if (def.type === "FIXED") return `ลด ฿${(def.fixedValue || 0).toLocaleString()}`;
+    const pct = def.discountPct ?? 100;
+    return pct === 100 ? `${def.service?.name || ""} ฟรี` : `${def.service?.name || ""} ลด ${pct}%`;
   }
 
   return (
@@ -187,9 +254,9 @@ function CheckoutContent() {
                 <span>฿{selectedOrder.subtotal.toLocaleString()}</span>
               </div>
 
-              {/* Discount */}
+              {/* Manual Discount */}
               <div style={{ marginTop: "1rem" }}>
-                <label className="label">ส่วนลด {approvedById ? "✓ (อนุมัติแล้ว)" : ""}</label>
+                <label className="label">ส่วนลด (Manual) {approvedById ? "✓ (อนุมัติแล้ว)" : ""}</label>
                 <div style={{ display: "flex", gap: "0.5rem" }}>
                   <input
                     type="number"
@@ -209,6 +276,62 @@ function CheckoutContent() {
                     onChange={e => handleDiscountChange(Number(e.target.value), "pct")}
                   />
                 </div>
+              </div>
+
+              {/* Coupon Section */}
+              <div style={{ marginTop: "1rem", borderTop: "1px solid var(--beige-dark)", paddingTop: "1rem" }}>
+                <label className="label">🎫 คูปอง</label>
+                {!selectedOrder.customerId ? (
+                  <p style={{ fontSize: "0.8rem", color: "#aaa", margin: 0 }}>ออร์เดอร์นี้ไม่มีข้อมูลสมาชิก</p>
+                ) : applicableTickets.length === 0 ? (
+                  <p style={{ fontSize: "0.8rem", color: "#aaa", margin: 0 }}>ไม่มีคูปองที่ใช้ได้</p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                    {applicableTickets.map(t => {
+                      const isSelected = selectedTicket?.id === t.id;
+                      return (
+                        <div
+                          key={t.id}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "0.5rem 0.75rem",
+                            borderRadius: 8,
+                            border: `2px solid ${isSelected ? "var(--olive)" : "var(--beige-dark)"}`,
+                            background: isSelected ? "#f0f5e8" : "white",
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: "0.875rem" }}>{t.ticketDef.name}</div>
+                            <div style={{ fontSize: "0.775rem", color: "#666" }}>{ticketDefLabel(t.ticketDef)}</div>
+                          </div>
+                          {isSelected ? (
+                            <button
+                              onClick={removeTicket}
+                              style={{ background: "#fee2e2", border: "none", borderRadius: 6, padding: "0.25rem 0.75rem", cursor: "pointer", color: "#dc2626", fontSize: "0.8rem", fontWeight: 600 }}
+                            >
+                              ยกเลิก
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => applyTicket(t)}
+                              style={{ background: "var(--olive)", border: "none", borderRadius: 6, padding: "0.25rem 0.75rem", cursor: "pointer", color: "white", fontSize: "0.8rem", fontWeight: 600 }}
+                            >
+                              ใช้
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {selectedTicket && (
+                  <div style={{ marginTop: "0.5rem", display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "#16a34a", fontWeight: 600 }}>
+                    <span>ส่วนลดจากคูปอง</span>
+                    <span>-฿{ticketDiscount.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
 
               {hasCreditCard && (
@@ -246,14 +369,15 @@ function CheckoutContent() {
                     onChange={e => {
                       const newMethod = e.target.value;
                       setPayments(prev => {
-                        const newPayments = prev.map((p, j) => j === i ? { ...p, method: newMethod } : p);
-                        if (newPayments.length === 1) {
+                        const updated = prev.map((p, j) => j === i ? { ...p, method: newMethod } : p);
+                        if (updated.length === 1) {
+                          const base = Math.max(0, selectedOrder.subtotal - discountAmount - ticketDiscount);
                           const hasCC = newMethod === "CREDIT_CARD";
-                          const sc = hasCC ? Math.round(baseTotal * 0.03) : 0;
-                          const v = Math.round((baseTotal + sc) * 0.07);
-                          newPayments[0].amount = baseTotal + sc + v;
+                          const sc = hasCC ? Math.round(base * 0.03) : 0;
+                          const v = Math.round((base + sc) * 0.07);
+                          updated[0].amount = base + sc + v;
                         }
-                        return newPayments;
+                        return updated;
                       });
                     }}
                   >

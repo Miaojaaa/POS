@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { payments, discountAmount, discountPct, approvedById, serviceCharge = 0, vat = 0 } = await req.json();
+  const { payments, discountAmount, discountPct, approvedById, serviceCharge = 0, vat = 0, ticketId = null, ticketDiscount = 0 } = await req.json();
 
   const order = await prisma.order.findUnique({
     where: { id },
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-  const total = order.subtotal - (discountAmount || 0) + serviceCharge + vat;
+  const total = order.subtotal - (discountAmount || 0) - (ticketDiscount || 0) + serviceCharge + vat;
 
   await prisma.$transaction(async (tx) => {
     await tx.order.update({
@@ -50,6 +50,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (discountAmount && discountAmount > 0 && approvedById) {
       await tx.discountLog.create({
         data: { orderId: id, approvedById, amount: discountAmount, pct: discountPct || 0 },
+      });
+    }
+
+    if (ticketId) {
+      await tx.customerTicket.update({
+        where: { id: ticketId },
+        data: { isUsed: true, usedOrderId: id, usedAt: new Date() },
       });
     }
 

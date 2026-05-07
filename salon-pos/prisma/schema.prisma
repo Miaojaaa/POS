@@ -176,9 +176,10 @@ model WalletTransaction {
 model TicketDefinition {
   id          String  @id @default(cuid())
   name        String
-  type        String
+  type        String  // "FIXED" | "SERVICE"
   serviceId   String?
-  discountPct Float?
+  discountPct Float?  // for SERVICE type (0-100)
+  fixedValue  Float?  // for FIXED type (baht amount)
   service     Service? @relation(fields: [serviceId], references: [id])
   issued      CustomerTicket[]
 }

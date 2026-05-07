@@ -13,15 +13,29 @@ type OrderSummary = {
 };
 
 type OrderDetail = {
-  id: string; customerName: string; customerPhone?: string;
+  id: string; customerId?: string; customerName: string; customerPhone?: string;
   subtotal: number; total: number; discountAmount: number; status: string; createdAt: string;
   customer?: { id: string; name: string; walletBalance: number };
   technician: { name: string };
-  items: { id: string; service: { name: string }; price: number }[];
+  items: { id: string; serviceId: string; service: { id: string; name: string }; price: number }[];
   chemicals: { product: { name: string }; amountMg: number; totalCost: number }[];
 };
 
 type Payment = { method: string; amount: number };
+
+type CustomerTicket = {
+  id: string;
+  isUsed: boolean;
+  ticketDef: {
+    id: string;
+    name: string;
+    type: string;
+    serviceId?: string | null;
+    discountPct?: number | null;
+    fixedValue?: number | null;
+    service?: { name: string } | null;
+  };
+};
 
 type ReceiptData = {
   order: OrderDetail; finalTotal: number; change: number;
@@ -89,6 +103,10 @@ export default function QueuePage() {
   const [approvedById, setApprovedById] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
+  /* coupon/ticket */
+  const [customerTickets, setCustomerTickets] = useState<CustomerTicket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<CustomerTicket | null>(null);
+
   /* PIN modal (discount approval) */
   const [showPinModal, setShowPinModal] = useState(false);
   const [pin, setPin] = useState("");
@@ -131,6 +149,13 @@ export default function QueuePage() {
     setDiscountAmount(0);
     setDiscountPct(0);
     setApprovedById(null);
+    setSelectedTicket(null);
+    setCustomerTickets([]);
+    if (order.customerId) {
+      const tRes = await fetch(`/api/tickets?customerId=${order.customerId}`);
+      const all: CustomerTicket[] = await tRes.json();
+      setCustomerTickets(all.filter(t => !t.isUsed));
+    }
     setLoadingCheckout(false);
   }
 
@@ -140,6 +165,52 @@ export default function QueuePage() {
     setDiscountAmount(0);
     setDiscountPct(0);
     setApprovedById(null);
+    setSelectedTicket(null);
+    setCustomerTickets([]);
+  }
+
+  function getTicketDiscount(ticket: CustomerTicket | null, order: OrderDetail | null): number {
+    if (!ticket || !order) return 0;
+    const def = ticket.ticketDef;
+    if (def.type === "FIXED") return def.fixedValue || 0;
+    if (def.type === "SERVICE" && def.serviceId) {
+      const item = order.items.find(i => i.serviceId === def.serviceId);
+      return item ? item.price * ((def.discountPct ?? 100) / 100) : 0;
+    }
+    return 0;
+  }
+
+  function ticketDefLabel(def: CustomerTicket["ticketDef"]) {
+    if (def.type === "FIXED") return `ลด ฿${(def.fixedValue || 0).toLocaleString()}`;
+    const pct = def.discountPct ?? 100;
+    return pct === 100 ? `${def.service?.name || ""} ฟรี` : `${def.service?.name || ""} ลด ${pct}%`;
+  }
+
+  function applyTicket(ticket: CustomerTicket) {
+    if (!checkoutOrder) return;
+    setSelectedTicket(ticket);
+    const tDiscount = getTicketDiscount(ticket, checkoutOrder);
+    setPayments(prev => {
+      if (prev.length !== 1) return prev;
+      const base = Math.max(0, checkoutOrder.subtotal - discountAmount - tDiscount);
+      const hasCC = prev[0].method === "CREDIT_CARD";
+      const sc = hasCC ? Math.round(base * 0.03) : 0;
+      const v = Math.round((base + sc) * 0.07);
+      return [{ ...prev[0], amount: base + sc + v }];
+    });
+  }
+
+  function removeTicket() {
+    if (!checkoutOrder) return;
+    setSelectedTicket(null);
+    setPayments(prev => {
+      if (prev.length !== 1) return prev;
+      const base = Math.max(0, checkoutOrder.subtotal - discountAmount);
+      const hasCC = prev[0].method === "CREDIT_CARD";
+      const sc = hasCC ? Math.round(base * 0.03) : 0;
+      const v = Math.round((base + sc) * 0.07);
+      return [{ ...prev[0], amount: base + sc + v }];
+    });
   }
 
   /* ── discount ── */
@@ -156,9 +227,10 @@ export default function QueuePage() {
       setDiscountAmount(newDiscount);
     }
 
+    const tDiscount = getTicketDiscount(selectedTicket, checkoutOrder);
     setPayments(prev => {
       if (prev.length === 1) {
-        const base = Math.max(0, checkoutOrder.subtotal - newDiscount);
+        const base = Math.max(0, checkoutOrder.subtotal - newDiscount - tDiscount);
         const hasCC = prev[0].method === "CREDIT_CARD";
         const sc = hasCC ? Math.round(base * 0.03) : 0;
         const v = Math.round((base + sc) * 0.07);
@@ -188,7 +260,15 @@ export default function QueuePage() {
   }
 
   /* ── checkout submit ── */
-  const baseTotal = checkoutOrder ? Math.max(0, checkoutOrder.subtotal - discountAmount) : 0;
+  const ticketDiscount = getTicketDiscount(selectedTicket, checkoutOrder);
+  const applicableTickets = customerTickets.filter(t => {
+    if (t.ticketDef.type === "FIXED") return true;
+    if (t.ticketDef.type === "SERVICE" && t.ticketDef.serviceId) {
+      return checkoutOrder?.items.some(i => i.serviceId === t.ticketDef.serviceId);
+    }
+    return false;
+  });
+  const baseTotal = checkoutOrder ? Math.max(0, checkoutOrder.subtotal - discountAmount - ticketDiscount) : 0;
   const hasCreditCard = payments.some(p => p.method === "CREDIT_CARD");
   const serviceCharge = hasCreditCard ? Math.round(baseTotal * 0.03) : 0;
   const vat = Math.round((baseTotal + serviceCharge) * 0.07);
@@ -207,6 +287,8 @@ export default function QueuePage() {
         payments: payments.filter(p => p.amount > 0),
         discountAmount, discountPct, approvedById,
         serviceCharge, vat,
+        ticketId: selectedTicket?.id ?? null,
+        ticketDiscount,
       }),
     });
     if (res.ok) {
@@ -382,11 +464,56 @@ export default function QueuePage() {
                   </div>
                 </div>
 
+                {/* Coupon */}
+                <div style={{ marginBottom: "0.75rem" }}>
+                  <label className="label">🎫 คูปอง</label>
+                  {!checkoutOrder.customerId ? (
+                    <p style={{ fontSize: "0.8rem", color: "#aaa", margin: 0 }}>ออร์เดอร์นี้ไม่มีข้อมูลสมาชิก</p>
+                  ) : applicableTickets.length === 0 ? (
+                    <p style={{ fontSize: "0.8rem", color: "#aaa", margin: 0 }}>ไม่มีคูปองที่ใช้ได้</p>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", maxHeight: 160, overflowY: "auto" }}>
+                      {applicableTickets.map(t => {
+                        const isSelected = selectedTicket?.id === t.id;
+                        return (
+                          <div key={t.id} style={{
+                            display: "flex", justifyContent: "space-between", alignItems: "center",
+                            padding: "0.4rem 0.6rem", borderRadius: 8,
+                            border: `2px solid ${isSelected ? "var(--olive)" : "var(--beige-dark)"}`,
+                            background: isSelected ? "#f0f5e8" : "white",
+                          }}>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ fontWeight: 600, fontSize: "0.825rem" }}>{t.ticketDef.name}</div>
+                              <div style={{ fontSize: "0.75rem", color: "#666" }}>{ticketDefLabel(t.ticketDef)}</div>
+                            </div>
+                            {isSelected ? (
+                              <button onClick={removeTicket}
+                                style={{ background: "#fee2e2", border: "none", borderRadius: 6, padding: "0.2rem 0.6rem", cursor: "pointer", color: "#dc2626", fontSize: "0.75rem", fontWeight: 600 }}>
+                                ยกเลิก
+                              </button>
+                            ) : (
+                              <button onClick={() => applyTicket(t)}
+                                style={{ background: "var(--olive)", border: "none", borderRadius: 6, padding: "0.2rem 0.6rem", cursor: "pointer", color: "white", fontSize: "0.75rem", fontWeight: 600 }}>
+                                ใช้
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 {/* Totals */}
                 <div style={{ background: "var(--beige)", borderRadius: 8, padding: "0.75rem" }}>
                   {discountAmount > 0 && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "var(--alert-red, #c0392b)" }}>
                       <span>ส่วนลด</span><span>-฿{discountAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {ticketDiscount > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "#16a34a" }}>
+                      <span>คูปอง ({selectedTicket?.ticketDef.name})</span><span>-฿{ticketDiscount.toLocaleString()}</span>
                     </div>
                   )}
                   {hasCreditCard && (
@@ -419,11 +546,12 @@ export default function QueuePage() {
                         const newMethod = e.target.value;
                         setPayments(prev => {
                           const newPayments = prev.map((p, j) => j === i ? { ...p, method: newMethod } : p);
-                          if (newPayments.length === 1) {
+                          if (newPayments.length === 1 && checkoutOrder) {
+                            const base = Math.max(0, checkoutOrder.subtotal - discountAmount - ticketDiscount);
                             const hasCC = newMethod === "CREDIT_CARD";
-                            const sc = hasCC ? Math.round(baseTotal * 0.03) : 0;
-                            const v = Math.round((baseTotal + sc) * 0.07);
-                            newPayments[0].amount = baseTotal + sc + v;
+                            const sc = hasCC ? Math.round(base * 0.03) : 0;
+                            const v = Math.round((base + sc) * 0.07);
+                            newPayments[0].amount = base + sc + v;
                           }
                           return newPayments;
                         });
