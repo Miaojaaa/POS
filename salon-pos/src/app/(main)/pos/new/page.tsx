@@ -37,11 +37,9 @@ export default function NewOrderPage() {
 
   // Multiple technicians
   const [technicianIds, setTechnicianIds] = useState<string[]>([]);
-  const [selectedTechDropdown, setSelectedTechDropdown] = useState("");
 
-  // Multiple assistants (dropdown + button)
+  // Multiple assistants (dropdown)
   const [assistantIds, setAssistantIds] = useState<string[]>([]);
-  const [selectedAssistDropdown, setSelectedAssistDropdown] = useState("");
 
   const [notes, setNotes] = useState("");
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
@@ -86,20 +84,8 @@ export default function NewOrderPage() {
   const availableTechs = technicians.filter(u => !technicianIds.includes(u.id));
   const availableAssists = assistants.filter(u => !assistantIds.includes(u.id));
 
-  function addTechnician() {
-    if (!selectedTechDropdown || technicianIds.includes(selectedTechDropdown)) return;
-    setTechnicianIds(prev => [...prev, selectedTechDropdown]);
-    setSelectedTechDropdown("");
-  }
-
   function removeTechnician(id: string) {
     setTechnicianIds(prev => prev.filter(t => t !== id));
-  }
-
-  function addAssistant() {
-    if (!selectedAssistDropdown || assistantIds.includes(selectedAssistDropdown)) return;
-    setAssistantIds(prev => [...prev, selectedAssistDropdown]);
-    setSelectedAssistDropdown("");
   }
 
   function removeAssistant(id: string) {
@@ -257,15 +243,19 @@ export default function NewOrderPage() {
                 <select
                   className="input"
                   style={{ flex: 1, marginBottom: 0 }}
-                  value={selectedTechDropdown}
-                  onChange={e => setSelectedTechDropdown(e.target.value)}
+                  value=""
+                  onChange={e => {
+                    const id = e.target.value;
+                    if (id && !technicianIds.includes(id)) {
+                      setTechnicianIds(prev => [...prev, id]);
+                    }
+                  }}
                 >
                   <option value="">-- เลือกช่าง --</option>
                   {availableTechs.map(u => (
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
                 </select>
-                <button style={addBtnStyle} onClick={addTechnician} title="เพิ่มช่าง">+</button>
               </div>
               {technicianIds.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.5rem" }}>
@@ -293,19 +283,19 @@ export default function NewOrderPage() {
                 <select
                   className="input"
                   style={{ flex: 1, marginBottom: 0 }}
-                  value={selectedAssistDropdown}
-                  onChange={e => setSelectedAssistDropdown(e.target.value)}
+                  value=""
+                  onChange={e => {
+                    const id = e.target.value;
+                    if (id && !assistantIds.includes(id)) {
+                      setAssistantIds(prev => [...prev, id]);
+                    }
+                  }}
                 >
                   <option value="">-- เลือกผู้ช่วย --</option>
                   {availableAssists.map(u => (
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
                 </select>
-                <button
-                  style={{ ...addBtnStyle, background: "#8a9a5b" }}
-                  onClick={addAssistant}
-                  title="เพิ่มผู้ช่วย"
-                >+</button>
               </div>
               {assistantIds.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.5rem" }}>
