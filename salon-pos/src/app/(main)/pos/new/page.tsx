@@ -81,8 +81,8 @@ export default function NewOrderPage() {
 
   const technicians = users.filter(u => ["TECHNICIAN", "OWNER", "MANAGER"].includes(u.role));
   const assistants = users.filter(u => ["ASSISTANT", "TECHNICIAN"].includes(u.role));
-  const availableTechs = technicians.filter(u => !technicianIds.includes(u.id));
-  const availableAssists = assistants.filter(u => !assistantIds.includes(u.id));
+  const availableTechs = technicians.filter(u => !technicianIds.includes(u.id) && !assistantIds.includes(u.id));
+  const availableAssists = assistants.filter(u => !assistantIds.includes(u.id) && !technicianIds.includes(u.id));
 
   function removeTechnician(id: string) {
     setTechnicianIds(prev => prev.filter(t => t !== id));
@@ -262,8 +262,7 @@ export default function NewOrderPage() {
                   {technicianIds.map((id, idx) => {
                     const u = users.find(u => u.id === id);
                     return (
-                      <span key={id} style={tagStyle(idx === 0)}>
-                        {idx === 0 && <span style={{ fontSize: "0.7rem", opacity: 0.75 }}>หลัก·</span>}
+                      <span key={id} style={tagStyle(true)}>
                         {u?.name ?? id}
                         <button
                           onClick={() => removeTechnician(id)}
