@@ -106,12 +106,12 @@ async function main() {
 
   // Products (chemicals)
   const products = [
-    { id: "prod-color-a", name: "ครีมเปลี่ยนสี Brand A", unitVolumeMg: 500000, costPerUnit: 850, reorderPoint: 1000000 },
-    { id: "prod-color-b", name: "ครีมเปลี่ยนสี Brand B", unitVolumeMg: 500000, costPerUnit: 750, reorderPoint: 500000 },
-    { id: "prod-developer", name: "น้ำยาออกซิเดนท์ 6%", unitVolumeMg: 1000000, costPerUnit: 300, reorderPoint: 2000000 },
-    { id: "prod-perm-sol", name: "น้ำยาดัดผม", unitVolumeMg: 400000, costPerUnit: 450, reorderPoint: 400000 },
-    { id: "prod-treat", name: "ทรีทเมนท์บำรุงผม", unitVolumeMg: 300000, costPerUnit: 650, reorderPoint: 600000 },
-    { id: "prod-shampoo", name: "แชมพูร้านเสริมสวย", unitVolumeMg: 1000000, costPerUnit: 400, reorderPoint: 3000000 },
+    { id: "prod-color-a", name: "ครีมเปลี่ยนสี Brand A", unitVolumeG: 500, costPerUnit: 850, reorderPoint: 1000 },
+    { id: "prod-color-b", name: "ครีมเปลี่ยนสี Brand B", unitVolumeG: 500, costPerUnit: 750, reorderPoint: 500 },
+    { id: "prod-developer", name: "น้ำยาออกซิเดนท์ 6%", unitVolumeG: 1000, costPerUnit: 300, reorderPoint: 2000 },
+    { id: "prod-perm-sol", name: "น้ำยาดัดผม", unitVolumeG: 400, costPerUnit: 450, reorderPoint: 400 },
+    { id: "prod-treat", name: "ทรีทเมนท์บำรุงผม", unitVolumeG: 300, costPerUnit: 650, reorderPoint: 600 },
+    { id: "prod-shampoo", name: "แชมพูร้านเสริมสวย", unitVolumeG: 1000, costPerUnit: 400, reorderPoint: 3000 },
   ];
 
   for (const prod of products) {
@@ -128,7 +128,7 @@ async function main() {
     await prisma.subStock.upsert({
       where: { productId: p.id },
       update: {},
-      create: { productId: p.id, quantity: 2, currentVolumeMg: prod.unitVolumeMg },
+      create: { productId: p.id, quantity: 2, currentVolumeG: prod.unitVolumeG },
     });
   }
 

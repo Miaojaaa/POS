@@ -8,20 +8,22 @@ export async function GET() {
     orderBy: { name: "asc" },
   });
 
-  const result = products.map(p => ({
-    id: p.id,
-    name: p.name,
-    unitVolumeMg: p.unitVolumeMg,
-    costPerUnit: p.costPerUnit,
-    reorderPoint: p.reorderPoint,
-    costPerMg: p.costPerUnit / p.unitVolumeMg,
-    mainQty: p.mainStock?.quantity ?? 0,
-    subQty: p.subStock?.quantity ?? 0,
-    subVolumeMg: p.subStock?.currentVolumeMg ?? 0,
-    totalVolumeMg: ((p.mainStock?.quantity ?? 0) + (p.subStock?.quantity ?? 0)) * p.unitVolumeMg
-      + (p.subStock?.currentVolumeMg ?? 0),
-    isLow: ((p.subStock?.currentVolumeMg ?? 0) + ((p.subStock?.quantity ?? 0) * p.unitVolumeMg)) < p.reorderPoint,
-  }));
+  const result = products.map(p => {
+    const totalVolumeG = ((p.mainStock?.quantity ?? 0) + (p.subStock?.quantity ?? 0)) * p.unitVolumeG + (p.subStock?.currentVolumeG ?? 0);
+    return {
+      id: p.id,
+      name: p.name,
+      unitVolumeG: p.unitVolumeG,
+      costPerUnit: p.costPerUnit,
+      reorderPoint: p.reorderPoint,
+      costPerG: p.costPerUnit / p.unitVolumeG,
+      mainQty: p.mainStock?.quantity ?? 0,
+      subQty: p.subStock?.quantity ?? 0,
+      subVolumeG: p.subStock?.currentVolumeG ?? 0,
+      totalVolumeG,
+      isLow: totalVolumeG <= p.reorderPoint,
+    };
+  });
 
   return NextResponse.json(result);
 }

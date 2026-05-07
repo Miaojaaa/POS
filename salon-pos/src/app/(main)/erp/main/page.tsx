@@ -5,15 +5,15 @@ import { useEffect, useState } from "react";
 type StockItem = {
   id: string;
   name: string;
-  unitVolumeMg: number;
+  unitVolumeG: number;
   costPerUnit: number;
   reorderPoint: number;
   mainQty: number;
   subQty: number;
-  subVolumeMg: number;
-  totalVolumeMg: number;
+  subVolumeG: number;
+  totalVolumeG: number;
   isLow: boolean;
-  costPerMg: number;
+  costPerG: number;
 };
 
 export default function MainStockPage() {
@@ -51,10 +51,10 @@ export default function MainStockPage() {
             {stock.map(p => (
               <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5", background: p.isLow ? "#fff8f8" : "white" }}>
                 <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
-                <td style={{ padding: "8px 12px", textAlign: "center" }}>{(p.unitVolumeMg / 1000).toFixed(0)}</td>
+                <td style={{ padding: "8px 12px", textAlign: "center" }}>{(p.unitVolumeG).toFixed(0)}</td>
                 <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700 }}>{p.mainQty}</td>
                 <td style={{ padding: "8px 12px", textAlign: "center", color: "#555" }}>
-                  {p.subQty} ขวด + {(p.subVolumeMg / 1000).toFixed(0)}ก.
+                  {p.subQty} ขวด + {(p.subVolumeG).toFixed(0)}ก.
                 </td>
                 <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{p.costPerUnit.toLocaleString()}</td>
                 <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{(p.mainQty * p.costPerUnit).toLocaleString()}</td>

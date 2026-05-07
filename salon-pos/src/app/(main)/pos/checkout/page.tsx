@@ -13,7 +13,7 @@ type Order = {
   discountAmount: number;
   status: string;
   items: { id: string; service: { name: string }; price: number }[];
-  chemicals: { product: { name: string }; amountMg: number; totalCost: number }[];
+  chemicals: { product: { name: string }; amountG: number; totalCost: number }[];
   technician: { name: string };
 };
 
