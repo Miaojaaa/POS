@@ -37,11 +37,11 @@ export default async function StockReportPage() {
           <thead>
             <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
               <th style={{ textAlign: "left", padding: "8px 12px" }}>สินค้า</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหลัก</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหน้าร้าน</th>
-              <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาต้นทุน/ขวด</th>
-              <th style={{ textAlign: "right", padding: "8px 12px" }}>มูลค่ารวม</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>Reorder Point</th>
+              <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหลัก (ขวด)</th>
+              <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหน้าร้าน (ขวด + ก.)</th>
+              <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาต้นทุนต่อขวด (฿)</th>
+              <th style={{ textAlign: "right", padding: "8px 12px" }}>มูลค่ารวม (฿)</th>
+              <th style={{ textAlign: "center", padding: "8px 12px" }}>Reorder Point (ก.)</th>
             </tr>
           </thead>
           <tbody>
@@ -56,14 +56,14 @@ export default async function StockReportPage() {
                     {isLow && <span style={{ color: "var(--alert-red)" }}>⚠️ </span>}
                     {p.name}
                   </td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>{p.mainStock?.quantity ?? 0} ขวด</td>
+                  <td style={{ padding: "8px 12px", textAlign: "center" }}>{p.mainStock?.quantity ?? 0}</td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    {p.subStock?.quantity ?? 0} ขวด + {((p.subStock?.currentVolumeG ?? 0)).toFixed(0)}ก.
+                    {p.subStock?.quantity ?? 0} + {((p.subStock?.currentVolumeG ?? 0)).toLocaleString()}
                   </td>
-                  <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{p.costPerUnit.toLocaleString()}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600 }}>฿{totalVal.toFixed(0)}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right" }}>{p.costPerUnit.toLocaleString()}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600 }}>{Math.round(totalVal).toLocaleString()}</td>
                   <td style={{ padding: "8px 12px", textAlign: "center", color: "#888" }}>
-                    {(p.reorderPoint).toFixed(0)} ก.
+                    {(p.reorderPoint).toLocaleString()}
                   </td>
                 </tr>
               );

@@ -43,23 +43,23 @@ export default function ProductsPage() {
           <thead>
             <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
               <th style={{ textAlign: "left", padding: "8px 12px" }}>ชื่อสินค้า</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>ปริมาณ/ขวด</th>
-              <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาต้นทุน/ขวด</th>
-              <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคา/ก.</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหลัก</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหน้าร้าน</th>
+              <th style={{ textAlign: "center", padding: "8px 12px" }}>ปริมาณต่อขวด (ก.)</th>
+              <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาต้นทุนต่อขวด (฿)</th>
+              <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาต่อกรัม (฿)</th>
+              <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหลัก (ขวด)</th>
+              <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหน้าร้าน (ขวด + ก.)</th>
             </tr>
           </thead>
           <tbody>
             {products.map(p => (
               <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                 <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
-                <td style={{ padding: "8px 12px", textAlign: "center" }}>{(p.unitVolumeG).toFixed(0)} กรัม</td>
-                <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{p.costPerUnit.toLocaleString()}</td>
-                <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{(p.costPerUnit / p.unitVolumeG).toFixed(4)}</td>
-                <td style={{ padding: "8px 12px", textAlign: "center" }}>{p.mainStock?.quantity ?? 0} ขวด</td>
+                <td style={{ padding: "8px 12px", textAlign: "center" }}>{(p.unitVolumeG).toLocaleString()}</td>
+                <td style={{ padding: "8px 12px", textAlign: "right" }}>{p.costPerUnit.toLocaleString()}</td>
+                <td style={{ padding: "8px 12px", textAlign: "right" }}>{(p.costPerUnit / p.unitVolumeG).toFixed(4)}</td>
+                <td style={{ padding: "8px 12px", textAlign: "center" }}>{p.mainStock?.quantity ?? 0}</td>
                 <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                  {p.subStock?.quantity ?? 0} ขวด + {((p.subStock?.currentVolumeG ?? 0)).toFixed(0)} ก.
+                  {p.subStock?.quantity ?? 0} + {((p.subStock?.currentVolumeG ?? 0)).toLocaleString()}
                 </td>
               </tr>
             ))}

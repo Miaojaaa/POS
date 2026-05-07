@@ -29,10 +29,10 @@ export default function SubStockPage() {
           <thead>
             <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
               <th style={{ textAlign: "left", padding: "8px 12px" }}>สินค้า</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>จำนวนขวด</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>ปริมาณที่เหลือในขวดปัจจุบัน</th>
-              <th style={{ textAlign: "right", padding: "8px 12px" }}>ต้นทุน/ก.</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>Reorder Point</th>
+              <th style={{ textAlign: "center", padding: "8px 12px" }}>จำนวน (ขวด)</th>
+              <th style={{ textAlign: "center", padding: "8px 12px" }}>ปริมาณที่เหลือในขวดปัจจุบัน (ก.)</th>
+              <th style={{ textAlign: "right", padding: "8px 12px" }}>ต้นทุนต่อกรัม (฿)</th>
+              <th style={{ textAlign: "center", padding: "8px 12px" }}>Reorder Point (ก.)</th>
               <th style={{ textAlign: "center", padding: "8px 12px" }}>สถานะ</th>
             </tr>
           </thead>
@@ -42,13 +42,13 @@ export default function SubStockPage() {
                 <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
                 <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700 }}>{p.subQty}</td>
                 <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                  {p.subVolumeG.toLocaleString()} ก.
+                  {p.subVolumeG.toLocaleString()}
                 </td>
                 <td style={{ padding: "8px 12px", textAlign: "right" }}>
-                  ฿{(p.costPerUnit / p.unitVolumeG).toFixed(4)}/ก.
+                  {(p.costPerUnit / p.unitVolumeG).toFixed(4)}
                 </td>
                 <td style={{ padding: "8px 12px", textAlign: "center", color: "#888" }}>
-                  {(p.reorderPoint).toFixed(0)} ก.
+                  {(p.reorderPoint).toLocaleString()}
                 </td>
                 <td style={{ padding: "8px 12px", textAlign: "center" }}>
                   {p.isLow ? (
