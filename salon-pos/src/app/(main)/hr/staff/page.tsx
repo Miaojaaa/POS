@@ -4,33 +4,105 @@ import { useEffect, useState } from "react";
 
 type User = { id: string; name: string; email: string; role: string; phone?: string; isActive: boolean };
 
+const ROLE_ORDER = ["OWNER", "MANAGER", "CASHIER", "TECHNICIAN", "ASSISTANT"];
 const ROLES: Record<string, string> = {
-  OWNER: "เจ้าของร้าน",
-  MANAGER: "ผู้จัดการ",
-  CASHIER: "แคชเชียร์",
-  TECHNICIAN: "ช่าง",
-  ASSISTANT: "ผู้ช่วยช่าง",
+  OWNER: "👑 เจ้าของร้าน",
+  MANAGER: "👔 ผู้จัดการ",
+  CASHIER: "💵 แคชเชียร์",
+  TECHNICIAN: "✂️ ช่าง",
+  ASSISTANT: "🧴 ผู้ช่วยช่าง",
 };
 
 export default function StaffPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "" });
+  
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [unlockPin, setUnlockPin] = useState("");
+  const [ownerPinStr, setOwnerPinStr] = useState("");
 
   useEffect(() => {
     fetch("/api/users").then(r => r.json()).then(setUsers);
   }, []);
 
-  async function handleAdd() {
-    if (!form.name || !form.email) { alert("กรุณากรอกชื่อและอีเมล"); return; }
-    const res = await fetch("/api/users", {
+  function handleAddClick() {
+    setEditingId(null);
+    setForm({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "" });
+    setShowForm(true);
+  }
+
+  function handleEditClick(u: User) {
+    setEditingId(u.id);
+    setForm({ name: u.name, email: u.email, password: "", role: u.role, phone: u.phone || "" });
+    setShowForm(true);
+  }
+
+  async function handleDelete(id: string) {
+    if (!ownerPinStr) { alert("กรุณาปลดล็อกสิทธิ์ก่อน"); return; }
+    const targetUser = users.find(u => u.id === id);
+    if (!targetUser) return;
+    if (confirm(`คุณต้องการลบรายชื่อพนักงาน: ${targetUser.name} ใช่หรือไม่?`)) {
+      const res = await fetch(`/api/users/${id}?ownerPin=${ownerPinStr}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setShowForm(false);
+        fetch("/api/users").then(r => r.json()).then(setUsers);
+      } else {
+        const err = await res.json();
+        alert(err.error || "ลบไม่สำเร็จ");
+      }
+    }
+  }
+
+  async function handleUnlock() {
+    const res = await fetch("/api/verify-pin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ role: "OWNER", pin: unlockPin }),
     });
     if (res.ok) {
-      setShowForm(false);
-      fetch("/api/users").then(r => r.json()).then(setUsers);
+      setIsUnlocked(true);
+      setOwnerPinStr(unlockPin);
+      setShowUnlockModal(false);
+      setUnlockPin("");
+    } else {
+      alert("รหัส PIN ไม่ถูกต้อง");
+    }
+  }
+
+  async function handleSave() {
+    if (!form.name || !form.email) { alert("กรุณากรอกชื่อและอีเมล"); return; }
+    
+    if (editingId) {
+      if (!ownerPinStr) { alert("กรุณาปลดล็อกด้วย Owner PIN ก่อน"); return; }
+      const res = await fetch(`/api/users/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, ownerPin: ownerPinStr }),
+      });
+      if (res.ok) {
+        setShowForm(false);
+        fetch("/api/users").then(r => r.json()).then(setUsers);
+      } else {
+        const err = await res.json();
+        alert(err.error || "แก้ไขไม่สำเร็จ");
+      }
+    } else {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setShowForm(false);
+        fetch("/api/users").then(r => r.json()).then(setUsers);
+      } else {
+        alert("เพิ่มพนักงานไม่สำเร็จ");
+      }
     }
   }
 
@@ -40,21 +112,50 @@ export default function StaffPage() {
     return acc;
   }, {});
 
+  const sortedRoles = Object.keys(byRole).sort((a, b) => {
+    const ia = ROLE_ORDER.indexOf(a);
+    const ib = ROLE_ORDER.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>👤 พนักงาน</h1>
-        <button className="btn-primary" onClick={() => setShowForm(true)}>+ เพิ่มพนักงาน</button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          {!isUnlocked && (
+            <button className="btn-secondary" onClick={() => setShowUnlockModal(true)}>
+              🔒 ปลดล็อกสิทธิ์แก้ไข
+            </button>
+          )}
+          {isUnlocked && (
+            <button className="btn-secondary" onClick={() => { setIsUnlocked(false); setOwnerPinStr(""); }}>
+              🔓 ล็อกสิทธิ์แก้ไข
+            </button>
+          )}
+          <button className="btn-primary" onClick={handleAddClick}>+ เพิ่มพนักงาน</button>
+        </div>
       </div>
 
-      {Object.entries(byRole).map(([role, staff]) => (
+      {sortedRoles.map((role) => {
+        const staff = byRole[role];
+        return (
         <div key={role} style={{ marginBottom: "1.5rem" }}>
           <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--olive)", marginBottom: "0.75rem" }}>
             {ROLES[role] || role} ({staff.length} คน)
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "0.75rem" }}>
             {staff.map(u => (
-              <div key={u.id} className="card">
+              <div key={u.id} className="card" style={{ position: "relative" }}>
+                {isUnlocked && (
+                  <button 
+                    onClick={() => handleEditClick(u)}
+                    style={{ position: "absolute", top: 8, right: 8, background: "none", border: "none", cursor: "pointer", fontSize: "1.2rem" }}
+                    title="แก้ไข"
+                  >
+                    ✏️
+                  </button>
+                )}
                 <div style={{ fontWeight: 700, marginBottom: 4 }}>{u.name}</div>
                 <div style={{ fontSize: "0.8rem", color: "#888" }}>{u.email}</div>
                 {u.phone && <div style={{ fontSize: "0.8rem", color: "#888" }}>📞 {u.phone}</div>}
@@ -65,12 +166,31 @@ export default function StaffPage() {
             ))}
           </div>
         </div>
-      ))}
+        );
+      })}
+
+      {showUnlockModal && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 300 }}>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>🔒 ปลดล็อกสิทธิ์แก้ไข</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div>
+                <label className="label">รหัส Owner PIN</label>
+                <input type="password" placeholder="ใส่รหัส 6 หลัก" className="input" value={unlockPin} onChange={e => setUnlockPin(e.target.value)} />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
+              <button className="btn-primary" style={{ flex: 1 }} onClick={handleUnlock}>ยืนยัน</button>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowUnlockModal(false)}>ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>เพิ่มพนักงาน</h3>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>{editingId ? "แก้ไขข้อมูลพนักงาน" : "เพิ่มพนักงาน"}</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div>
                 <label className="label">ชื่อ</label>
@@ -90,13 +210,20 @@ export default function StaffPage() {
                   {Object.entries(ROLES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="label">รหัสผ่านเริ่มต้น</label>
-                <input className="input" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
-              </div>
+              {!editingId && (
+                <div>
+                  <label className="label">รหัสผ่านเริ่มต้น</label>
+                  <input className="input" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+                </div>
+              )}
             </div>
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={handleAdd}>บันทึก</button>
+              <button className="btn-primary" style={{ flex: 1 }} onClick={handleSave}>บันทึก</button>
+              {editingId && (
+                <button className="btn-secondary" style={{ flex: 1, background: "#dc3545", color: "white", border: "none" }} onClick={() => handleDelete(editingId)}>
+                  ลบพนักงาน
+                </button>
+              )}
               <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowForm(false)}>ยกเลิก</button>
             </div>
           </div>
