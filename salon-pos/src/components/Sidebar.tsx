@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const menuItems = [
-  { href: "/dashboard", label: "หน้าหลัก", icon: "🏠" },
   {
     label: "POS",
     icon: "📋",
@@ -14,6 +13,7 @@ const menuItems = [
       { href: "/pos/queue", label: "คิวลูกค้า" },
     ],
   },
+  { href: "/dashboard", label: "ภาพรวมรายวัน", icon: "🏠" },
   {
     label: "CRM",
     icon: "👥",
