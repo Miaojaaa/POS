@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await tx.order.update({
       where: { id },
       data: {
-        status: "DONE",
+        status: "PAID",
         discountAmount: discountAmount || 0,
         discountPct: discountPct || 0,
         total,

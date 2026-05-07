@@ -29,9 +29,9 @@ type ReceiptData = {
 };
 
 /* ─────────────────────────── constants ─────────────────────── */
-const STATUS_LABEL: Record<string, string> = { WAITING: "รอคิว", IN_PROGRESS: "กำลังทำ", DONE: "เสร็จแล้ว", CANCELLED: "ยกเลิก" };
-const STATUS_COLOR: Record<string, string> = { WAITING: "#856404", IN_PROGRESS: "#004085", DONE: "#155724", CANCELLED: "#721c24" };
-const STATUS_BG: Record<string, string> = { WAITING: "#FFF3CD", IN_PROGRESS: "#CCE5FF", DONE: "#D4EDDA", CANCELLED: "#F8D7DA" };
+const STATUS_LABEL: Record<string, string> = { WAITING: "รอคิว", IN_PROGRESS: "กำลังทำ", DONE: "รอชำระเงิน", PAID: "ชำระเงินแล้ว", CANCELLED: "ยกเลิกรายการ" };
+const STATUS_COLOR: Record<string, string> = { WAITING: "#856404", IN_PROGRESS: "#004085", DONE: "#856404", PAID: "#155724", CANCELLED: "#721c24" };
+const STATUS_BG: Record<string, string> = { WAITING: "#FFF3CD", IN_PROGRESS: "#CCE5FF", DONE: "#FFF3CD", PAID: "#D4EDDA", CANCELLED: "#F8D7DA" };
 const METHOD_LABEL: Record<string, string> = { CASH: "เงินสด", TRANSFER: "โอนเงิน (QR)", WALLET: "Wallet", TICKET: "Ticket/คูปอง" };
 
 /* ─────────────────────────── helper: build receipt html ─────── */
@@ -101,7 +101,7 @@ export default function QueuePage() {
 
   /* ── queue load ── */
   const load = useCallback(async () => {
-    const res = await fetch("/api/orders?status=WAITING,IN_PROGRESS,DONE");
+    const res = await fetch("/api/orders?status=WAITING,IN_PROGRESS,DONE,PAID,CANCELLED");
     const data = await res.json();
     setOrders(data);
     setLoading(false);
@@ -288,9 +288,11 @@ export default function QueuePage() {
               💳 ชำระเงิน
             </button>
           )}
-          <button className="btn-secondary" style={{ fontSize: "0.8rem", padding: "4px 12px" }} onClick={() => updateStatus(order.id, "CANCELLED")}>
-            ยกเลิก
-          </button>
+          {order.status !== "PAID" && order.status !== "CANCELLED" && (
+            <button className="btn-secondary" style={{ fontSize: "0.8rem", padding: "4px 12px" }} onClick={() => updateStatus(order.id, "CANCELLED")}>
+              ยกเลิก
+            </button>
+          )}
           <span style={{ marginLeft: "auto", fontSize: "0.85rem", fontWeight: 600 }}>฿{order.subtotal.toLocaleString()}</span>
         </div>
       </div>
@@ -301,7 +303,8 @@ export default function QueuePage() {
 
   const waiting = orders.filter(o => o.status === "WAITING");
   const inProgress = orders.filter(o => o.status === "IN_PROGRESS");
-  const done = orders.filter(o => o.status === "DONE").slice(0, 10);
+  const pendingPayment = orders.filter(o => o.status === "DONE");
+  const completed = orders.filter(o => o.status === "PAID" || o.status === "CANCELLED").slice(0, 15);
 
   /* ── render ── */
   return (
@@ -316,7 +319,7 @@ export default function QueuePage() {
       </div>
 
       {/* Kanban */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "1rem" }}>
         <div>
           <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#856404", background: "#FFF3CD", padding: "0.5rem 1rem", borderRadius: 8, marginBottom: "0.75rem" }}>
             ⏳ รอคิว ({waiting.length})
@@ -330,10 +333,16 @@ export default function QueuePage() {
           {inProgress.length === 0 ? <p style={{ color: "#aaa", fontSize: "0.875rem" }}>ไม่มี</p> : inProgress.map(o => <OrderCard key={o.id} order={o} />)}
         </div>
         <div>
-          <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#155724", background: "#D4EDDA", padding: "0.5rem 1rem", borderRadius: 8, marginBottom: "0.75rem" }}>
-            ✓ เสร็จแล้ว / รอชำระ ({done.length})
+          <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#856404", background: "#FFF3CD", padding: "0.5rem 1rem", borderRadius: 8, marginBottom: "0.75rem" }}>
+            💳 รอชำระเงิน ({pendingPayment.length})
           </h2>
-          {done.length === 0 ? <p style={{ color: "#aaa", fontSize: "0.875rem" }}>ไม่มี</p> : done.map(o => <OrderCard key={o.id} order={o} />)}
+          {pendingPayment.length === 0 ? <p style={{ color: "#aaa", fontSize: "0.875rem" }}>ไม่มี</p> : pendingPayment.map(o => <OrderCard key={o.id} order={o} />)}
+        </div>
+        <div>
+          <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#155724", background: "#D4EDDA", padding: "0.5rem 1rem", borderRadius: 8, marginBottom: "0.75rem" }}>
+            ✓ รายการทำสำเร็จ ({completed.length})
+          </h2>
+          {completed.length === 0 ? <p style={{ color: "#aaa", fontSize: "0.875rem" }}>ไม่มี</p> : completed.map(o => <OrderCard key={o.id} order={o} />)}
         </div>
       </div>
 
