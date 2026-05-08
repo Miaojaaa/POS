@@ -62,12 +62,12 @@ export default function PayrollPage() {
         <>
           <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
             <div className="card" style={{ textAlign: "center", flex: 1 }}>
+              <div style={{ color: "#888", fontSize: "0.8rem", marginBottom: 4 }}>ค่าคอมรวมทั้งหมด</div>
               <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--olive)" }}>฿{totalPayroll.toLocaleString()}</div>
-              <div style={{ color: "#888", fontSize: "0.875rem" }}>ค่าคอมรวมทั้งหมด</div>
             </div>
             <div className="card" style={{ textAlign: "center", flex: 1 }}>
+              <div style={{ color: "#888", fontSize: "0.8rem", marginBottom: 4 }}>จำนวนพนักงานที่มีออร์เดอร์</div>
               <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>{run.items.filter(i => i.orderCount > 0).length} คน</div>
-              <div style={{ color: "#888", fontSize: "0.875rem" }}>มีออร์เดอร์</div>
             </div>
           </div>
 

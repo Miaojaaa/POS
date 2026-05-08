@@ -19,16 +19,16 @@ export default async function StockReportPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
         <div className="card" style={{ textAlign: "center" }}>
+          <div style={{ color: "#888", fontSize: "0.8rem", marginBottom: 4 }}>มูลค่าคลังหลัก</div>
           <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--olive)" }}>฿{totalMainValue.toLocaleString()}</div>
-          <div style={{ color: "#888", fontSize: "0.875rem" }}>มูลค่าคลังหลัก</div>
         </div>
         <div className="card" style={{ textAlign: "center" }}>
+          <div style={{ color: "#888", fontSize: "0.8rem", marginBottom: 4 }}>มูลค่าคลังหน้าร้าน</div>
           <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#5A7CA6" }}>฿{totalSubValue.toLocaleString()}</div>
-          <div style={{ color: "#888", fontSize: "0.875rem" }}>มูลค่าคลังหน้าร้าน</div>
         </div>
         <div className="card" style={{ textAlign: "center" }}>
+          <div style={{ color: "#888", fontSize: "0.8rem", marginBottom: 4 }}>มูลค่าสต็อกรวม</div>
           <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#555" }}>฿{(totalMainValue + totalSubValue).toLocaleString()}</div>
-          <div style={{ color: "#888", fontSize: "0.875rem" }}>มูลค่าสต็อกรวม</div>
         </div>
       </div>
 
