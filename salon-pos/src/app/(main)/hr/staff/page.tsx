@@ -29,6 +29,11 @@ export default function StaffPage() {
   }, []);
 
   function handleAddClick() {
+    if (!isUnlocked) {
+      alert("กรุณาปลดล็อกสิทธิ์ก่อนเพิ่มพนักงาน");
+      setShowUnlockModal(true);
+      return;
+    }
     setEditingId(null);
     setForm({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "" });
     setShowForm(true);
@@ -95,7 +100,7 @@ export default function StaffPage() {
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, ownerPin: ownerPinStr }),
       });
       if (res.ok) {
         setShowForm(false);
@@ -133,7 +138,13 @@ export default function StaffPage() {
               🔓 ล็อกสิทธิ์แก้ไข
             </button>
           )}
-          <button className="btn-primary" onClick={handleAddClick}>+ เพิ่มพนักงาน</button>
+          <button 
+            className="btn-primary" 
+            onClick={handleAddClick}
+            style={{ opacity: isUnlocked ? 1 : 0.6 }}
+          >
+            + เพิ่มพนักงาน
+          </button>
         </div>
       </div>
 
@@ -176,7 +187,15 @@ export default function StaffPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div>
                 <label className="label">รหัส Owner PIN</label>
-                <input type="password" placeholder="ใส่รหัส 6 หลัก" className="input" value={unlockPin} onChange={e => setUnlockPin(e.target.value)} />
+                <input 
+                  type="password" 
+                  placeholder="ใส่รหัส" 
+                  className="input" 
+                  value={unlockPin} 
+                  onChange={e => setUnlockPin(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleUnlock()}
+                  autoFocus
+                />
               </div>
             </div>
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
