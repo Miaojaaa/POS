@@ -67,7 +67,7 @@ export default async function DashboardPage() {
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--beige-dark)" }}>
                   <th style={{ textAlign: "left", padding: "4px 8px" }}>ลูกค้า</th>
-                  <th style={{ textAlign: "right", padding: "4px 8px" }}>ยอด</th>
+                  <th style={{ textAlign: "right", padding: "4px 8px" }}>ยอด (฿)</th>
                   <th style={{ textAlign: "center", padding: "4px 8px" }}>สถานะ</th>
                 </tr>
               </thead>
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
                 {allTodayOrders.slice(0, 10).map(o => (
                   <tr key={o.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                     <td style={{ padding: "4px 8px" }}>{o.customerName}</td>
-                    <td style={{ padding: "4px 8px", textAlign: "right" }}>฿{o.total.toLocaleString()}</td>
+                    <td style={{ padding: "4px 8px", textAlign: "right" }}>{o.total.toLocaleString()}</td>
                     <td style={{ padding: "4px 8px", textAlign: "center" }}>
                       <span className={`badge badge-${o.status.toLowerCase().replace("_", "-")}`}>
                         {o.status === "WAITING" ? "รอ" : o.status === "IN_PROGRESS" ? "กำลังทำ" : o.status === "DONE" ? "เสร็จ" : o.status === "PAID" ? "จ่ายแล้ว" : "ยกเลิก"}
