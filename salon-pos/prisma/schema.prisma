@@ -104,8 +104,10 @@ model Order {
   technicianId   String
   status         String   @default("WAITING")
   notes          String?
-  subtotal       Int      @default(0)
-  discountAmount Int      @default(0)
+  receiptNumber  Int?
+  subtotal       Float    @default(0)
+  retailSubtotal Float    @default(0)
+  discountAmount Float    @default(0)
   discountPct    Float    @default(0)
   total          Int      @default(0)
   chemicalCost   Int      @default(0)
@@ -117,10 +119,31 @@ model Order {
   technician     User             @relation("TechnicianOrders", fields: [technicianId], references: [id])
   assistants     OrderAssistant[]
   items          OrderItem[]
+  retailItems    OrderRetailItem[]
   chemicals      OrderChemical[]
   payments       Payment[]
   discountLogs   DiscountLog[]
   serviceHistory ServiceHistory[]
+}
+
+model RetailProduct {
+  id          String  @id @default(cuid())
+  name        String
+  price       Float
+  stock       Int     @default(0)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  orderItems  OrderRetailItem[]
+}
+
+model OrderRetailItem {
+  id              String        @id @default(cuid())
+  orderId         String
+  retailProductId String
+  quantity        Int
+  price           Float
+  order           Order         @relation(fields: [orderId], references: [id])
+  retailProduct   RetailProduct @relation(fields: [retailProductId], references: [id])
 }
 
 model OrderAssistant {
@@ -176,9 +199,10 @@ model WalletTransaction {
 model TicketDefinition {
   id          String  @id @default(cuid())
   name        String
-  type        String
+  type        String  // "FIXED" | "SERVICE"
   serviceId   String?
-  discountPct Float?
+  discountPct Float?  // for SERVICE type (0-100)
+  fixedValue  Float?  // for FIXED type (baht amount)
   service     Service? @relation(fields: [serviceId], references: [id])
   issued      CustomerTicket[]
 }

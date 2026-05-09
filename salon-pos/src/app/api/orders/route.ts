@@ -24,12 +24,16 @@ export async function POST(req: NextRequest) {
   const {
     customerName, customerPhone, customerId,
     technicianId, assistantIds = [],
-    items = [], chemicals = [],
+    items = [], chemicals = [], retailItems = [],
     notes,
   } = body;
 
+  type RetailItemInput = { retailProductId: string; quantity: number; price: number };
+  const ri: RetailItemInput[] = Array.isArray(retailItems) ? retailItems : [];
+
   let subtotal = 0;
   let chemicalCost = 0;
+  let retailSubtotal = 0;
 
   for (const item of items) {
     subtotal += item.price;
@@ -37,40 +41,62 @@ export async function POST(req: NextRequest) {
   for (const chem of chemicals) {
     chemicalCost += chem.totalCost;
   }
+  for (const r of ri) {
+    retailSubtotal += Number(r.price) * Number(r.quantity);
+  }
 
-  const order = await prisma.order.create({
-    data: {
-      customerName,
-      customerPhone,
-      customerId: customerId || null,
-      technicianId,
-      notes,
-      subtotal,
-      total: subtotal,
-      chemicalCost,
-      status: "WAITING",
-      assistants: {
-        create: assistantIds.map((uid: string) => ({ userId: uid })),
+  const order = await prisma.$transaction(async (tx) => {
+    const created = await tx.order.create({
+      data: {
+        customerName,
+        customerPhone,
+        customerId: customerId || null,
+        technicianId,
+        notes,
+        subtotal,
+        retailSubtotal,
+        total: subtotal + retailSubtotal,
+        chemicalCost,
+        status: "WAITING",
+        assistants: {
+          create: assistantIds.map((uid: string) => ({ userId: uid })),
+        },
+        items: {
+          create: items.map((i: { serviceId: string; price: number }) => ({
+            serviceId: i.serviceId,
+            price: i.price,
+          })),
+        },
+        chemicals: {
+          create: chemicals.map((c: { productId: string; amountG: number; costPerG: number; totalCost: number }) => ({
+            productId: c.productId,
+            amountG: c.amountG,
+            costPerG: c.costPerG,
+            totalCost: c.totalCost,
+          })),
+        },
+        retailItems: {
+          create: ri.map(r => ({
+            retailProductId: r.retailProductId,
+            quantity: Number(r.quantity),
+            price: Number(r.price),
+          })),
+        },
       },
-      items: {
-        create: items.map((i: { serviceId: string; price: number }) => ({
-          serviceId: i.serviceId,
-          price: i.price,
-        })),
+      include: {
+        technician: { select: { id: true, name: true } },
+        items: { include: { service: true } },
       },
-      chemicals: {
-        create: chemicals.map((c: { productId: string; amountG: number; costPerG: number; totalCost: number }) => ({
-          productId: c.productId,
-          amountG: c.amountG,
-          costPerG: c.costPerG,
-          totalCost: c.totalCost,
-        })),
-      },
-    },
-    include: {
-      technician: { select: { id: true, name: true } },
-      items: { include: { service: true } },
-    },
+    });
+
+    for (const r of ri) {
+      await tx.retailProduct.update({
+        where: { id: r.retailProductId },
+        data: { stock: { decrement: Number(r.quantity) } },
+      });
+    }
+
+    return created;
   });
 
   if (customerId) {
