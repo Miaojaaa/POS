@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 type Service = { id: string; name: string; price: number; duration: number; category: { name: string } };
 type User = { id: string; name: string; role: string };
-type Product = { id: string; name: string; unitVolumeMg: number; costPerUnit: number };
+type Product = { id: string; name: string; unitVolumeG: number; costPerUnit: number };
 type CustomerDetail = {
   id: string; name: string; phone: string; walletBalance: number;
   allergyHistory?: string; memberLevel: string;
@@ -15,13 +15,13 @@ type CustomerDetail = {
       createdAt: string;
       items: { service: { name: string } }[];
       technician: { name: string };
-      chemicals: { product: { name: string }; amountMg: number }[];
+      chemicals: { product: { name: string }; amountG: number }[];
     };
   }[];
 };
 
 type OrderItem = { serviceId: string; serviceName: string; originalPrice: number; price: number };
-type OrderChem = { productId: string; productName: string; amountMg: number; costPerMg: number; totalCost: number };
+type OrderChem = { productId: string; productName: string; amountG: number; costPerG: number; totalCost: number };
 
 export default function NewOrderPage() {
   const router = useRouter();
@@ -102,14 +102,14 @@ export default function NewOrderPage() {
   const showChemDropdown = chemFocused && filteredChemProducts.length > 0;
 
   function addChemToList(prod: Product) {
-    const costPerMg = prod.costPerUnit / prod.unitVolumeMg;
-    setSelectedChems(prev => [...prev, { productId: prod.id, productName: prod.name, amountMg: 0, costPerMg, totalCost: 0 }]);
+    const costPerG = prod.costPerUnit / prod.unitVolumeG;
+    setSelectedChems(prev => [...prev, { productId: prod.id, productName: prod.name, amountG: 0, costPerG, totalCost: 0 }]);
     setChemSearch("");
   }
 
-  function updateChemAmount(productId: string, amountMg: number) {
+  function updateChemAmount(productId: string, amountG: number) {
     setSelectedChems(prev =>
-      prev.map(c => c.productId === productId ? { ...c, amountMg, totalCost: c.costPerMg * amountMg } : c)
+      prev.map(c => c.productId === productId ? { ...c, amountG, totalCost: c.costPerG * amountG } : c)
     );
   }
 
@@ -170,7 +170,7 @@ export default function NewOrderPage() {
         technicianId: technicianIds[0],
         assistantIds: [...technicianIds.slice(1), ...assistantIds],
         items: selectedItems.map(i => ({ serviceId: i.serviceId, price: i.price })),
-        chemicals: selectedChems.filter(c => c.amountMg > 0),
+        chemicals: selectedChems.filter(c => c.amountG > 0),
         notes,
       }),
     });
@@ -373,12 +373,12 @@ export default function NewOrderPage() {
                     <span style={{ flex: 1 }}>{chem.productName}</span>
                     <input
                       type="number"
-                      placeholder="มก."
+                      placeholder="ก."
                       style={{
                         width: 68, border: "1px solid var(--beige-dark)", borderRadius: 6,
                         padding: "3px 6px", fontSize: "0.85rem", textAlign: "center",
                       }}
-                      value={chem.amountMg || ""}
+                      value={chem.amountG || ""}
                       onChange={e => updateChemAmount(chem.productId, parseInt(e.target.value) || 0)}
                     />
                     <span style={{ color: "#888", fontSize: "0.75rem", width: 58, textAlign: "right" }}>
@@ -489,13 +489,13 @@ export default function NewOrderPage() {
                   </div>
                 ))}
 
-                {selectedChems.some(c => c.amountMg > 0) && (
+                {selectedChems.some(c => c.amountG > 0) && (
                   <>
                     <div style={{ borderTop: "1px dashed #ddd", margin: "8px 0" }} />
                     <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: 4 }}>ต้นทุนเคมี:</div>
-                    {selectedChems.filter(c => c.amountMg > 0).map(c => (
+                    {selectedChems.filter(c => c.amountG > 0).map(c => (
                       <div key={c.productId} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#888" }}>
-                        <span>{c.productName} ({c.amountMg}มก.)</span>
+                        <span>{c.productName} ({c.amountG}ก.)</span>
                         <span>฿{c.totalCost.toFixed(2)}</span>
                       </div>
                     ))}
@@ -564,7 +564,7 @@ export default function NewOrderPage() {
                     <div><strong>{new Date(h.order.createdAt).toLocaleDateString("th-TH")}</strong> · ช่าง {h.order.technician.name}</div>
                     <div style={{ color: "#555" }}>{h.order.items.map(it => it.service.name).join(", ")}</div>
                     {h.order.chemicals.length > 0 && (
-                      <div style={{ color: "#888" }}>เคมี: {h.order.chemicals.map(c => `${c.product.name}(${c.amountMg}มก.)`).join(", ")}</div>
+                      <div style={{ color: "#888" }}>เคมี: {h.order.chemicals.map(c => `${c.product.name}(${c.amountG}ก.)`).join(", ")}</div>
                     )}
                   </div>
                 ))}

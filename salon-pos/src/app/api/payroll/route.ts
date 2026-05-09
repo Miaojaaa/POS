@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const users = await prisma.user.findMany({ where: { isActive: true } });
 
   const orders = await prisma.order.findMany({
-    where: { status: "DONE", completedAt: { gte: startOfMonth, lte: endOfMonth } },
+    where: { status: { in: ["DONE", "PAID"] }, completedAt: { gte: startOfMonth, lte: endOfMonth } },
     include: { items: true, chemicals: true, assistants: true },
   });
 

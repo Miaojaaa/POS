@@ -62,12 +62,12 @@ export default function PayrollPage() {
         <>
           <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
             <div className="card" style={{ textAlign: "center", flex: 1 }}>
+              <div style={{ color: "#888", fontSize: "0.8rem", marginBottom: 4 }}>ค่าคอมรวมทั้งหมด</div>
               <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--olive)" }}>฿{totalPayroll.toLocaleString()}</div>
-              <div style={{ color: "#888", fontSize: "0.875rem" }}>ค่าคอมรวมทั้งหมด</div>
             </div>
             <div className="card" style={{ textAlign: "center", flex: 1 }}>
+              <div style={{ color: "#888", fontSize: "0.8rem", marginBottom: 4 }}>จำนวนพนักงานที่มีออร์เดอร์</div>
               <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>{run.items.filter(i => i.orderCount > 0).length} คน</div>
-              <div style={{ color: "#888", fontSize: "0.875rem" }}>มีออร์เดอร์</div>
             </div>
           </div>
 
@@ -78,9 +78,9 @@ export default function PayrollPage() {
                   <th style={{ textAlign: "left", padding: "8px 12px" }}>พนักงาน</th>
                   <th style={{ textAlign: "center", padding: "8px 12px" }}>ตำแหน่ง</th>
                   <th style={{ textAlign: "center", padding: "8px 12px" }}>ออร์เดอร์</th>
-                  <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าคอม Pool</th>
-                  <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าคอม Retail</th>
-                  <th style={{ textAlign: "right", padding: "8px 12px" }}>รวม</th>
+                  <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าคอม Pool (฿)</th>
+                  <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าคอม Retail (฿)</th>
+                  <th style={{ textAlign: "right", padding: "8px 12px" }}>รวม (฿)</th>
                 </tr>
               </thead>
               <tbody>
@@ -89,10 +89,10 @@ export default function PayrollPage() {
                     <td style={{ padding: "8px 12px", fontWeight: 500 }}>{item.user.name}</td>
                     <td style={{ padding: "8px 12px", textAlign: "center", color: "#666" }}>{ROLES[item.user.role]}</td>
                     <td style={{ padding: "8px 12px", textAlign: "center" }}>{item.orderCount}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{item.poolCommission.toLocaleString()}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{item.retailCommission.toLocaleString()}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "right" }}>{item.poolCommission.toLocaleString()}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "right" }}>{item.retailCommission.toLocaleString()}</td>
                     <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "var(--olive)" }}>
-                      ฿{item.totalAmount.toLocaleString()}
+                      {item.totalAmount.toLocaleString()}
                     </td>
                   </tr>
                 ))}

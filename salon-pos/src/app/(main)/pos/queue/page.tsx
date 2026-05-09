@@ -9,7 +9,7 @@ type OrderSummary = {
   subtotal: number; total: number; createdAt: string; notes?: string;
   technician: { name: string };
   items: { service: { name: string }; price: number }[];
-  chemicals: { product: { name: string }; amountMg: number }[];
+  chemicals: { product: { name: string }; amountG: number }[];
 };
 
 type OrderDetail = {
@@ -18,7 +18,7 @@ type OrderDetail = {
   customer?: { id: string; name: string; walletBalance: number };
   technician: { name: string };
   items: { id: string; service: { name: string }; price: number }[];
-  chemicals: { product: { name: string }; amountMg: number; totalCost: number }[];
+  chemicals: { product: { name: string }; amountG: number; totalCost: number }[];
 };
 
 type Payment = { method: string; amount: number };
@@ -263,7 +263,7 @@ export default function QueuePage() {
         <div style={{ fontSize: "0.85rem", marginBottom: 4 }}>{order.items.map(i => i.service.name).join(" · ")}</div>
         {order.chemicals.length > 0 && (
           <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: 4 }}>
-            🧪 {order.chemicals.map(c => `${c.product.name}(${c.amountMg}มก.)`).join(", ")}
+            🧪 {order.chemicals.map(c => `${c.product.name}(${c.amountG}ก.)`).join(", ")}
           </div>
         )}
         {order.notes && <div style={{ fontSize: "0.8rem", color: "#888", fontStyle: "italic" }}>📝 {order.notes}</div>}

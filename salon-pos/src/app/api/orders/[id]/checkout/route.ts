@@ -53,19 +53,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
     }
 
-    for (const chem of order.chemicals as { productId: string; amountMg: number }[]) {
+    for (const chem of order.chemicals as { productId: string; amountG: number }[]) {
       const sub = await tx.subStock.findUnique({ where: { productId: chem.productId } });
       if (!sub) continue;
-      let remainMg = sub.currentVolumeMg - chem.amountMg;
+      let remainG = sub.currentVolumeG - chem.amountG;
       let bottles = sub.quantity;
-      if (remainMg < 0) {
+      if (remainG < 0) {
         bottles -= 1;
         const prod = await tx.product.findUnique({ where: { id: chem.productId } });
-        remainMg = prod ? prod.unitVolumeMg + remainMg : 0;
+        remainG = prod ? prod.unitVolumeG + remainG : 0;
       }
       await tx.subStock.update({
         where: { productId: chem.productId },
-        data: { quantity: Math.max(0, bottles), currentVolumeMg: Math.max(0, remainMg) },
+        data: { quantity: Math.max(0, bottles), currentVolumeG: Math.max(0, remainG) },
       });
     }
 

@@ -57,7 +57,7 @@ model ServiceCategory {
 model Service {
   id         String          @id @default(cuid())
   name       String
-  price      Float
+  price      Int
   duration   Int             @default(60)
   categoryId String
   isActive   Boolean         @default(true)
@@ -69,7 +69,7 @@ model Service {
 model Product {
   id           String  @id @default(cuid())
   name         String
-  unitVolumeMg Int
+  unitVolumeG  Int     @map("unitVolumeMg")
   costPerUnit  Float
   reorderPoint Int     @default(0)
   isActive     Boolean @default(true)
@@ -92,7 +92,7 @@ model SubStock {
   id              String  @id @default(cuid())
   productId       String  @unique
   quantity        Int     @default(0)
-  currentVolumeMg Int     @default(0)
+  currentVolumeG Int     @default(0) @map("currentVolumeMg")
   product         Product @relation(fields: [productId], references: [id])
 }
 
@@ -104,11 +104,11 @@ model Order {
   technicianId   String
   status         String   @default("WAITING")
   notes          String?
-  subtotal       Float    @default(0)
-  discountAmount Float    @default(0)
+  subtotal       Int      @default(0)
+  discountAmount Int      @default(0)
   discountPct    Float    @default(0)
-  total          Float    @default(0)
-  chemicalCost   Float    @default(0)
+  total          Int      @default(0)
+  chemicalCost   Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   completedAt    DateTime?
@@ -135,7 +135,7 @@ model OrderItem {
   id         String  @id @default(cuid())
   orderId    String
   serviceId  String
-  price      Float
+  price      Int
   ticketUsed Boolean @default(false)
   order      Order   @relation(fields: [orderId], references: [id])
   service    Service @relation(fields: [serviceId], references: [id])
@@ -145,8 +145,8 @@ model OrderChemical {
   id        String  @id @default(cuid())
   orderId   String
   productId String
-  amountMg  Int
-  costPerMg Float
+  amountG   Int    @map("amountMg")
+  costPerG  Float  @map("costPerMg")
   totalCost Float
   order     Order   @relation(fields: [orderId], references: [id])
   product   Product @relation(fields: [productId], references: [id])
@@ -156,7 +156,7 @@ model Payment {
   id        String   @id @default(cuid())
   orderId   String
   method    String
-  amount    Float
+  amount    Int
   createdAt DateTime @default(now())
   order     Order    @relation(fields: [orderId], references: [id])
 }

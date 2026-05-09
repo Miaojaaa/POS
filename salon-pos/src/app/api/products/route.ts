@@ -20,11 +20,11 @@ export async function POST(req: NextRequest) {
   const product = await prisma.product.create({
     data: {
       name: body.name,
-      unitVolumeMg: body.unitVolumeMg,
+      unitVolumeG: body.unitVolumeG,
       costPerUnit: body.costPerUnit,
       reorderPoint: body.reorderPoint || 0,
       mainStock: { create: { quantity: body.initialMain || 0 } },
-      subStock: { create: { quantity: body.initialSub || 0, currentVolumeMg: body.unitVolumeMg } },
+      subStock: { create: { quantity: body.initialSub || 0, currentVolumeG: body.unitVolumeG } },
     },
   });
   return NextResponse.json(product);

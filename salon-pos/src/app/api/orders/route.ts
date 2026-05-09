@@ -59,10 +59,10 @@ export async function POST(req: NextRequest) {
         })),
       },
       chemicals: {
-        create: chemicals.map((c: { productId: string; amountMg: number; costPerMg: number; totalCost: number }) => ({
+        create: chemicals.map((c: { productId: string; amountG: number; costPerG: number; totalCost: number }) => ({
           productId: c.productId,
-          amountMg: c.amountMg,
-          costPerMg: c.costPerMg,
+          amountG: c.amountG,
+          costPerG: c.costPerG,
           totalCost: c.totalCost,
         })),
       },

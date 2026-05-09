@@ -11,15 +11,17 @@ const adapter = new PrismaBetterSqlite3({ url: `file:${path.join(__dirname, ".."
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  console.log("Seeding master data...");
+
   // System config (PINs)
   await prisma.systemConfig.upsert({
     where: { key: "manager_pin" },
-    update: {},
+    update: { value: "1234" },
     create: { key: "manager_pin", value: "1234" },
   });
   await prisma.systemConfig.upsert({
     where: { key: "owner_pin" },
-    update: {},
+    update: { value: "9999" },
     create: { key: "owner_pin", value: "9999" },
   });
   await prisma.systemConfig.upsert({
@@ -34,12 +36,12 @@ async function main() {
   const cashierPw = await bcrypt.hash("cashier123", 10);
   const techPw = await bcrypt.hash("tech123", 10);
 
-  const owner = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "owner@salon.com" },
     update: {},
     create: { name: "เจ้าของร้าน", email: "owner@salon.com", password: ownerPw, role: "OWNER", phone: "0891234567" },
   });
-  const manager = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "manager@salon.com" },
     update: {},
     create: { name: "ผู้จัดการ สมใจ", email: "manager@salon.com", password: managerPw, role: "MANAGER", phone: "0812345678" },
@@ -49,12 +51,12 @@ async function main() {
     update: {},
     create: { name: "แคชเชียร์ นงนุช", email: "cashier@salon.com", password: cashierPw, role: "CASHIER", phone: "0823456789" },
   });
-  const tech1 = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "tech1@salon.com" },
     update: {},
     create: { name: "ช่าง สมหญิง", email: "tech1@salon.com", password: techPw, role: "TECHNICIAN", phone: "0834567890" },
   });
-  const tech2 = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "tech2@salon.com" },
     update: {},
     create: { name: "ช่าง มณีรัตน์", email: "tech2@salon.com", password: techPw, role: "TECHNICIAN", phone: "0845678901" },
@@ -106,12 +108,12 @@ async function main() {
 
   // Products (chemicals)
   const products = [
-    { id: "prod-color-a", name: "ครีมเปลี่ยนสี Brand A", unitVolumeMg: 500000, costPerUnit: 850, reorderPoint: 1000000 },
-    { id: "prod-color-b", name: "ครีมเปลี่ยนสี Brand B", unitVolumeMg: 500000, costPerUnit: 750, reorderPoint: 500000 },
-    { id: "prod-developer", name: "น้ำยาออกซิเดนท์ 6%", unitVolumeMg: 1000000, costPerUnit: 300, reorderPoint: 2000000 },
-    { id: "prod-perm-sol", name: "น้ำยาดัดผม", unitVolumeMg: 400000, costPerUnit: 450, reorderPoint: 400000 },
-    { id: "prod-treat", name: "ทรีทเมนท์บำรุงผม", unitVolumeMg: 300000, costPerUnit: 650, reorderPoint: 600000 },
-    { id: "prod-shampoo", name: "แชมพูร้านเสริมสวย", unitVolumeMg: 1000000, costPerUnit: 400, reorderPoint: 3000000 },
+    { id: "prod-color-a", name: "ครีมเปลี่ยนสี Brand A", unitVolumeG: 500, costPerUnit: 850, reorderPoint: 1000 },
+    { id: "prod-color-b", name: "ครีมเปลี่ยนสี Brand B", unitVolumeG: 500, costPerUnit: 750, reorderPoint: 500 },
+    { id: "prod-developer", name: "น้ำยาออกซิเดนท์ 6%", unitVolumeG: 1000, costPerUnit: 300, reorderPoint: 2000 },
+    { id: "prod-perm-sol", name: "น้ำยาดัดผม", unitVolumeG: 400, costPerUnit: 450, reorderPoint: 400 },
+    { id: "prod-treat", name: "ทรีทเมนท์บำรุงผม", unitVolumeG: 300, costPerUnit: 650, reorderPoint: 600 },
+    { id: "prod-shampoo", name: "แชมพูร้านเสริมสวย", unitVolumeG: 1000, costPerUnit: 400, reorderPoint: 3000 },
   ];
 
   for (const prod of products) {
@@ -128,7 +130,7 @@ async function main() {
     await prisma.subStock.upsert({
       where: { productId: p.id },
       update: {},
-      create: { productId: p.id, quantity: 2, currentVolumeMg: prod.unitVolumeMg },
+      create: { productId: p.id, quantity: 2, currentVolumeG: prod.unitVolumeG },
     });
   }
 
@@ -172,12 +174,6 @@ async function main() {
   });
 
   console.log("Seed completed successfully!");
-  console.log("Login credentials:");
-  console.log("  Owner:   owner@salon.com / owner123");
-  console.log("  Manager: manager@salon.com / manager123");
-  console.log("  Cashier: cashier@salon.com / cashier123");
-  console.log("  Technician: tech1@salon.com / tech123");
-  console.log("Manager PIN: 1234 | Owner PIN: 9999");
 }
 
 main()
