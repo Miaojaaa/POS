@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const items = await prisma.retailProduct.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-  });
-  return NextResponse.json(items);
+  try {
+    const items = await prisma.retailProduct.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+    });
+    return NextResponse.json(items);
+  } catch (error: any) {
+    console.error("Error in GET /api/retail-products:", error);
+    return new NextResponse(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 }
 
 export async function POST(req: NextRequest) {

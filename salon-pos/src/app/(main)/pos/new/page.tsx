@@ -70,21 +70,40 @@ export default function NewOrderPage() {
   const [pendingPriceEdit, setPendingPriceEdit] = useState<{ serviceId: string; price: number } | null>(null);
 
   useEffect(() => {
-    fetch("/api/services").then(r => r.json()).then(setServices);
-    fetch("/api/users").then(r => r.json()).then(setUsers);
-    fetch("/api/products").then(r => r.json()).then(setProducts);
-    fetch("/api/retail-products").then(r => r.json()).then(setRetailProducts);
+    const fetchData = async (url: string, setter: (data: any) => void) => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Failed to fetch ${url}: ${res.status} ${text}`);
+        }
+        const data = await res.json();
+        setter(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchData("/api/services", setServices);
+    fetchData("/api/users", setUsers);
+    fetchData("/api/products", setProducts);
+    fetchData("/api/retail-products", setRetailProducts);
   }, []);
 
   const lookupPhone = useCallback(async (phone: string) => {
     if (phone.length < 9) return;
-    const res = await fetch(`/api/customers/${phone}`);
-    const data = await res.json();
-    if (data) {
-      setCustomerDetail(data);
-      setCustomerId(data.id);
-      setCustomerName(data.name);
-      setShowMemberModal(true);
+    try {
+      const res = await fetch(`/api/customers/${phone}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data) {
+        setCustomerDetail(data);
+        setCustomerId(data.id);
+        setCustomerName(data.name);
+        setShowMemberModal(true);
+      }
+    } catch (err) {
+      console.error("Error looking up customer:", err);
     }
   }, []);
 
