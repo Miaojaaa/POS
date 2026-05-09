@@ -11,6 +11,7 @@ const menuItems = [
     children: [
       { href: "/pos/new", label: "รับออร์เดอร์ใหม่" },
       { href: "/pos/queue", label: "คิวลูกค้า" },
+      { href: "/pos/history", label: "ประวัติ Transaction" },
     ],
   },
   { href: "/dashboard", label: "ภาพรวมรายวัน", icon: "🏠" },

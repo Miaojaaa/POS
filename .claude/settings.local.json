@@ -17,11 +17,13 @@
       "Bash(mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\api\\\\payroll\\\\items\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\api\\\\payroll\\\\items\\\\[id]\" 2>&1; echo done)",
       "Bash(mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\api\\\\retail-products\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\api\\\\retail-products\\\\[id]\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\settings\\\\retail-products\" 2>&1; echo done)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\" -Recurse -Directory)",
-      "Bash(Select-Object -First 50 FullName)"
+      "Bash(Select-Object -First 50 FullName)",
+      "Bash(mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\pos\\\\history\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\pos\\\\edit\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\pos\\\\edit\\\\[id]\" 2>&1; echo done)"
     ],
     "additionalDirectories": [
       "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\api\\payroll\\items",
-      "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\api\\retail-products"
+      "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\api\\retail-products",
+      "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\(main)\\pos\\edit"
     ]
   }
 }

@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
         retailSubtotal,
         total: subtotal + retailSubtotal,
         chemicalCost,
-        status: "WAITING",
+        status: "IN_PROGRESS",
         assistants: {
           create: assistantIds.map((uid: string) => ({ userId: uid })),
         },

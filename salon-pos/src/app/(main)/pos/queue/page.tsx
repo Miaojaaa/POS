@@ -581,15 +581,15 @@ export default function QueuePage() {
         )}
         {order.notes && <div style={{ fontSize: "0.8rem", color: "#888", fontStyle: "italic" }}>📝 {order.notes}</div>}
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
-          {order.status === "WAITING" && (
-            <button className="btn-primary" style={{ fontSize: "0.8rem", padding: "4px 12px" }} onClick={() => updateStatus(order.id, "IN_PROGRESS")}>
-              เริ่มให้บริการ
-            </button>
-          )}
-          {order.status === "IN_PROGRESS" && (
-            <button className="btn-primary" style={{ fontSize: "0.8rem", padding: "4px 12px" }} onClick={() => updateStatus(order.id, "DONE")}>
-              ✓ เสร็จแล้ว
-            </button>
+          {(order.status === "IN_PROGRESS" || order.status === "WAITING") && (
+            <>
+              <Link href={`/pos/edit/${order.id}`} className="btn-secondary" style={{ fontSize: "0.8rem", padding: "4px 12px", textDecoration: "none" }}>
+                ✏️ แก้ไขรายการ
+              </Link>
+              <button className="btn-primary" style={{ fontSize: "0.8rem", padding: "4px 12px" }} onClick={() => updateStatus(order.id, "DONE")}>
+                ✓ เสร็จแล้ว
+              </button>
+            </>
           )}
           {order.status === "DONE" && (
             <button
@@ -614,10 +614,8 @@ export default function QueuePage() {
 
   if (loading) return <div>กำลังโหลด...</div>;
 
-  const waiting = orders.filter(o => o.status === "WAITING");
-  const inProgress = orders.filter(o => o.status === "IN_PROGRESS");
+  const inProgress = orders.filter(o => o.status === "IN_PROGRESS" || o.status === "WAITING");
   const pendingPayment = orders.filter(o => o.status === "DONE");
-  const completed = orders.filter(o => o.status === "PAID" || o.status === "CANCELLED").slice(0, 15);
 
   /* ── render ── */
   return (
@@ -627,18 +625,13 @@ export default function QueuePage() {
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📋 คิวลูกค้า</h1>
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <Link href="/pos/new" className="btn-primary" style={{ textDecoration: "none" }}>+ รับออร์เดอร์ใหม่</Link>
+          <Link href="/pos/history" className="btn-secondary" style={{ textDecoration: "none" }}>📜 ประวัติ Transaction</Link>
           <button className="btn-secondary" onClick={load}>🔄 รีเฟรช</button>
         </div>
       </div>
 
-      {/* Kanban */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "1rem" }}>
-        <div>
-          <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#856404", background: "#FFF3CD", padding: "0.5rem 1rem", borderRadius: 8, marginBottom: "0.75rem" }}>
-            ⏳ รอคิว ({waiting.length})
-          </h2>
-          {waiting.length === 0 ? <p style={{ color: "#aaa", fontSize: "0.875rem" }}>ไม่มีคิวรอ</p> : waiting.map(o => <OrderCard key={o.id} order={o} />)}
-        </div>
+      {/* Kanban — 2 columns */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
         <div>
           <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#004085", background: "#CCE5FF", padding: "0.5rem 1rem", borderRadius: 8, marginBottom: "0.75rem" }}>
             ✂️ กำลังทำ ({inProgress.length})
@@ -650,12 +643,6 @@ export default function QueuePage() {
             💳 รอชำระเงิน ({pendingPayment.length})
           </h2>
           {pendingPayment.length === 0 ? <p style={{ color: "#aaa", fontSize: "0.875rem" }}>ไม่มี</p> : pendingPayment.map(o => <OrderCard key={o.id} order={o} />)}
-        </div>
-        <div>
-          <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#155724", background: "#D4EDDA", padding: "0.5rem 1rem", borderRadius: 8, marginBottom: "0.75rem" }}>
-            ✓ รายการทำสำเร็จ ({completed.length})
-          </h2>
-          {completed.length === 0 ? <p style={{ color: "#aaa", fontSize: "0.875rem" }}>ไม่มี</p> : completed.map(o => <OrderCard key={o.id} order={o} />)}
         </div>
       </div>
 
