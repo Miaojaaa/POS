@@ -42,8 +42,21 @@ type RetailProduct = { id: string; name: string; price: number; stock: number };
 type RetailLine = { retailProductId: string; name: string; price: number; quantity: number };
 
 type ReceiptData = {
-  order: OrderDetail; finalTotal: number; change: number;
+  order: OrderDetail;
+  subtotal: number;        // services + retail (before discount)
+  discountTotal: number;   // manual discount + ticket discount
+  baseTotal: number;       // after discount, before SC/VAT
+  serviceCharge: number;   // 3% if CC
+  vat: number;             // 7% on (baseTotal + SC)
+  finalTotal: number;
+  change: number;
   payments: Payment[]; paidAt: Date; receiptNumber: number;
+};
+
+type FullInvoiceInfo = {
+  customerName: string;
+  customerAddress: string;
+  customerTaxId: string;
 };
 
 /* ─────────────────────────── constants ─────────────────────── */
@@ -74,172 +87,222 @@ const COMPANY = {
 };
 
 /* ─────────────────────────── helper: build receipt html ─────── */
-function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", taxId: string, fullCustomerName?: string): string {
+function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvoiceInfo): string {
   const date = r.paidAt.toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" });
   const time = r.paidAt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
   const receiptNo = formatReceiptNo(r.receiptNumber, mode, r.paidAt);
+  const hasCC = r.payments.some(p => p.method === "CREDIT_CARD");
+  const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // unify services + retail items
+  const lineItems = [
+    ...r.order.items.map(i => ({ name: i.service.name, qty: 1, unitPrice: i.price, total: i.price })),
+    ...(r.order.retailItems || []).map(ri => ({
+      name: ri.retailProduct.name,
+      qty: ri.quantity,
+      unitPrice: ri.price,
+      total: ri.price * ri.quantity,
+    })),
+  ];
+  const totalQty = lineItems.reduce((s, it) => s + it.qty, 0);
 
   if (mode === "SHORT") {
+    const itemRows = lineItems.map(it =>
+      `<tr><td class="c">${it.qty}</td><td>${it.name}</td><td class="r">${fmt(it.total)}</td></tr>`
+    ).join("");
+
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>ใบเสร็จ ${receiptNo}</title>
-<style>body{font-family:sans-serif;margin:24px;font-size:13px;max-width:320px}
-h2,h3{text-align:center;margin:4px 0}p{margin:3px 0}
-.line{border-top:1px dashed #555;margin:8px 0}
-table{width:100%;border-collapse:collapse}td{padding:2px 0}
-.r{text-align:right}.b{font-weight:700}.sm{font-size:11px;color:#555}
-.no{text-align:center;font-family:monospace;font-size:12px;letter-spacing:0.5px;background:#f5f5f5;padding:4px;border-radius:4px;margin:6px 0}
-.shop{text-align:center;font-size:11px;color:#666;line-height:1.4}
+<style>
+body { font-family: "Sarabun", "TH Sarabun New", sans-serif; margin: 16px; font-size: 12px; max-width: 320px; color: #222; }
+h2, h3 { text-align: center; margin: 4px 0; }
+p { margin: 3px 0; }
+.line { border-top: 1px dashed #555; margin: 6px 0; }
+table { width: 100%; border-collapse: collapse; }
+table.items td, table.items th { padding: 2px 0; vertical-align: top; }
+table.items th { font-size: 11px; color: #555; border-bottom: 1px solid #888; }
+.c { text-align: center; }
+.r { text-align: right; }
+.b { font-weight: 700; }
+.sm { font-size: 11px; color: #555; }
+.no { text-align: center; font-family: monospace; font-size: 12px; letter-spacing: 0.5px; background: #f5f5f5; padding: 4px; border-radius: 4px; margin: 6px 0; }
+.shop { text-align: center; font-size: 11px; color: #666; line-height: 1.4; }
+.summary td { padding: 2px 0; }
+.summary tr.net td { border-top: 1px solid #aaa; font-weight: 700; padding-top: 4px; }
+.summary tr.grand td { border-top: 2px solid #000; border-bottom: 2px solid #000; font-weight: 700; font-size: 13px; padding: 4px 0; }
+.vat-label { text-align: center; font-size: 11px; letter-spacing: 1px; border: 1px solid #999; padding: 3px; margin-top: 6px; font-weight: 700; }
 </style></head><body>
 <h2>${COMPANY.name}</h2>
 <div class="shop">${COMPANY.address}</div>
 <div class="shop">เลขผู้เสียภาษี: ${COMPANY.taxId}</div>
-<h3>ใบเสร็จรับเงิน (อย่างย่อ)</h3>
+<div class="line"></div>
+<h3>ใบกำกับภาษีอย่างย่อ / ใบเสร็จรับเงิน</h3>
 <div class="no">${receiptNo}</div>
 <div class="line"></div>
+<p>พนักงานขาย: ${r.order.technician.name}</p>
 <p>วันที่: ${date} ${time}</p>
 <p>ลูกค้า: ${r.order.customerName}</p>
-${r.order.customerPhone ? `<p>โทร: ${r.order.customerPhone}</p>` : ""}
-<p class="sm">ช่าง: ${r.order.technician.name}</p>
+${r.order.customerPhone ? `<p class="sm">โทร: ${r.order.customerPhone}</p>` : ""}
 <div class="line"></div>
-<table>
-${r.order.items.map(i => `<tr><td>${i.service.name}</td><td class="r">฿${i.price.toLocaleString()}</td></tr>`).join("")}
+<table class="items">
+  <thead><tr><th class="c" style="width:36px">จำนวน</th><th>รายการ</th><th class="r" style="width:80px">ราคา</th></tr></thead>
+  <tbody>${itemRows}</tbody>
 </table>
 <div class="line"></div>
-<table>
-<tr><td>ราคาก่อนส่วนลด</td><td class="r">฿${r.order.subtotal.toLocaleString()}</td></tr>
-${r.order.discountAmount > 0 ? `<tr><td>ส่วนลด</td><td class="r" style="color:red">-฿${r.order.discountAmount.toLocaleString()}</td></tr>` : ""}
-<tr class="b"><td>ยอดสุทธิ</td><td class="r">฿${r.finalTotal.toLocaleString()}</td></tr>
+<p class="b">จำนวนรวม ${totalQty}</p>
+<table class="summary">
+  <tr><td>รวมเป็นเงิน</td><td class="r">${fmt(r.subtotal)}</td></tr>
+  ${r.discountTotal > 0 ? `<tr><td>ส่วนลด</td><td class="r" style="color:#c00">-${fmt(r.discountTotal)}</td></tr>` : ""}
+  <tr class="net"><td>ยอดสุทธิ (หลังหักส่วนลด)</td><td class="r">${fmt(r.baseTotal)}</td></tr>
+  ${hasCC ? `<tr><td>+ Service Charge 3% (CC)</td><td class="r">${fmt(r.serviceCharge)}</td></tr>` : ""}
+  <tr><td>+ ภาษีมูลค่าเพิ่ม 7%</td><td class="r">${fmt(r.vat)}</td></tr>
+  <tr class="grand"><td>รวมทั้งสิ้น</td><td class="r">${fmt(r.finalTotal)}</td></tr>
 </table>
 <div class="line"></div>
-${r.payments.map(p => `<p>${METHOD_LABEL[p.method] ?? p.method}: ฿${p.amount.toLocaleString()}</p>`).join("")}
-${r.change > 0 ? `<p class="b">เงินทอน: ฿${r.change.toLocaleString()}</p>` : ""}
-<div class="line"></div>
-<p style="text-align:center;font-size:12px">ขอบคุณที่ใช้บริการค่ะ 🙏</p>
+${r.payments.map(p => `<p>${METHOD_LABEL[p.method] ?? p.method}: ฿${fmt(p.amount)}</p>`).join("")}
+${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` : ""}
+<div class="vat-label">VAT INCLUDED</div>
+<p style="text-align:center;font-size:12px;margin-top:8px">ขอบคุณที่ใช้บริการค่ะ 🙏</p>
 </body></html>`;
   }
 
-  // FULL TAX INVOICE — A4 layout
-  const subtotalNet = r.finalTotal / 1.07;
-  const vatAmount = r.finalTotal - subtotalNet;
-  const itemsRows = r.order.items.map((i, idx) => `
+  // FULL TAX INVOICE — A4 layout, prints Original + Copy on 2 pages
+  const itemsRows = lineItems.map((it, idx) => `
     <tr>
       <td class="c">${idx + 1}</td>
-      <td>${i.service.name}</td>
-      <td class="c">1</td>
-      <td class="r">${(i.price / 1.07).toFixed(2)}</td>
-      <td class="r">${(i.price / 1.07).toFixed(2)}</td>
+      <td>${it.name}</td>
+      <td class="c">${it.qty}</td>
+      <td class="r">${fmt(it.unitPrice)}</td>
+      <td class="r">${fmt(it.total)}</td>
     </tr>`).join("");
 
-  const buyerName = (fullCustomerName && fullCustomerName.trim()) || r.order.customerName;
+  const priceExclVat = r.baseTotal + r.serviceCharge;
+
+  const buildPage = (variant: "ORIGINAL" | "COPY") => {
+    const variantLabel = variant === "ORIGINAL" ? "ต้นฉบับ / Original" : "สำเนา / Copy";
+    return `
+    <div class="page">
+      <div class="header">
+        <div class="shop-info">
+          <h1>${COMPANY.name}</h1>
+          <p>${COMPANY.address}</p>
+          <p><strong>เลขประจำตัวผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
+        </div>
+        <div class="doc-info">
+          <h2>ใบกำกับภาษี / Tax Invoice</h2>
+          <div class="badge ${variant === "COPY" ? "copy" : ""}">${variantLabel}</div>
+          <div class="no">เลขที่: ${receiptNo}</div>
+          <div class="meta">วันที่: ${date}</div>
+          <div class="meta">เวลา: ${time}</div>
+        </div>
+      </div>
+
+      <div class="parties">
+        <div class="party">
+          <h3>ผู้ขาย / Seller</h3>
+          <p class="b">${COMPANY.name}</p>
+          <p>${COMPANY.address}</p>
+          <p><strong>เลขผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
+        </div>
+        <div class="party">
+          <h3>ผู้ซื้อ / Customer</h3>
+          <p class="b">${info.customerName}</p>
+          <p>${info.customerAddress}</p>
+          <p><strong>เลขผู้เสียภาษี:</strong> ${info.customerTaxId}</p>
+          ${r.order.customerPhone ? `<p>โทร: ${r.order.customerPhone}</p>` : ""}
+        </div>
+      </div>
+
+      <table class="items">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>รายการ / Description</th>
+            <th class="c" style="width:60px">จำนวน</th>
+            <th class="r" style="width:110px">ราคา/หน่วย</th>
+            <th class="r" style="width:120px">จำนวนเงิน</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsRows}
+        </tbody>
+      </table>
+
+      <div class="summary">
+        <table>
+          <tr><td class="label">รวมเป็นเงิน</td><td class="val">${fmt(r.subtotal)} บาท</td></tr>
+          ${r.discountTotal > 0 ? `<tr><td class="label">ส่วนลด</td><td class="val red">-${fmt(r.discountTotal)} บาท</td></tr>` : ""}
+          <tr class="net"><td class="label">ยอดสุทธิ (หลังหักส่วนลด)</td><td class="val">${fmt(r.baseTotal)} บาท</td></tr>
+          ${hasCC ? `<tr><td class="label">+ Service Charge 3% (Credit Card)</td><td class="val">${fmt(r.serviceCharge)} บาท</td></tr>` : ""}
+          <tr><td class="label">ราคาไม่รวมภาษีมูลค่าเพิ่ม</td><td class="val">${fmt(priceExclVat)} บาท</td></tr>
+          <tr><td class="label">+ ภาษีมูลค่าเพิ่ม 7%</td><td class="val">${fmt(r.vat)} บาท</td></tr>
+          <tr class="total"><td>รวมทั้งสิ้น</td><td class="val">${fmt(r.finalTotal)} บาท</td></tr>
+        </table>
+      </div>
+
+      <div class="payments">
+        ชำระโดย: ${r.payments.map(p => `${METHOD_LABEL[p.method] ?? p.method} ฿${fmt(p.amount)}`).join(", ")}
+      </div>
+
+      <div class="signatures">
+        <div class="sig">
+          <div class="line"></div>
+          <small>ผู้รับเงิน / Authorized Signature</small>
+        </div>
+        <div class="sig">
+          <div class="line"></div>
+          <small>ผู้รับสินค้า / Customer Signature</small>
+        </div>
+      </div>
+
+      <div class="footer">
+        เอกสารนี้พิมพ์จากระบบคอมพิวเตอร์ของ ${COMPANY.name} — ${receiptNo} (${variantLabel})
+      </div>
+    </div>`;
+  };
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>ใบกำกับภาษี ${receiptNo}</title>
 <style>
 @page { size: A4; margin: 1.5cm; }
 * { box-sizing: border-box; }
 body { font-family: "Sarabun", "TH Sarabun New", sans-serif; margin: 0; font-size: 13px; color: #222; }
-.page { width: 100%; max-width: 18cm; margin: 0 auto; }
+.page { width: 100%; max-width: 18cm; margin: 0 auto; page-break-after: always; }
+.page:last-child { page-break-after: auto; }
 .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; }
 .shop-info h1 { margin: 0 0 4px; font-size: 20px; color: #333; }
 .shop-info p { margin: 2px 0; font-size: 12px; color: #555; }
 .doc-info { text-align: right; }
 .doc-info h2 { margin: 0; font-size: 18px; color: #333; }
-.doc-info .badge { background: #333; color: white; padding: 4px 12px; border-radius: 4px; font-size: 11px; margin-top: 4px; display: inline-block; }
+.badge { background: #333; color: white; padding: 4px 12px; border-radius: 4px; font-size: 11px; margin-top: 4px; display: inline-block; font-weight: 700; }
+.badge.copy { background: #c0392b; }
 .no { font-family: monospace; font-size: 13px; letter-spacing: 1px; margin-top: 6px; }
+.meta { font-size: 12px; color: #666; margin-top: 2px; }
 .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
 .party { border: 1px solid #ccc; padding: 10px 12px; border-radius: 4px; background: #fafafa; }
 .party h3 { margin: 0 0 6px; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
 .party p { margin: 2px 0; font-size: 13px; }
-.party .b { font-weight: 700; }
+.b { font-weight: 700; }
 table.items { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
 table.items th { background: #333; color: white; padding: 8px 10px; font-size: 12px; text-align: left; }
 table.items td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-table.items td.c { text-align: center; }
-table.items td.r { text-align: right; }
+table.items td.c, table.items th.c { text-align: center; }
+table.items td.r, table.items th.r { text-align: right; }
 .summary { display: flex; justify-content: flex-end; margin-bottom: 24px; }
-.summary table { border-collapse: collapse; min-width: 280px; }
+.summary table { border-collapse: collapse; min-width: 320px; }
 .summary td { padding: 4px 8px; }
 .summary .label { color: #555; }
-.summary .val { text-align: right; min-width: 100px; }
+.summary .val { text-align: right; min-width: 110px; }
+.summary .red { color: #c00; }
+.summary tr.net td { border-top: 1px solid #999; font-weight: 700; padding-top: 6px; }
 .summary tr.total td { border-top: 2px solid #333; font-weight: 700; font-size: 15px; padding-top: 8px; }
+.payments { font-size: 12px; color: #555; margin-bottom: 8px; }
 .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 50px; }
 .sig { text-align: center; }
 .sig .line { border-top: 1px solid #999; margin-bottom: 6px; }
 .sig small { color: #666; }
 .footer { text-align: center; margin-top: 30px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 11px; color: #888; }
 </style></head><body>
-<div class="page">
-  <div class="header">
-    <div class="shop-info">
-      <h1>${COMPANY.name}</h1>
-      <p>${COMPANY.address}</p>
-      <p><strong>เลขประจำตัวผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
-    </div>
-    <div class="doc-info">
-      <h2>ใบกำกับภาษี</h2>
-      <div class="badge">ต้นฉบับ / Original</div>
-      <div class="no">เลขที่: ${receiptNo}</div>
-      <div style="font-size:12px;color:#666;margin-top:4px">วันที่: ${date}</div>
-      <div style="font-size:12px;color:#666">เวลา: ${time}</div>
-    </div>
-  </div>
-
-  <div class="parties">
-    <div class="party">
-      <h3>ผู้ขาย / Seller</h3>
-      <p class="b">${COMPANY.name}</p>
-      <p>${COMPANY.address}</p>
-      <p>เลขผู้เสียภาษี: ${COMPANY.taxId}</p>
-    </div>
-    <div class="party">
-      <h3>ผู้ซื้อ / Customer</h3>
-      <p class="b">${buyerName}</p>
-      ${r.order.customerPhone ? `<p>โทร: ${r.order.customerPhone}</p>` : ""}
-      ${taxId ? `<p>เลขผู้เสียภาษี: ${taxId}</p>` : ""}
-    </div>
-  </div>
-
-  <table class="items">
-    <thead>
-      <tr>
-        <th style="width:40px">#</th>
-        <th>รายการ / Description</th>
-        <th class="c" style="width:60px">จำนวน</th>
-        <th class="r" style="width:100px">ราคา/หน่วย</th>
-        <th class="r" style="width:120px">จำนวนเงิน</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${itemsRows}
-    </tbody>
-  </table>
-
-  <div class="summary">
-    <table>
-      <tr><td class="label">มูลค่าสินค้า/บริการ</td><td class="val">${subtotalNet.toFixed(2)} บาท</td></tr>
-      ${r.order.discountAmount > 0 ? `<tr><td class="label">ส่วนลด</td><td class="val" style="color:#c00">-${r.order.discountAmount.toFixed(2)} บาท</td></tr>` : ""}
-      <tr><td class="label">ภาษีมูลค่าเพิ่ม 7%</td><td class="val">${vatAmount.toFixed(2)} บาท</td></tr>
-      <tr class="total"><td>รวมทั้งสิ้น</td><td class="val">${r.finalTotal.toFixed(2)} บาท</td></tr>
-    </table>
-  </div>
-
-  <div style="font-size:12px;color:#555;margin-bottom:8px">
-    ชำระโดย: ${r.payments.map(p => `${METHOD_LABEL[p.method] ?? p.method} ฿${p.amount.toLocaleString()}`).join(", ")}
-  </div>
-
-  <div class="signatures">
-    <div class="sig">
-      <div class="line"></div>
-      <small>ผู้รับเงิน / Authorized Signature</small>
-    </div>
-    <div class="sig">
-      <div class="line"></div>
-      <small>ผู้รับสินค้า / Customer Signature</small>
-    </div>
-  </div>
-
-  <div class="footer">
-    เอกสารนี้พิมพ์จากระบบคอมพิวเตอร์ของ ${COMPANY.name} — ${receiptNo}
-  </div>
-</div>
+${buildPage("ORIGINAL")}
+${buildPage("COPY")}
 </body></html>`;
 }
 
@@ -280,6 +343,7 @@ export default function QueuePage() {
   const [receiptMode, setReceiptMode] = useState<"SHORT" | "FULL">("SHORT");
   const [taxId, setTaxId] = useState("");
   const [fullCustomerName, setFullCustomerName] = useState("");
+  const [fullCustomerAddress, setFullCustomerAddress] = useState("");
 
   /* ── queue load ── */
   const load = useCallback(async () => {
@@ -515,9 +579,30 @@ export default function QueuePage() {
     });
     if (res.ok) {
       const data = await res.json();
+      const receiptOrder: OrderDetail = {
+        ...checkoutOrder,
+        discountAmount,
+        retailItems: [
+          ...checkoutOrder.retailItems,
+          ...retailLines.map(l => ({
+            id: `tmp-${l.retailProductId}`,
+            retailProductId: l.retailProductId,
+            quantity: l.quantity,
+            price: l.price,
+            retailProduct: { name: l.name },
+          })),
+        ],
+      };
+      const receiptSubtotal = checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + retailSubtotal;
       const receiptPayload: ReceiptData = {
-        order: { ...checkoutOrder, discountAmount },
-        finalTotal, change: Math.max(0, change),
+        order: receiptOrder,
+        subtotal: receiptSubtotal,
+        discountTotal: discountAmount + ticketDiscount,
+        baseTotal,
+        serviceCharge,
+        vat,
+        finalTotal,
+        change: Math.max(0, change),
         payments: payments.filter(p => p.amount > 0),
         paidAt: new Date(),
         receiptNumber: data.receiptNumber ?? 1,
@@ -527,6 +612,7 @@ export default function QueuePage() {
       setReceiptMode("SHORT");
       setTaxId("");
       setFullCustomerName(checkoutOrder.customerName || "");
+      setFullCustomerAddress("");
       await load();
     } else {
       showAlert("เกิดข้อผิดพลาด กรุณาลองใหม่");
@@ -536,18 +622,20 @@ export default function QueuePage() {
 
   /* ── receipt print ── */
   function printReceipt() {
-    if (receiptMode === "FULL" && !taxId.trim()) {
-      showAlert("กรุณากรอกเลขผู้เสียภาษีก่อนพิมพ์ใบกำกับภาษีเต็ม");
-      return;
-    }
-    if (receiptMode === "FULL" && !fullCustomerName.trim()) {
-      showAlert("กรุณากรอกชื่อผู้ซื้อก่อนพิมพ์ใบกำกับภาษีเต็ม");
-      return;
+    if (receiptMode === "FULL") {
+      if (!fullCustomerName.trim()) { showAlert("กรุณากรอกชื่อผู้ซื้อก่อนพิมพ์ใบกำกับภาษีเต็ม"); return; }
+      if (!fullCustomerAddress.trim()) { showAlert("กรุณากรอกที่อยู่ผู้ซื้อก่อนพิมพ์ใบกำกับภาษีเต็ม"); return; }
+      if (!taxId.trim()) { showAlert("กรุณากรอกเลขผู้เสียภาษีก่อนพิมพ์ใบกำกับภาษีเต็ม"); return; }
     }
     const winSize = receiptMode === "FULL" ? "width=900,height=900" : "width=420,height=640";
     const win = window.open("", "_blank", winSize);
     if (!win || !receipt) return;
-    win.document.write(buildReceiptHtml(receipt, receiptMode, taxId, fullCustomerName));
+    const info: FullInvoiceInfo = {
+      customerName: fullCustomerName.trim() || receipt.order.customerName,
+      customerAddress: fullCustomerAddress.trim(),
+      customerTaxId: taxId.trim(),
+    };
+    win.document.write(buildReceiptHtml(receipt, receiptMode, info));
     win.document.close();
     setTimeout(() => win.print(), 400);
   }
@@ -557,6 +645,7 @@ export default function QueuePage() {
     setReceiptMode("SHORT");
     setTaxId("");
     setFullCustomerName("");
+    setFullCustomerAddress("");
   }
 
   /* ── order card ── */
@@ -921,13 +1010,19 @@ export default function QueuePage() {
               >📋 ใบกำกับภาษีเต็ม</button>
             </div>
 
-            {/* Full receipt: customer name + tax ID required */}
+            {/* Full receipt: customer name + address + tax ID required */}
             {receiptMode === "FULL" && (
               <div style={{ marginBottom: "1rem", padding: "0.75rem", background: "#fff8e6", border: "1px solid #f5c842", borderRadius: 8, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 <div>
                   <label className="label" style={{ color: "#8a6d00" }}>ชื่อผู้ซื้อ / นิติบุคคล (บังคับ) *</label>
                   <input className="input" style={{ marginBottom: 0 }} placeholder="ชื่อบุคคล หรือ บริษัท..."
                     value={fullCustomerName} onChange={e => setFullCustomerName(e.target.value)} autoFocus />
+                </div>
+                <div>
+                  <label className="label" style={{ color: "#8a6d00" }}>ที่อยู่ผู้ซื้อ (บังคับ) *</label>
+                  <textarea className="input" style={{ marginBottom: 0, minHeight: 60, resize: "vertical" }}
+                    placeholder="เลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
+                    value={fullCustomerAddress} onChange={e => setFullCustomerAddress(e.target.value)} />
                 </div>
                 <div>
                   <label className="label" style={{ color: "#8a6d00" }}>เลขผู้เสียภาษีลูกค้า (บังคับ) *</label>
@@ -942,7 +1037,7 @@ export default function QueuePage() {
               <div style={{ textAlign: "center", fontWeight: 700, marginBottom: 2 }}>{COMPANY.name}</div>
               <div style={{ textAlign: "center", fontSize: "0.7rem", color: "#666", marginBottom: 2 }}>เลขผู้เสียภาษี: {COMPANY.taxId}</div>
               <div style={{ textAlign: "center", fontSize: "0.75rem", color: "#666", marginBottom: 4 }}>
-                {receiptMode === "FULL" ? "ใบกำกับภาษีเต็มรูปแบบ (A4)" : "ใบเสร็จรับเงิน (อย่างย่อ)"}
+                {receiptMode === "FULL" ? "ใบกำกับภาษีเต็มรูปแบบ (A4) — Original + Copy" : "ใบกำกับภาษีอย่างย่อ / ใบเสร็จรับเงิน"}
               </div>
               <div style={{ textAlign: "center", fontSize: "0.75rem", letterSpacing: 0.5, padding: "3px 6px", background: "white", border: "1px solid #ddd", borderRadius: 4, margin: "4px 0 8px", fontWeight: 600 }}>
                 {formatReceiptNo(receipt.receiptNumber, receiptMode, receipt.paidAt)}
@@ -960,14 +1055,34 @@ export default function QueuePage() {
                   <span>{item.service.name}</span><span>฿{item.price.toLocaleString()}</span>
                 </div>
               ))}
+              {receipt.order.retailItems && receipt.order.retailItems.length > 0 && receipt.order.retailItems.map(ri => (
+                <div key={ri.id} style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>{ri.retailProduct.name} × {ri.quantity}</span>
+                  <span>฿{(ri.price * ri.quantity).toLocaleString()}</span>
+                </div>
+              ))}
               <div style={{ borderTop: "1px dashed #aaa", margin: "6px 0" }} />
-              {receipt.order.discountAmount > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>รวมเป็นเงิน</span><span>฿{receipt.subtotal.toLocaleString()}</span>
+              </div>
+              {receipt.discountTotal > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", color: "var(--alert-red, #c0392b)" }}>
-                  <span>ส่วนลด</span><span>-฿{receipt.order.discountAmount.toLocaleString()}</span>
+                  <span>ส่วนลด</span><span>-฿{receipt.discountTotal.toLocaleString()}</span>
                 </div>
               )}
-              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
-                <span>ยอดสุทธิ</span><span>฿{receipt.finalTotal.toLocaleString()}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, borderTop: "1px solid #aaa", marginTop: 4, paddingTop: 4 }}>
+                <span>ยอดสุทธิ</span><span>฿{receipt.baseTotal.toLocaleString()}</span>
+              </div>
+              {receipt.serviceCharge > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>+ Service Charge 3% (CC)</span><span>฿{receipt.serviceCharge.toLocaleString()}</span>
+                </div>
+              )}
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>+ ภาษีมูลค่าเพิ่ม 7%</span><span>฿{receipt.vat.toLocaleString()}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, borderTop: "2px solid #000", borderBottom: "2px solid #000", marginTop: 4, padding: "4px 0" }}>
+                <span>รวมทั้งสิ้น</span><span>฿{receipt.finalTotal.toLocaleString()}</span>
               </div>
               <div style={{ borderTop: "1px dashed #aaa", margin: "6px 0" }} />
               {receipt.payments.map((p, i) => (
@@ -988,17 +1103,17 @@ export default function QueuePage() {
                 className="btn-primary"
                 style={{ flex: 1 }}
                 onClick={printReceipt}
-                disabled={receiptMode === "FULL" && !taxId.trim()}
+                disabled={receiptMode === "FULL" && (!taxId.trim() || !fullCustomerName.trim() || !fullCustomerAddress.trim())}
               >
-                🖨️ พิมพ์ใบเสร็จ
+                🖨️ พิมพ์ใบเสร็จ {receiptMode === "FULL" ? "(Original + Copy)" : ""}
               </button>
               <button className="btn-secondary" style={{ flex: 1 }} onClick={closeReceipt}>
                 ✓ ปิด
               </button>
             </div>
-            {receiptMode === "FULL" && !taxId.trim() && (
+            {receiptMode === "FULL" && (!taxId.trim() || !fullCustomerName.trim() || !fullCustomerAddress.trim()) && (
               <p style={{ fontSize: "0.75rem", color: "#c0392b", textAlign: "center", marginTop: "0.5rem" }}>
-                กรุณากรอกเลขผู้เสียภาษีก่อนพิมพ์
+                กรุณากรอกชื่อ ที่อยู่ และเลขผู้เสียภาษีของผู้ซื้อก่อนพิมพ์
               </p>
             )}
           </div>
