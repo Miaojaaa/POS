@@ -22,6 +22,8 @@ type CustomerDetail = {
 
 type OrderItem = { serviceId: string; serviceName: string; originalPrice: number; price: number };
 type OrderChem = { productId: string; productName: string; amountMg: number; costPerMg: number; totalCost: number };
+type RetailProduct = { id: string; name: string; price: number; stock: number };
+type RetailLine = { retailProductId: string; name: string; price: number; quantity: number; maxStock: number };
 
 export default function NewOrderPage() {
   const router = useRouter();
@@ -45,6 +47,12 @@ export default function NewOrderPage() {
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
   const [selectedChems, setSelectedChems] = useState<OrderChem[]>([]);
 
+  // Retail products
+  const [retailProducts, setRetailProducts] = useState<RetailProduct[]>([]);
+  const [selectedRetail, setSelectedRetail] = useState<RetailLine[]>([]);
+  const [retailSearch, setRetailSearch] = useState("");
+  const [retailFocused, setRetailFocused] = useState(false);
+
   // Chemical search
   const [chemSearch, setChemSearch] = useState("");
   const [chemFocused, setChemFocused] = useState(false);
@@ -65,6 +73,7 @@ export default function NewOrderPage() {
     fetch("/api/services").then(r => r.json()).then(setServices);
     fetch("/api/users").then(r => r.json()).then(setUsers);
     fetch("/api/products").then(r => r.json()).then(setProducts);
+    fetch("/api/retail-products").then(r => r.json()).then(setRetailProducts);
   }, []);
 
   const lookupPhone = useCallback(async (phone: string) => {
@@ -115,6 +124,33 @@ export default function NewOrderPage() {
 
   function removeChem(productId: string) {
     setSelectedChems(prev => prev.filter(c => c.productId !== productId));
+  }
+
+  // Retail product helpers
+  const filteredRetailProducts = retailSearch.trim()
+    ? retailProducts.filter(p =>
+        p.name.toLowerCase().includes(retailSearch.toLowerCase()) &&
+        !selectedRetail.find(r => r.retailProductId === p.id)
+      )
+    : [];
+  const showRetailDropdown = retailFocused && filteredRetailProducts.length > 0;
+
+  function addRetail(p: RetailProduct) {
+    if (p.stock <= 0) return;
+    setSelectedRetail(prev => [...prev, { retailProductId: p.id, name: p.name, price: p.price, quantity: 1, maxStock: p.stock }]);
+    setRetailSearch("");
+  }
+
+  function updateRetailQty(id: string, qty: number) {
+    setSelectedRetail(prev => prev.map(r => {
+      if (r.retailProductId !== id) return r;
+      const q = Math.max(1, Math.min(r.maxStock, qty));
+      return { ...r, quantity: q };
+    }));
+  }
+
+  function removeRetail(id: string) {
+    setSelectedRetail(prev => prev.filter(r => r.retailProductId !== id));
   }
 
   function addService(svc: Service) {
@@ -171,6 +207,7 @@ export default function NewOrderPage() {
         assistantIds: [...technicianIds.slice(1), ...assistantIds],
         items: selectedItems.map(i => ({ serviceId: i.serviceId, price: i.price })),
         chemicals: selectedChems.filter(c => c.amountMg > 0),
+        retailItems: selectedRetail.map(r => ({ retailProductId: r.retailProductId, quantity: r.quantity, price: r.price })),
         notes,
       }),
     });
@@ -180,7 +217,9 @@ export default function NewOrderPage() {
   }
 
   const subtotal = selectedItems.reduce((s, i) => s + i.price, 0);
+  const retailSubtotal = selectedRetail.reduce((s, r) => s + r.price * r.quantity, 0);
   const chemCost = selectedChems.reduce((s, c) => s + c.totalCost, 0);
+  const grandTotal = subtotal + retailSubtotal;
   const servicesByCategory = services.reduce<Record<string, Service[]>>((acc, svc) => {
     const cat = svc.category.name;
     if (!acc[cat]) acc[cat] = [];
@@ -398,6 +437,89 @@ export default function NewOrderPage() {
               <p style={{ color: "#aaa", fontSize: "0.85rem", margin: 0 }}>ค้นหาและกด + เพื่อเพิ่มเคมีที่ใช้</p>
             )}
           </div>
+
+          {/* Retail product card */}
+          <div className="card">
+            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>🛍️ สินค้า Retail</h3>
+
+            <div style={{ position: "relative", marginBottom: "0.75rem" }}>
+              <input
+                className="input"
+                style={{ marginBottom: 0, paddingLeft: "2rem" }}
+                placeholder="🔍 ค้นหาสินค้า retail..."
+                value={retailSearch}
+                onChange={e => setRetailSearch(e.target.value)}
+                onFocus={() => setRetailFocused(true)}
+                onBlur={() => setTimeout(() => setRetailFocused(false), 150)}
+                autoComplete="off"
+              />
+              {showRetailDropdown && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0,
+                  background: "white", border: "1px solid var(--beige-dark)", borderRadius: 8,
+                  zIndex: 20, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", maxHeight: 220, overflowY: "auto",
+                }}>
+                  {filteredRetailProducts.map(prod => (
+                    <div
+                      key={prod.id}
+                      onMouseDown={() => prod.stock > 0 && addRetail(prod)}
+                      style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "9px 14px",
+                        cursor: prod.stock > 0 ? "pointer" : "not-allowed",
+                        borderBottom: "1px solid #f0f0f0",
+                        fontSize: "0.875rem",
+                        opacity: prod.stock > 0 ? 1 : 0.4,
+                      }}
+                      onMouseEnter={e => { if (prod.stock > 0) e.currentTarget.style.background = "var(--beige)"; }}
+                      onMouseLeave={e => (e.currentTarget.style.background = "white")}
+                    >
+                      <span>{prod.name}</span>
+                      <span style={{ fontSize: "0.8rem", color: "#666" }}>
+                        ฿{prod.price.toLocaleString()} · เหลือ {prod.stock}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {selectedRetail.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                {selectedRetail.map(r => (
+                  <div key={r.retailProductId} style={{
+                    display: "flex", alignItems: "center", gap: "0.5rem",
+                    padding: "6px 10px", background: "var(--beige)", borderRadius: 8, fontSize: "0.875rem",
+                  }}>
+                    <span style={{ flex: 1 }}>{r.name}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={r.maxStock}
+                      value={r.quantity}
+                      onChange={e => updateRetailQty(r.retailProductId, parseInt(e.target.value) || 1)}
+                      style={{
+                        width: 56, border: "1px solid var(--beige-dark)", borderRadius: 6,
+                        padding: "3px 6px", fontSize: "0.85rem", textAlign: "center",
+                      }}
+                    />
+                    <span style={{ minWidth: 64, textAlign: "right", fontWeight: 600 }}>
+                      ฿{(r.price * r.quantity).toLocaleString()}
+                    </span>
+                    <button
+                      onClick={() => removeRetail(r.retailProductId)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#bbb", fontSize: "1rem", lineHeight: 1 }}
+                    >×</button>
+                  </div>
+                ))}
+                <div style={{ fontSize: "0.85rem", color: "var(--olive)", textAlign: "right", marginTop: 2, fontWeight: 600 }}>
+                  รวมสินค้า: ฿{retailSubtotal.toLocaleString()}
+                </div>
+              </div>
+            ) : (
+              <p style={{ color: "#aaa", fontSize: "0.85rem", margin: 0 }}>ค้นหาสินค้าและกดเพื่อเพิ่ม (ไม่บังคับ)</p>
+            )}
+          </div>
         </div>
 
         {/* Right: Services + Summary */}
@@ -502,9 +624,22 @@ export default function NewOrderPage() {
                   </>
                 )}
 
+                {selectedRetail.length > 0 && (
+                  <>
+                    <div style={{ borderTop: "1px dashed #ddd", margin: "8px 0" }} />
+                    <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: 4 }}>🛍️ สินค้า Retail:</div>
+                    {selectedRetail.map(r => (
+                      <div key={r.retailProductId} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: 2 }}>
+                        <span>{r.name} × {r.quantity}</span>
+                        <span>฿{(r.price * r.quantity).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+
                 <div style={{ borderTop: "2px solid var(--beige-dark)", marginTop: 8, paddingTop: 8, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1rem" }}>
                   <span>รวม</span>
-                  <span>฿{subtotal.toLocaleString()}</span>
+                  <span>฿{grandTotal.toLocaleString()}</span>
                 </div>
                 {chemCost > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#888" }}>

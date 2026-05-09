@@ -3,7 +3,17 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { payments, discountAmount, discountPct, approvedById, serviceCharge = 0, vat = 0, ticketId = null, ticketDiscount = 0 } = await req.json();
+  const {
+    payments,
+    discountAmount,
+    discountPct,
+    approvedById,
+    serviceCharge = 0,
+    vat = 0,
+    ticketId = null,
+    ticketDiscount = 0,
+    retailItems = [],
+  } = await req.json();
 
   const order = await prisma.order.findUnique({
     where: { id },
@@ -11,7 +21,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
-  const total = order.subtotal - (discountAmount || 0) - (ticketDiscount || 0) + serviceCharge + vat;
+  type RetailItemInput = { retailProductId: string; quantity: number; price: number };
+  const ri: RetailItemInput[] = Array.isArray(retailItems) ? retailItems : [];
+  const newRetailSubtotal = ri.reduce((s, r) => s + Number(r.price) * Number(r.quantity), 0);
+  const finalRetailSubtotal = (order.retailSubtotal || 0) + newRetailSubtotal;
+  const total = order.subtotal + finalRetailSubtotal - (discountAmount || 0) - (ticketDiscount || 0) + serviceCharge + vat;
+
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const todayPaidCount = await prisma.order.count({
+    where: { status: "PAID", completedAt: { gte: startOfDay, lt: endOfDay } },
+  });
+  const receiptNumber = todayPaidCount + 1;
 
   await prisma.$transaction(async (tx) => {
     await tx.order.update({
@@ -20,10 +42,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         status: "PAID",
         discountAmount: discountAmount || 0,
         discountPct: discountPct || 0,
+        retailSubtotal: finalRetailSubtotal,
         total,
-        completedAt: new Date(),
+        receiptNumber,
+        completedAt: now,
       },
     });
+
+    for (const r of ri) {
+      await tx.orderRetailItem.create({
+        data: { orderId: id, retailProductId: r.retailProductId, quantity: r.quantity, price: r.price },
+      });
+      await tx.retailProduct.update({
+        where: { id: r.retailProductId },
+        data: { stock: { decrement: r.quantity } },
+      });
+    }
 
     for (const pay of payments) {
       await tx.payment.create({
@@ -48,9 +82,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     if (discountAmount && discountAmount > 0 && approvedById) {
-      await tx.discountLog.create({
-        data: { orderId: id, approvedById, amount: discountAmount, pct: discountPct || 0 },
-      });
+      const approver = await tx.user.findUnique({ where: { id: approvedById }, select: { id: true } });
+      if (approver) {
+        await tx.discountLog.create({
+          data: { orderId: id, approvedById: approver.id, amount: discountAmount, pct: discountPct || 0 },
+        });
+      }
     }
 
     if (ticketId) {
@@ -81,5 +118,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, receiptNumber });
 }

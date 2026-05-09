@@ -10,6 +10,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
       assistants: { include: { user: { select: { id: true, name: true } } } },
       items: { include: { service: { include: { category: true } } } },
       chemicals: { include: { product: true } },
+      retailItems: { include: { retailProduct: true } },
       payments: true,
       customer: true,
       discountLogs: { include: { approvedBy: { select: { name: true } } } },

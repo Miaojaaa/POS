@@ -13,7 +13,15 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\" -Force)",
       "Bash(Select-Object -First 20)",
       "Bash(curl -s http://localhost:3000/api/services)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\api\\\\payroll\\\\items\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\api\\\\payroll\\\\items\\\\[id]\" 2>&1; echo done)",
+      "Bash(mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\api\\\\retail-products\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\api\\\\retail-products\\\\[id]\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\settings\\\\retail-products\" 2>&1; echo done)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\" -Recurse -Directory)",
+      "Bash(Select-Object -First 50 FullName)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\api\\payroll\\items",
+      "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\api\\retail-products"
     ]
   }
 }

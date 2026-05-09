@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
           let poolCommission = 0;
           if (u.role === "TECHNICIAN" && techCount > 0) poolCommission = techPoolAmount / techCount;
           else if (u.role === "ASSISTANT" && assistCount > 0) poolCommission = assistPoolAmount / assistCount;
-          return { userId: u.id, poolCommission, totalAmount: poolCommission, orderCount };
+          return { userId: u.id, poolCommission, baseSalary: 0, totalAmount: poolCommission, orderCount };
         }),
       },
     },

@@ -162,7 +162,7 @@ function CheckoutContent() {
     });
     const data = await res.json();
     if (data.ok) {
-      setApprovedById("manager");
+      setApprovedById(data.userId ?? null);
       setShowPinModal(false);
       setPin("");
     } else {
