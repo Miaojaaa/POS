@@ -18,12 +18,48 @@ type StockItem = {
 
 export default function MainStockPage() {
   const [stock, setStock] = useState<StockItem[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editQty, setEditQty] = useState<number>(0);
+  const [saving, setSaving] = useState(false);
+
+  async function load() {
+    const res = await fetch("/api/stock");
+    const data = await res.json();
+    setStock(data);
+  }
 
   useEffect(() => {
-    fetch("/api/stock").then(r => r.json()).then(setStock);
+    load();
   }, []);
 
   const totalValue = stock.reduce((s, p) => s + p.mainQty * p.costPerUnit, 0);
+
+  function startEdit(item: StockItem) {
+    setEditingId(item.id);
+    setEditQty(item.mainQty);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function saveEdit(id: string) {
+    if (editQty < 0) return;
+    setSaving(true);
+    const res = await fetch("/api/stock", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, mainQty: editQty }),
+    });
+    
+    if (res.ok) {
+      setEditingId(null);
+      await load();
+    } else {
+      alert("เกิดข้อผิดพลาดในการบันทึก");
+    }
+    setSaving(false);
+  }
 
   return (
     <div>
@@ -40,11 +76,12 @@ export default function MainStockPage() {
             <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
               <th style={{ textAlign: "left", padding: "8px 12px" }}>สินค้า</th>
               <th style={{ textAlign: "center", padding: "8px 12px" }}>ปริมาณต่อขวด (กรัม)</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหลัก (ขวด)</th>
+              <th style={{ textAlign: "center", padding: "8px 12px", width: "180px" }}>คลังหลัก (ขวด)</th>
               <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหน้าร้าน (ขวด + ก.)</th>
               <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาต่อขวด (฿)</th>
               <th style={{ textAlign: "right", padding: "8px 12px" }}>มูลค่า (฿)</th>
               <th style={{ textAlign: "center", padding: "8px 12px" }}>สถานะ</th>
+              <th style={{ textAlign: "center", padding: "8px 12px", width: "100px" }}>จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -52,7 +89,20 @@ export default function MainStockPage() {
               <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5", background: p.isLow ? "#fff8f8" : "white" }}>
                 <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
                 <td style={{ padding: "8px 12px", textAlign: "center" }}>{(p.unitVolumeG).toLocaleString()}</td>
-                <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700 }}>{p.mainQty}</td>
+                <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                  {editingId === p.id ? (
+                    <input 
+                      type="number" 
+                      className="input" 
+                      style={{ width: "80px", textAlign: "center", padding: "4px" }}
+                      value={editQty} 
+                      onChange={e => setEditQty(Number(e.target.value))}
+                      min="0"
+                    />
+                  ) : (
+                    <span style={{ fontWeight: 700 }}>{p.mainQty}</span>
+                  )}
+                </td>
                 <td style={{ padding: "8px 12px", textAlign: "center", color: "#555" }}>
                   {p.subQty} + {(p.subVolumeG).toLocaleString()}
                 </td>
@@ -63,6 +113,36 @@ export default function MainStockPage() {
                     <span style={{ color: "var(--alert-red)", fontSize: "0.8rem", fontWeight: 700 }}>⚠️ ใกล้หมด</span>
                   ) : (
                     <span style={{ color: "var(--success-green)", fontSize: "0.8rem" }}>✓ ปกติ</span>
+                  )}
+                </td>
+                <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                  {editingId === p.id ? (
+                    <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                      <button 
+                        className="btn-primary" 
+                        style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                        onClick={() => saveEdit(p.id)}
+                        disabled={saving}
+                      >
+                        บันทึก
+                      </button>
+                      <button 
+                        className="btn-secondary" 
+                        style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                        onClick={cancelEdit}
+                        disabled={saving}
+                      >
+                        ยกเลิก
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      className="btn-secondary" 
+                      style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                      onClick={() => startEdit(p)}
+                    >
+                      แก้ไข
+                    </button>
                   )}
                 </td>
               </tr>

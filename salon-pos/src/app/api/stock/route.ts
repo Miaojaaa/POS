@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -26,4 +26,20 @@ export async function GET() {
   });
 
   return NextResponse.json(result);
+}
+
+export async function PUT(req: NextRequest) {
+  const { id, mainQty } = await req.json();
+  
+  if (!id || typeof mainQty !== 'number') {
+    return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+  }
+
+  await prisma.mainStock.upsert({
+    where: { productId: id },
+    update: { quantity: mainQty },
+    create: { productId: id, quantity: mainQty },
+  });
+
+  return NextResponse.json({ ok: true });
 }
