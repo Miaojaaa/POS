@@ -14,6 +14,10 @@ export default function WalletPage() {
   const [note, setNote] = useState("");
   const [type, setType] = useState<"ADD" | "DEDUCT">("ADD");
   const [loading, setLoading] = useState(false);
+  
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState("");
 
   useEffect(() => {
     fetch("/api/customers").then(r => r.json()).then(setCustomers);
@@ -27,21 +31,46 @@ export default function WalletPage() {
 
   async function handleWalletAction() {
     if (!selected || !amount) return;
+    if (type === "ADD") {
+      setShowPinModal(true);
+      return;
+    }
+    await proceedWalletAction();
+  }
+
+  async function proceedWalletAction() {
     setLoading(true);
     const res = await fetch("/api/wallet", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customerId: selected.id, amount: Number(amount), type, note }),
+      body: JSON.stringify({ customerId: selected!.id, amount: Number(amount), type, note }),
     });
     const data = await res.json();
     if (res.ok) {
-      setSelected({ ...selected, walletBalance: data.walletBalance });
+      setSelected({ ...selected!, walletBalance: data.walletBalance });
       setAmount("");
       setNote("");
-      const txnRes = await fetch(`/api/wallet?customerId=${selected.id}`);
+      const txnRes = await fetch(`/api/wallet?customerId=${selected!.id}`);
       setTxns(await txnRes.json());
     }
     setLoading(false);
+  }
+
+  async function verifyPin() {
+    setPinError("");
+    const res = await fetch("/api/verify-pin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "MANAGER", pin }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      setShowPinModal(false);
+      setPin("");
+      await proceedWalletAction();
+    } else {
+      setPinError("PIN ไม่ถูกต้อง");
+    }
   }
 
   const filtered = customers.filter(c => c.name.includes(q) || c.phone.includes(q));
@@ -167,6 +196,32 @@ export default function WalletPage() {
           )}
         </div>
       </div>
+
+      {/* PIN Modal */}
+      {showPinModal && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 350 }}>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>🔐 ยืนยัน Manager PIN</h3>
+            <p style={{ fontSize: "0.875rem", color: "#666" }}>กรุณากรอก Manager PIN เพื่ออนุมัติการเติมเงิน</p>
+            <input
+              type="password"
+              className="input"
+              style={{ marginBottom: "1rem" }}
+              placeholder="PIN 4-6 หลัก"
+              value={pin}
+              onChange={e => setPin(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && verifyPin()}
+            />
+            {pinError && <div style={{ color: "var(--alert-red)", fontSize: "0.875rem", marginBottom: "0.5rem" }}>{pinError}</div>}
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button className="btn-primary" style={{ flex: 1 }} onClick={verifyPin}>ยืนยัน</button>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPinModal(false); setPin(""); setPinError(""); }}>
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
