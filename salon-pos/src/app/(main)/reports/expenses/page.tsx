@@ -11,6 +11,14 @@ export default function ExpensesReportPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Modal states
+  const [showModal, setShowModal] = useState(false);
+  const [newDate, setNewDate] = useState(today.toISOString().split('T')[0]);
+  const [newCategory, setNewCategory] = useState("ค่าอุปกรณ์");
+  const [newDescription, setNewDescription] = useState("");
+  const [newAmount, setNewAmount] = useState("");
+  const [saving, setSaving] = useState(false);
+
   async function load() {
     setLoading(true);
     const res = await fetch(`/api/expenses?month=${month}&year=${year}`);
@@ -19,6 +27,28 @@ export default function ExpensesReportPage() {
   }
 
   useEffect(() => { load(); }, [month, year]);
+
+  async function handleAddExpense() {
+    if (!newDate || !newCategory || !newDescription || !newAmount) return;
+    setSaving(true);
+    const res = await fetch("/api/expenses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date: newDate,
+        category: newCategory,
+        description: newDescription,
+        amount: Number(newAmount)
+      })
+    });
+    if (res.ok) {
+      setShowModal(false);
+      setNewDescription("");
+      setNewAmount("");
+      load();
+    }
+    setSaving(false);
+  }
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
 
@@ -32,6 +62,7 @@ export default function ExpensesReportPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>💸 รายงานค่าใช้จ่าย</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button className="btn-primary" onClick={() => setShowModal(true)}>+ เพิ่มค่าใช้จ่าย</button>
           <select className="input" style={{ width: 120 }} value={month} onChange={e => setMonth(Number(e.target.value))}>
             {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={i + 1}>เดือน {i + 1}</option>)}
           </select>
@@ -82,13 +113,56 @@ export default function ExpensesReportPage() {
                   <td style={{ padding: "8px 12px" }}>{e.category}</td>
                   <td style={{ padding: "8px 12px" }}>{e.description}</td>
                   <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600 }}>{e.amount.toLocaleString()}</td>
-                  <td style={{ padding: "8px 12px", color: "#666" }}>{e.createdBy.name}</td>
+                  <td style={{ padding: "8px 12px", color: "#666" }}>{e.createdBy?.name || '-'}</td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 400 }}>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>+ เพิ่มค่าใช้จ่าย</h3>
+            
+            <div style={{ marginBottom: "0.75rem" }}>
+              <label className="label">วันที่</label>
+              <input type="date" className="input" value={newDate} onChange={e => setNewDate(e.target.value)} />
+            </div>
+
+            <div style={{ marginBottom: "0.75rem" }}>
+              <label className="label">หมวดหมู่</label>
+              <select className="input" value={newCategory} onChange={e => setNewCategory(e.target.value)}>
+                <option value="ค่าอุปกรณ์">ค่าอุปกรณ์</option>
+                <option value="ค่าการตลาด">ค่าการตลาด</option>
+                <option value="ค่าสาธารณูปโภค">ค่าสาธารณูปโภค</option>
+                <option value="ค่าบำรุงรักษา">ค่าบำรุงรักษา</option>
+                <option value="อื่นๆ">อื่นๆ</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "0.75rem" }}>
+              <label className="label">รายการ</label>
+              <input className="input" placeholder="เช่น ซื้อแชมพูเพิ่ม" value={newDescription} onChange={e => setNewDescription(e.target.value)} />
+            </div>
+
+            <div style={{ marginBottom: "1rem" }}>
+              <label className="label">จำนวนเงิน (บาท)</label>
+              <input type="number" className="input" placeholder="0" value={newAmount} onChange={e => setNewAmount(e.target.value)} />
+            </div>
+
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button className="btn-primary" style={{ flex: 1 }} onClick={handleAddExpense} disabled={saving}>
+                {saving ? "กำลังบันทึก..." : "บันทึก"}
+              </button>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={saving}>
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
