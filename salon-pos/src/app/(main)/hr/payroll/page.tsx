@@ -15,6 +15,13 @@ type PayrollItem = {
 type PayrollRun = { id: string; month: number; year: number; status: string; items: PayrollItem[] };
 
 const ROLES: Record<string, string> = { OWNER: "เจ้าของ", MANAGER: "ผู้จัดการ", CASHIER: "แคชเชียร์", TECHNICIAN: "ช่าง", ASSISTANT: "ผู้ช่วย" };
+const POSITION_ALLOWANCES: Record<string, number> = {
+  OWNER: 15000,
+  MANAGER: 8000,
+  CASHIER: 2000,
+  TECHNICIAN: 3000,
+  ASSISTANT: 1500,
+};
 
 export default function PayrollPage() {
   const today = new Date();
@@ -76,8 +83,9 @@ export default function PayrollPage() {
     setSavingId(null);
   }
 
-  const totalPayroll = run?.items.reduce((s, i) => s + i.totalAmount, 0) ?? 0;
   const totalBase = run?.items.reduce((s, i) => s + i.baseSalary, 0) ?? 0;
+  const totalAllowances = run?.items.reduce((s, i) => s + (POSITION_ALLOWANCES[i.user.role] || 0), 0) ?? 0;
+  const totalPayroll = (run?.items.reduce((s, i) => s + i.totalAmount, 0) ?? 0) + totalAllowances;
 
   return (
     <div>
@@ -110,8 +118,8 @@ export default function PayrollPage() {
               <div style={{ color: "#888", fontSize: "0.875rem" }}>เงินเดือนพื้นฐานรวม</div>
             </div>
             <div className="card" style={{ textAlign: "center", flex: 1 }}>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>{run.items.filter(i => i.orderCount > 0).length} คน</div>
-              <div style={{ color: "#888", fontSize: "0.875rem" }}>มีออร์เดอร์</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>฿{totalAllowances.toLocaleString()}</div>
+              <div style={{ color: "#888", fontSize: "0.875rem" }}>ค่าตำแหน่งรวม</div>
             </div>
           </div>
 
@@ -123,6 +131,7 @@ export default function PayrollPage() {
                   <th style={{ textAlign: "center", padding: "8px 12px" }}>ตำแหน่ง</th>
                   <th style={{ textAlign: "center", padding: "8px 12px" }}>ออร์เดอร์</th>
                   <th style={{ textAlign: "right", padding: "8px 12px" }}>เงินเดือนพื้นฐาน</th>
+                  <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าตำแหน่ง</th>
                   <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าคอม Pool</th>
                   <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าคอม Retail</th>
                   <th style={{ textAlign: "right", padding: "8px 12px" }}>รวม</th>
@@ -132,6 +141,9 @@ export default function PayrollPage() {
                 {run.items.sort((a, b) => b.totalAmount - a.totalAmount).map(item => {
                   const isEditing = editing[item.id] !== undefined;
                   const editVal = editing[item.id];
+                  const allowance = POSITION_ALLOWANCES[item.user.role] || 0;
+                  const rowTotal = item.totalAmount + allowance;
+
                   return (
                     <tr key={item.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                       <td style={{ padding: "8px 12px", fontWeight: 500 }}>{item.user.name}</td>
@@ -174,10 +186,13 @@ export default function PayrollPage() {
                           )}
                         </div>
                       </td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", color: "#666" }}>
+                        ฿{allowance.toLocaleString()}
+                      </td>
                       <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{item.poolCommission.toLocaleString()}</td>
                       <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{item.retailCommission.toLocaleString()}</td>
                       <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "var(--olive)" }}>
-                        ฿{item.totalAmount.toLocaleString()}
+                        ฿{rowTotal.toLocaleString()}
                       </td>
                     </tr>
                   );
