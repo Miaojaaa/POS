@@ -75,7 +75,7 @@ export default function RevenuePage() {
                     <div key={i} style={{ fontSize: "0.875rem" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                         <span>{i + 1}. {s.name} ({s.count} ครั้ง)</span>
-                        <span style={{ fontWeight: 700 }}>{s.revenue.toLocaleString()}</span>
+                        <span style={{ fontWeight: 700 }}>{Math.round(s.revenue).toLocaleString()}</span>
                       </div>
                       <div style={{ width: "100%", height: "8px", backgroundColor: "#f0f0f0", borderRadius: "4px", overflow: "hidden" }}>
                         <div 
@@ -100,7 +100,7 @@ export default function RevenuePage() {
               {data.topTechs.map((t, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f5f5f5", fontSize: "0.875rem" }}>
                   <span>{i + 1}. {t.name} ({t.count} ออร์เดอร์)</span>
-                  <span style={{ fontWeight: 700 }}>{t.revenue.toLocaleString()}</span>
+                  <span style={{ fontWeight: 700 }}>{Math.round(t.revenue).toLocaleString()}</span>
                 </div>
               ))}
               {data.topTechs.length === 0 && <p style={{ color: "#aaa" }}>ไม่มีข้อมูล</p>}

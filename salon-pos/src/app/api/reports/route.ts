@@ -32,16 +32,14 @@ export async function GET(req: NextRequest) {
   for (const order of orders) {
     // Calculate total item price to distribute discount proportionally
     const itemsSubtotal = order.items.reduce((sum, item) => sum + item.price, 0);
+    const grossTotal = order.subtotal + order.retailSubtotal;
+    const ratio = grossTotal > 0 ? (order.total / grossTotal) : 0;
     
     for (const item of order.items) {
       const key = item.service.id;
       if (!serviceStats[key]) serviceStats[key] = { name: item.service.name, count: 0, revenue: 0 };
       serviceStats[key].count++;
       
-      // If there's a discount, distribute it proportionally to each item
-      // revenue_per_item = item_price - (item_price / subtotal * discount)
-      // This is equivalent to: revenue_per_item = item_price * (order_total / items_subtotal)
-      const ratio = itemsSubtotal > 0 ? (order.total / itemsSubtotal) : 0;
       serviceStats[key].revenue += item.price * ratio;
     }
   }
