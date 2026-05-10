@@ -4,8 +4,21 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
+
+  const where: any = {};
+  if (status) {
+    where.status = { in: status.split(",") };
+  }
+  if (startDate || endDate) {
+    where.completedAt = {};
+    if (startDate) where.completedAt.gte = new Date(startDate);
+    if (endDate) where.completedAt.lte = new Date(endDate);
+  }
+
   const orders = await prisma.order.findMany({
-    where: status ? { status: { in: status.split(",") } } : {},
+    where,
     include: {
       technician: { select: { id: true, name: true } },
       assistants: { include: { user: { select: { id: true, name: true } } } },

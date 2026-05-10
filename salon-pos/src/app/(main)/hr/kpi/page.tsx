@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 type TechKPI = {
   id: string;
@@ -9,6 +9,7 @@ type TechKPI = {
   orderCount: number;
   revenue: number;
   avgPct: number;
+  isLow?: boolean;
 };
 
 export default function KPIPage() {
@@ -17,48 +18,70 @@ export default function KPIPage() {
   const [year, setYear] = useState(today.getFullYear());
   const [kpiData, setKpiData] = useState<TechKPI[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  async function load() {
-    setLoading(true);
-    const [usersRes, ordersRes] = await Promise.all([
-      fetch("/api/users"),
-      fetch(`/api/orders?status=DONE`),
-    ]);
-    const users = await usersRes.json();
-    const allOrders = await ordersRes.json();
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const startOfMonth = new Date(year, month - 1, 1).toISOString();
+      const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999).toISOString();
 
-    const startOfMonth = new Date(year, month - 1, 1);
-    const endOfMonth = new Date(year, month, 0, 23, 59, 59);
-    const orders = allOrders.filter((o: { completedAt: string; status: string }) => {
-      if (!o.completedAt) return false;
-      const d = new Date(o.completedAt);
-      return d >= startOfMonth && d <= endOfMonth;
-    });
+      const [usersRes, ordersRes] = await Promise.all([
+        fetch("/api/users"),
+        fetch(`/api/orders?status=DONE,PAID&startDate=${startOfMonth}&endDate=${endOfMonth}`),
+      ]);
+      const users = await usersRes.json();
+      const orders = await ordersRes.json();
 
-    const totalOrders = orders.length;
-    const kpi = users
-      .filter((u: { role: string }) => ["TECHNICIAN", "ASSISTANT"].includes(u.role))
-      .map((u: { id: string; name: string; role: string }) => {
-        const myOrders = orders.filter((o: { technicianId: string }) => o.technicianId === u.id);
-        const revenue = myOrders.reduce((s: number, o: { total: number }) => s + o.total, 0);
-        const avgPct = totalOrders > 0 ? (myOrders.length / totalOrders) * 100 : 0;
-        return { id: u.id, name: u.name, role: u.role, orderCount: myOrders.length, revenue, avgPct };
-      });
+      const totalOrders = orders.length;
+      const kpi = users
+        .filter((u: { role: string }) => ["TECHNICIAN", "ASSISTANT"].includes(u.role))
+        .map((u: { id: string; name: string; role: string }) => {
+          const myOrders = orders.filter((o: { technicianId: string }) => o.technicianId === u.id);
+          const revenue = myOrders.reduce((s: number, o: { total: number }) => s + o.total, 0);
+          const avgPct = totalOrders > 0 ? (myOrders.length / totalOrders) * 100 : 0;
+          return { id: u.id, name: u.name, role: u.role, orderCount: myOrders.length, revenue, avgPct };
+        });
 
-    const teamAvg = kpi.reduce((s: number, k: TechKPI) => s + k.orderCount, 0) / (kpi.length || 1);
-    setKpiData(kpi.map((k: TechKPI) => ({ ...k, isLow: k.orderCount < teamAvg * 0.5 })));
-    setLoading(false);
-  }
+      const teamAvg = kpi.reduce((s: number, k: TechKPI) => s + k.orderCount, 0) / (kpi.length || 1);
+      setKpiData(kpi.map((k: TechKPI) => ({ ...k, isLow: k.orderCount < teamAvg * 0.5 })));
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error("Failed to load KPI data", err);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [month, year]);
 
-  useEffect(() => { load(); }, [month, year]);
+  useEffect(() => {
+    load();
+    const timer = setInterval(() => load(true), 30000); // Auto-refresh every 30 seconds
+    return () => clearInterval(timer);
+  }, [load]);
 
   const teamAvg = kpiData.length > 0 ? kpiData.reduce((s, k) => s + k.orderCount, 0) / kpiData.length : 0;
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📊 KPI ช่าง</h1>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div>
+          <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📊 KPI ช่าง</h1>
+          {lastUpdated && (
+            <span style={{ fontSize: "0.75rem", color: "#888" }}>
+              อัปเดตล่าสุด: {lastUpdated.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <button 
+            className="btn-secondary" 
+            style={{ padding: "6px 10px", fontSize: "1rem" }} 
+            onClick={() => load()}
+            title="รีเฟรช"
+            disabled={loading}
+          >
+            {loading ? "..." : "🔄"}
+          </button>
           <select className="input" style={{ width: 120 }} value={month} onChange={e => setMonth(Number(e.target.value))}>
             {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={i + 1}>เดือน {i + 1}</option>)}
           </select>
@@ -111,7 +134,7 @@ export default function KPIPage() {
           </tbody>
         </table>
         {kpiData.length === 0 && !loading && <p style={{ color: "#aaa", textAlign: "center", padding: "2rem" }}>ไม่มีข้อมูล</p>}
-        {loading && <p style={{ color: "#aaa", textAlign: "center", padding: "2rem" }}>กำลังโหลด...</p>}
+        {loading && !kpiData.length && <p style={{ color: "#aaa", textAlign: "center", padding: "2rem" }}>กำลังโหลด...</p>}
       </div>
     </div>
   );
