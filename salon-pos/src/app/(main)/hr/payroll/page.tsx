@@ -83,8 +83,13 @@ export default function PayrollPage() {
     setSavingId(null);
   }
 
+  const getAllowance = (roleStr: string) => {
+    const roles = roleStr.split(",");
+    return Math.max(...roles.map(r => POSITION_ALLOWANCES[r] || 0));
+  };
+
   const totalBase = run?.items.reduce((s, i) => s + i.baseSalary, 0) ?? 0;
-  const totalAllowances = run?.items.reduce((s, i) => s + (POSITION_ALLOWANCES[i.user.role] || 0), 0) ?? 0;
+  const totalAllowances = run?.items.reduce((s, i) => s + getAllowance(i.user.role), 0) ?? 0;
   const totalPayroll = (run?.items.reduce((s, i) => s + i.totalAmount, 0) ?? 0) + totalAllowances;
 
   return (
@@ -141,13 +146,15 @@ export default function PayrollPage() {
                 {run.items.sort((a, b) => b.totalAmount - a.totalAmount).map(item => {
                   const isEditing = editing[item.id] !== undefined;
                   const editVal = editing[item.id];
-                  const allowance = POSITION_ALLOWANCES[item.user.role] || 0;
+                  const allowance = getAllowance(item.user.role);
                   const rowTotal = item.totalAmount + allowance;
 
                   return (
                     <tr key={item.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                       <td style={{ padding: "8px 12px", fontWeight: 500 }}>{item.user.name}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "center", color: "#666" }}>{ROLES[item.user.role]}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "center", color: "#666" }}>
+                        {item.user.role.split(",").map(r => ROLES[r] || r).join(", ")}
+                      </td>
                       <td style={{ padding: "8px 12px", textAlign: "center" }}>{item.orderCount}</td>
                       <td style={{ padding: "8px 12px", textAlign: "right" }}>
                         <div style={{ display: "flex", gap: "0.25rem", justifyContent: "flex-end", alignItems: "center" }}>

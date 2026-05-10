@@ -24,6 +24,18 @@ export default function StaffPage() {
   const [unlockPin, setUnlockPin] = useState("");
   const [ownerPinStr, setOwnerPinStr] = useState("");
 
+  const isChanged = () => {
+    if (!editingId) return form.name && form.email; // For new users, just check required fields
+    const original = users.find(u => u.id === editingId);
+    if (!original) return false;
+    return (
+      form.name !== original.name ||
+      form.email !== original.email ||
+      form.phone !== (original.phone || "") ||
+      form.role !== original.role
+    );
+  };
+
   useEffect(() => {
     fetch("/api/users").then(r => r.json()).then(setUsers);
   }, []);
@@ -112,8 +124,11 @@ export default function StaffPage() {
   }
 
   const byRole = users.reduce<Record<string, User[]>>((acc, u) => {
-    if (!acc[u.role]) acc[u.role] = [];
-    acc[u.role].push(u);
+    const roles = u.role.split(",");
+    roles.forEach(r => {
+      if (!acc[r]) acc[r] = [];
+      acc[r].push(u);
+    });
     return acc;
   }, {});
 
@@ -122,6 +137,19 @@ export default function StaffPage() {
     const ib = ROLE_ORDER.indexOf(b);
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
   });
+
+  const toggleRole = (r: string) => {
+    const currentRoles = form.role.split(",").filter(Boolean);
+    if (currentRoles.includes(r)) {
+      if (currentRoles.length > 1) {
+        setForm({ ...form, role: currentRoles.filter(x => x !== r).join(",") });
+      } else {
+        alert("ต้องมีอย่างน้อย 1 ตำแหน่ง");
+      }
+    } else {
+      setForm({ ...form, role: [...currentRoles, r].join(",") });
+    }
+  };
 
   return (
     <div>
@@ -170,8 +198,12 @@ export default function StaffPage() {
                 <div style={{ fontWeight: 700, marginBottom: 4 }}>{u.name}</div>
                 <div style={{ fontSize: "0.8rem", color: "#888" }}>{u.email}</div>
                 {u.phone && <div style={{ fontSize: "0.8rem", color: "#888" }}>📞 {u.phone}</div>}
-                <div style={{ marginTop: 8, fontSize: "0.8rem", background: "#f5f5f5", padding: "2px 8px", borderRadius: 8, display: "inline-block" }}>
-                  {ROLES[u.role]}
+                <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                  {u.role.split(",").map(r => (
+                    <span key={r} style={{ fontSize: "0.75rem", background: "#f5f5f5", padding: "2px 8px", borderRadius: 8, color: "#666" }}>
+                      {ROLES[r] || r}
+                    </span>
+                  ))}
                 </div>
               </div>
             ))}
@@ -224,10 +256,19 @@ export default function StaffPage() {
                 <input className="input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
               </div>
               <div>
-                <label className="label">ตำแหน่ง</label>
-                <select className="input" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                  {Object.entries(ROLES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
+                <label className="label">ตำแหน่ง (เลือกได้หลายข้อ)</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", padding: "0.5rem", background: "#f9f9f9", borderRadius: 8 }}>
+                  {Object.entries(ROLES).map(([k, v]) => (
+                    <label key={k} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", cursor: "pointer" }}>
+                      <input 
+                        type="checkbox" 
+                        checked={form.role.split(",").includes(k)} 
+                        onChange={() => toggleRole(k)} 
+                      />
+                      {v}
+                    </label>
+                  ))}
+                </div>
               </div>
               {!editingId && (
                 <div>
@@ -237,7 +278,14 @@ export default function StaffPage() {
               )}
             </div>
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={handleSave}>บันทึก</button>
+              <button 
+                className="btn-primary" 
+                style={{ flex: 1, opacity: isChanged() ? 1 : 0.5, cursor: isChanged() ? "pointer" : "not-allowed" }} 
+                onClick={handleSave}
+                disabled={!isChanged()}
+              >
+                บันทึก
+              </button>
               {editingId && (
                 <button className="btn-secondary" style={{ flex: 1, background: "#dc3545", color: "white", border: "none" }} onClick={() => handleDelete(editingId)}>
                   ลบพนักงาน

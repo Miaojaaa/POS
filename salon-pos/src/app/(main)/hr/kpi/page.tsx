@@ -35,7 +35,7 @@ export default function KPIPage() {
 
       const totalOrders = orders.length;
       const kpi = users
-        .filter((u: { role: string }) => ["TECHNICIAN", "ASSISTANT"].includes(u.role))
+        .filter((u: { role: string }) => u.role.split(",").some(r => ["TECHNICIAN", "ASSISTANT"].includes(r)))
         .map((u: { id: string; name: string; role: string }) => {
           const myOrders = orders.filter((o: { technicianId: string }) => o.technicianId === u.id);
           const revenue = myOrders.reduce((s: number, o: { total: number }) => s + o.total, 0);

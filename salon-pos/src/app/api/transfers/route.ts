@@ -16,7 +16,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const { items, note, createdById } = await req.json();
-  const fallbackUser = await prisma.user.findFirst({ where: { role: "OWNER" } });
+  const fallbackUser = await prisma.user.findFirst({ where: { role: { contains: "OWNER" } } });
   const userId = createdById || fallbackUser?.id || "";
 
   const transfer = await prisma.stockTransfer.create({
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const { id, action } = await req.json();
-  const approver = await prisma.user.findFirst({ where: { role: "MANAGER" } });
+  const approver = await prisma.user.findFirst({ where: { role: { contains: "MANAGER" } } });
 
   if (action === "APPROVE") {
     const transfer = await prisma.stockTransfer.findUnique({ where: { id }, include: { items: true } });

@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
   const totalChemCost = orders.reduce((s, o) => s + o.chemicalCost, 0);
   const netRevenue = totalRevenue - totalChemCost;
 
-  const techCount = users.filter(u => u.role === "TECHNICIAN").length;
-  const assistCount = users.filter(u => u.role === "ASSISTANT").length;
+  const techCount = users.filter(u => u.role.split(",").includes("TECHNICIAN")).length;
+  const assistCount = users.filter(u => u.role.split(",").includes("ASSISTANT")).length;
 
   const techPool = pools.find(p => p.role === "TECHNICIAN");
   const assistPool = pools.find(p => p.role === "ASSISTANT");
@@ -50,8 +50,9 @@ export async function POST(req: NextRequest) {
           const myOrders = orders.filter(o => o.technicianId === u.id);
           const orderCount = myOrders.length;
           let poolCommission = 0;
-          if (u.role === "TECHNICIAN" && techCount > 0) poolCommission = techPoolAmount / techCount;
-          else if (u.role === "ASSISTANT" && assistCount > 0) poolCommission = assistPoolAmount / assistCount;
+          const roles = u.role.split(",");
+          if (roles.includes("TECHNICIAN") && techCount > 0) poolCommission = techPoolAmount / techCount;
+          else if (roles.includes("ASSISTANT") && assistCount > 0) poolCommission = assistPoolAmount / assistCount;
           return { userId: u.id, poolCommission, baseSalary: 0, totalAmount: poolCommission, orderCount };
         }),
       },

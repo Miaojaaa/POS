@@ -9,7 +9,10 @@ export async function POST(req: NextRequest) {
   if (!ok) return NextResponse.json({ ok: false, error: "PIN ไม่ถูกต้อง" }, { status: 401 });
 
   const user = await prisma.user.findFirst({
-    where: { role: role as string, isActive: true },
+    where: { 
+      role: { contains: role as string },
+      isActive: true 
+    },
     select: { id: true, name: true, role: true },
   });
   return NextResponse.json({ ok: true, userId: user?.id ?? null, userName: user?.name ?? null });

@@ -13,7 +13,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
-  if (!session || !["OWNER", "MANAGER"].includes(session.role)) {
+  if (!session || !session.role.split(",").some(r => ["OWNER", "MANAGER"].includes(r))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
   const body = await req.json();

@@ -146,8 +146,8 @@ export default function EditOrderPage() {
     } catch {}
   }, []);
 
-  const technicians = users.filter(u => ["TECHNICIAN", "OWNER", "MANAGER"].includes(u.role));
-  const assistants = users.filter(u => ["ASSISTANT", "TECHNICIAN"].includes(u.role));
+  const technicians = users.filter(u => u.role.split(",").some(r => ["TECHNICIAN", "OWNER", "MANAGER"].includes(r)));
+  const assistants = users.filter(u => u.role.split(",").some(r => ["ASSISTANT", "TECHNICIAN"].includes(r)));
   const availableTechs = technicians.filter(u => !technicianIds.includes(u.id) && !assistantIds.includes(u.id));
   const availableAssists = assistants.filter(u => !assistantIds.includes(u.id) && !technicianIds.includes(u.id));
 
