@@ -57,7 +57,6 @@ const menuItems = [
     icon: "⚙️",
     children: [
       { href: "/settings/services", label: "บริการ" },
-      { href: "/settings/users", label: "สิทธิ์ผู้ใช้" },
       { href: "/settings/products", label: "สินค้า/เคมี" },
       { href: "/settings/commission", label: "ค่าคอม Pool" },
     ],
