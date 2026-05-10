@@ -121,12 +121,10 @@ export default function NewOrderPage() {
   }
 
   // Chemical search — only show products not yet added
-  const filteredChemProducts = chemSearch.trim()
-    ? products.filter(p =>
-        p.name.toLowerCase().includes(chemSearch.toLowerCase()) &&
-        !selectedChems.find(c => c.productId === p.id)
-      )
-    : [];
+  const filteredChemProducts = products.filter(p =>
+    p.name.toLowerCase().includes(chemSearch.toLowerCase()) &&
+    !selectedChems.find(c => c.productId === p.id)
+  );
   const showChemDropdown = chemFocused && filteredChemProducts.length > 0;
 
   function addChemToList(prod: Product) {
@@ -146,12 +144,10 @@ export default function NewOrderPage() {
   }
 
   // Retail product helpers
-  const filteredRetailProducts = retailSearch.trim()
-    ? retailProducts.filter(p =>
-        p.name.toLowerCase().includes(retailSearch.toLowerCase()) &&
-        !selectedRetail.find(r => r.retailProductId === p.id)
-      )
-    : [];
+  const filteredRetailProducts = retailProducts.filter(p =>
+    p.name.toLowerCase().includes(retailSearch.toLowerCase()) &&
+    !selectedRetail.find(r => r.retailProductId === p.id)
+  );
   const showRetailDropdown = retailFocused && filteredRetailProducts.length > 0;
 
   function addRetail(p: RetailProduct) {
@@ -431,7 +427,7 @@ export default function NewOrderPage() {
                     <span style={{ flex: 1 }}>{chem.productName}</span>
                     <input
                       type="number"
-                      placeholder="มก."
+                      placeholder="ก."
                       style={{
                         width: 68, border: "1px solid var(--beige-dark)", borderRadius: 6,
                         padding: "3px 6px", fontSize: "0.85rem", textAlign: "center",
@@ -636,7 +632,7 @@ export default function NewOrderPage() {
                     <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: 4 }}>ต้นทุนเคมี:</div>
                     {selectedChems.filter(c => c.amountG > 0).map(c => (
                       <div key={c.productId} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#888" }}>
-                        <span>{c.productName} ({c.amountG}มก.)</span>
+                        <span>{c.productName} ({c.amountG}ก.)</span>
                         <span>฿{c.totalCost.toFixed(2)}</span>
                       </div>
                     ))}
@@ -718,7 +714,7 @@ export default function NewOrderPage() {
                     <div><strong>{new Date(h.order.createdAt).toLocaleDateString("th-TH")}</strong> · ช่าง {h.order.technician.name}</div>
                     <div style={{ color: "#555" }}>{h.order.items.map(it => it.service.name).join(", ")}</div>
                     {h.order.chemicals.length > 0 && (
-                      <div style={{ color: "#888" }}>เคมี: {h.order.chemicals.map(c => `${c.product.name}(${c.amountG}มก.)`).join(", ")}</div>
+                      <div style={{ color: "#888" }}>เคมี: {h.order.chemicals.map(c => `${c.product.name}(${c.amountG}ก.)`).join(", ")}</div>
                     )}
                   </div>
                 ))}

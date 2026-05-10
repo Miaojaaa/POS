@@ -215,7 +215,7 @@ export default function ProductsPage() {
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>หมวด</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>ปริมาณ/ขวด</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ต้นทุน/ขวด</th>
-                <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคา/มก.</th>
+                <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคา/ก.</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหลัก</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหน้าร้าน</th>
               </tr>
