@@ -12,10 +12,18 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const hashed = await bcrypt.hash(body.password || "changeme123", 10);
-  const user = await prisma.user.create({
-    data: { name: body.name, email: body.email, password: hashed, role: body.role, phone: body.phone || null },
-  });
-  return NextResponse.json({ id: user.id, name: user.name, role: user.role });
+  try {
+    const body = await req.json();
+    const hashed = await bcrypt.hash(body.password || "changeme123", 10);
+    const user = await prisma.user.create({
+      data: { name: body.name, email: body.email, password: hashed, role: body.role, phone: body.phone || null },
+    });
+    return NextResponse.json({ id: user.id, name: user.name, role: user.role });
+  } catch (err: any) {
+    console.error("Create user error:", err);
+    if (err.code === "P2002") {
+      return NextResponse.json({ error: "อีเมลนี้มีผู้ใช้งานแล้ว" }, { status: 400 });
+    }
+    return NextResponse.json({ error: "ไม่สามารถเพิ่มพนักงานได้" }, { status: 500 });
+  }
 }

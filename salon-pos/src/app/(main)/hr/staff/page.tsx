@@ -21,19 +21,33 @@ export default function StaffPage() {
   
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [unlockPin, setUnlockPin] = useState("");
   const [ownerPinStr, setOwnerPinStr] = useState("");
 
   const isChanged = () => {
-    if (!editingId) return form.name && form.email; // For new users, just check required fields
+    if (!editingId) return !!(form.name && form.email);
     const original = users.find(u => u.id === editingId);
     if (!original) return false;
+    
+    // Normalize values for comparison
+    const currentPhone = form.phone || "";
+    const originalPhone = original.phone || "";
+    
     return (
       form.name !== original.name ||
       form.email !== original.email ||
-      form.phone !== (original.phone || "") ||
+      currentPhone !== originalPhone ||
       form.role !== original.role
     );
+  };
+
+  const handleClose = () => {
+    if (isChanged()) {
+      setShowExitConfirm(true);
+    } else {
+      setShowForm(false);
+    }
   };
 
   useEffect(() => {
@@ -62,64 +76,94 @@ export default function StaffPage() {
     const targetUser = users.find(u => u.id === id);
     if (!targetUser) return;
     if (confirm(`คุณต้องการลบรายชื่อพนักงาน: ${targetUser.name} ใช่หรือไม่?`)) {
-      const res = await fetch(`/api/users/${id}?ownerPin=${ownerPinStr}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setShowForm(false);
-        fetch("/api/users").then(r => r.json()).then(setUsers);
-      } else {
-        const err = await res.json();
-        alert(err.error || "ลบไม่สำเร็จ");
+      try {
+        const res = await fetch(`/api/users/${id}?ownerPin=${ownerPinStr}`, {
+          method: "DELETE",
+        });
+        if (res.ok) {
+          setShowForm(false);
+          fetch("/api/users").then(r => r.json()).then(setUsers);
+        } else {
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const err = await res.json();
+            alert(err.error || "ลบไม่สำเร็จ");
+          } else {
+            alert("เกิดข้อผิดพลาดในการลบข้อมูล (Server Error)");
+          }
+        }
+      } catch (err) {
+        console.error("Delete error:", err);
+        alert("การเชื่อมต่อล้มเหลว");
       }
     }
   }
 
   async function handleUnlock() {
-    const res = await fetch("/api/verify-pin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "OWNER", pin: unlockPin }),
-    });
-    if (res.ok) {
-      setIsUnlocked(true);
-      setOwnerPinStr(unlockPin);
-      setShowUnlockModal(false);
-      setUnlockPin("");
-    } else {
-      alert("รหัส PIN ไม่ถูกต้อง");
+    try {
+      const res = await fetch("/api/verify-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "OWNER", pin: unlockPin }),
+      });
+      if (res.ok) {
+        setIsUnlocked(true);
+        setOwnerPinStr(unlockPin);
+        setShowUnlockModal(false);
+        setUnlockPin("");
+      } else {
+        alert("รหัส PIN ไม่ถูกต้อง");
+      }
+    } catch (err) {
+      alert("ไม่สามารถเชื่อมต่อระบบตรวจสอบ PIN ได้");
     }
   }
 
   async function handleSave() {
     if (!form.name || !form.email) { alert("กรุณากรอกชื่อและอีเมล"); return; }
     
-    if (editingId) {
-      if (!ownerPinStr) { alert("กรุณาปลดล็อกด้วย Owner PIN ก่อน"); return; }
-      const res = await fetch(`/api/users/${editingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, ownerPin: ownerPinStr }),
-      });
-      if (res.ok) {
-        setShowForm(false);
-        fetch("/api/users").then(r => r.json()).then(setUsers);
+    try {
+      if (editingId) {
+        if (!ownerPinStr) { alert("กรุณาปลดล็อกด้วย Owner PIN ก่อน"); return; }
+        const res = await fetch(`/api/users/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...form, ownerPin: ownerPinStr }),
+        });
+        if (res.ok) {
+          setShowForm(false);
+          fetch("/api/users").then(r => r.json()).then(setUsers);
+        } else {
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const err = await res.json();
+            alert(err.error || "แก้ไขไม่สำเร็จ");
+          } else {
+            alert("เกิดข้อผิดพลาดในการแก้ไขข้อมูล (Server Error)");
+          }
+        }
       } else {
-        const err = await res.json();
-        alert(err.error || "แก้ไขไม่สำเร็จ");
+        const res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...form, ownerPin: ownerPinStr }),
+        });
+        if (res.ok) {
+          setShowForm(false);
+          fetch("/api/users").then(r => r.json()).then(setUsers);
+        } else {
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const err = await res.json();
+            alert(err.error || "เพิ่มพนักงานไม่สำเร็จ");
+          } else {
+            alert("เกิดข้อผิดพลาดในการเพิ่มข้อมูล (Server Error)");
+          }
+        }
       }
-    } else {
-      const res = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, ownerPin: ownerPinStr }),
-      });
-      if (res.ok) {
-        setShowForm(false);
-        fetch("/api/users").then(r => r.json()).then(setUsers);
-      } else {
-        alert("เพิ่มพนักงานไม่สำเร็จ");
-      }
+    } catch (err) {
+      console.error("Save error:", err);
+      alert("การเชื่อมต่อล้มเหลว");
     }
   }
 
@@ -240,7 +284,23 @@ export default function StaffPage() {
 
       {showForm && (
         <div className="modal-overlay">
-          <div className="modal">
+          <div className="modal" style={{ position: "relative" }}>
+            <button 
+              onClick={handleClose}
+              style={{
+                position: "absolute",
+                top: "1rem",
+                right: "1rem",
+                background: "none",
+                border: "none",
+                fontSize: "1.5rem",
+                cursor: "pointer",
+                color: "#999",
+                lineHeight: 1
+              }}
+            >
+              ×
+            </button>
             <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>{editingId ? "แก้ไขข้อมูลพนักงาน" : "เพิ่มพนักงาน"}</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div>
@@ -291,7 +351,33 @@ export default function StaffPage() {
                   ลบพนักงาน
                 </button>
               )}
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowForm(false)}>ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showExitConfirm && (
+        <div className="modal-overlay" style={{ zIndex: 1100 }}>
+          <div className="modal" style={{ maxWidth: 320, textAlign: "center" }}>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ยืนยันการยกเลิก?</h3>
+            <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "1.5rem" }}>
+              ข้อมูลที่คุณแก้ไขยังไม่ได้บันทึก ต้องการยกเลิกการแก้ไขใช่หรือไม่?
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button 
+                className="btn-secondary" 
+                style={{ flex: 1, background: "#dc3545", color: "white", border: "none" }} 
+                onClick={() => { setShowExitConfirm(false); setShowForm(false); }}
+              >
+                ใช่, ยกเลิก
+              </button>
+              <button 
+                className="btn-primary" 
+                style={{ flex: 1 }} 
+                onClick={() => setShowExitConfirm(false)}
+              >
+                ไม่, แก้ไขต่อ
+              </button>
             </div>
           </div>
         </div>
