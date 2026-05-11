@@ -52,10 +52,9 @@ export default function PayrollPage() {
   const [year, setYear] = useState(today.getFullYear());
   const [run, setRun] = useState<PayrollRun | null>(null);
   const [loading, setLoading] = useState(false);
-  const [editing, setEditing] = useState<Record<string, string>>({});
-  const [savingId, setSavingId] = useState<string | null>(null);
 
   // confirm flow
+  const [showConfirmWarning, setShowConfirmWarning] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
@@ -72,7 +71,6 @@ export default function PayrollPage() {
     const res = await fetch(`/api/payroll?month=${month}&year=${year}`);
     const data = await res.json();
     setRun(data);
-    setEditing({});
     setLoading(false);
   }
 
@@ -86,32 +84,6 @@ export default function PayrollPage() {
     const data = await res.json();
     if (Array.isArray(data)) setTxOrders(data);
     setTxLoading(false);
-  }
-
-  async function saveBaseSalary(itemId: string) {
-    const val = editing[itemId];
-    if (val == null) return;
-    const num = Number(val);
-    if (isNaN(num) || num < 0) return;
-    setSavingId(itemId);
-    const res = await fetch(`/api/payroll/items/${itemId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ baseSalary: num }),
-    });
-    if (res.ok) {
-      const updated: PayrollItem = await res.json();
-      setRun(prev => prev ? {
-        ...prev,
-        items: prev.items.map(i => i.id === itemId ? updated : i),
-      } : prev);
-      setEditing(prev => {
-        const next = { ...prev };
-        delete next[itemId];
-        return next;
-      });
-    }
-    setSavingId(null);
   }
 
   async function confirmPayroll() {
@@ -168,14 +140,6 @@ export default function PayrollPage() {
           <select className="input" style={{ width: 100 }} value={year} onChange={e => setYear(Number(e.target.value))}>
             {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y + 543}</option>)}
           </select>
-          <button
-            className="btn-primary"
-            style={{ background: isConfirmed ? "#6c757d" : undefined }}
-            onClick={() => { setPin(""); setPinError(""); setShowPinModal(true); }}
-            disabled={!run || (run.items?.length ?? 0) === 0}
-          >
-            {isConfirmed ? "🔁 ยืนยันใหม่" : "✓ ยืนยันเงินเดือน"}
-          </button>
         </div>
       </div>
 
@@ -201,7 +165,11 @@ export default function PayrollPage() {
           <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             🔗 ข้อมูลค่าคอม Pool และจำนวนออร์เดอร์ดึงจากออร์เดอร์สถานะ <strong>ชำระแล้ว (PAID)</strong> ในเดือนที่เลือก —
             <Link href="/pos/history" style={{ color: "var(--olive)", textDecoration: "underline" }}>ดูประวัติ Transaction</Link>
-            {!isConfirmed && <span style={{ marginLeft: "auto", color: "#888" }}>ตัวเลขอัปเดตอัตโนมัติทุกครั้งที่เปิดหน้านี้</span>}
+            <span style={{ marginLeft: "auto", color: "#888" }}>
+              {isConfirmed
+                ? "ล็อกแล้ว — กด \"🔁 ยืนยันใหม่\" เพื่อดึงข้อมูลพนักงาน/ออร์เดอร์ล่าสุด"
+                : "ตัวเลขอัปเดตอัตโนมัติทุกครั้งที่เปิดหน้านี้"}
+            </span>
           </div>
 
           <div className="card">
@@ -222,8 +190,6 @@ export default function PayrollPage() {
                 {run.items.length === 0 ? (
                   <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มีพนักงาน — กรุณาเพิ่มพนักงานก่อน</td></tr>
                 ) : run.items.slice().sort((a, b) => b.totalAmount - a.totalAmount).map(item => {
-                  const isEditing = editing[item.id] !== undefined;
-                  const editVal = editing[item.id];
                   const allowance = getAllowance(item.user.role);
                   const rowTotal = item.totalAmount + allowance;
 
@@ -251,41 +217,7 @@ export default function PayrollPage() {
                         )}
                       </td>
                       <td style={{ padding: "8px 12px", textAlign: "right" }}>
-                        <div style={{ display: "flex", gap: "0.25rem", justifyContent: "flex-end", alignItems: "center" }}>
-                          <input
-                            type="number"
-                            min={0}
-                            value={isEditing ? editVal : item.baseSalary || ""}
-                            placeholder="0"
-                            onChange={e => setEditing(prev => ({ ...prev, [item.id]: e.target.value }))}
-                            onKeyDown={e => { if (e.key === "Enter") saveBaseSalary(item.id); }}
-                            style={{
-                              width: 110,
-                              padding: "4px 8px",
-                              border: "1px solid var(--beige-dark)",
-                              borderRadius: 6,
-                              textAlign: "right",
-                              background: isEditing ? "#fff8e1" : "white",
-                            }}
-                          />
-                          {isEditing && (
-                            <button
-                              onClick={() => saveBaseSalary(item.id)}
-                              disabled={savingId === item.id}
-                              style={{
-                                background: "var(--olive)",
-                                color: "white",
-                                border: "none",
-                                borderRadius: 6,
-                                padding: "4px 8px",
-                                cursor: "pointer",
-                                fontSize: "0.75rem",
-                              }}
-                            >
-                              {savingId === item.id ? "..." : "✓"}
-                            </button>
-                          )}
-                        </div>
+                        ฿{item.baseSalary.toLocaleString()}
                       </td>
                       <td style={{ padding: "8px 12px", textAlign: "right", color: "#666" }}>
                         ฿{allowance.toLocaleString()}
@@ -307,10 +239,78 @@ export default function PayrollPage() {
               ✓ ยืนยันเงินเดือนเดือน {run.month}/{run.year} แล้ว — บันทึกในรายจ่ายเรียบร้อย
             </div>
           )}
+
+          <div style={{ marginTop: "1.25rem", display: "flex", justifyContent: "center" }}>
+            <button
+              onClick={() => setShowConfirmWarning(true)}
+              disabled={!run || (run.items?.length ?? 0) === 0}
+              style={{
+                background: "#2d6a4f",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                padding: "0.75rem 2.5rem",
+                fontSize: "1rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(45, 106, 79, 0.25)",
+                opacity: (!run || (run.items?.length ?? 0) === 0) ? 0.5 : 1,
+              }}
+            >
+              ✓ ยืนยันข้อมูล
+            </button>
+          </div>
         </>
       ) : (
         <div className="card" style={{ textAlign: "center", padding: "3rem" }}>
           <p style={{ color: "#aaa" }}>ไม่สามารถสร้างข้อมูลเงินเดือนได้</p>
+        </div>
+      )}
+
+      {/* Confirm warning modal */}
+      {showConfirmWarning && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 420, textAlign: "center" }}>
+            <div style={{ fontSize: "2.25rem", marginBottom: "0.5rem" }}>⚠️</div>
+            <h3 style={{ margin: "0 0 0.75rem", color: "var(--olive)" }}>ยืนยันข้อมูลเงินเดือน</h3>
+            <p style={{ fontSize: "0.9rem", color: "#555", marginBottom: "0.75rem", lineHeight: 1.5 }}>
+              ระบบจะดึงข้อมูล <strong>เงินเดือนพนักงาน</strong> และ <strong>ออร์เดอร์ที่ชำระแล้ว</strong> ของเดือน <strong>{run?.month}/{run?.year}</strong> มาคำนวณใหม่
+              <br />
+              และบันทึกยอดรวม <strong style={{ color: "var(--olive)" }}>฿{totalPayroll.toLocaleString()}</strong> ลงในหน้ารายจ่าย
+            </p>
+            <p style={{ fontSize: "0.875rem", color: "#c0392b", marginBottom: "1.25rem", fontWeight: 600 }}>
+              ต้องการยืนยันใช่หรือไม่?
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                className="btn-secondary"
+                style={{ flex: 1 }}
+                onClick={() => setShowConfirmWarning(false)}
+              >
+                ยกเลิก
+              </button>
+              <button
+                style={{
+                  flex: 1,
+                  background: "#2d6a4f",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "0.625rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+                onClick={() => {
+                  setShowConfirmWarning(false);
+                  setPin("");
+                  setPinError("");
+                  setShowPinModal(true);
+                }}
+              >
+                ✓ ใช่, ยืนยัน
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

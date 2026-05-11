@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPin } from "@/lib/auth";
+import { generatePayrollRun } from "@/lib/payroll";
 
 const POSITION_ALLOWANCES: Record<string, number> = {
   OWNER: 15000,
@@ -22,11 +23,12 @@ export async function POST(req: NextRequest) {
   const ok = await verifyPin("OWNER", pin);
   if (!ok) return NextResponse.json({ ok: false, error: "PIN ไม่ถูกต้อง" }, { status: 401 });
 
-  const run = await prisma.payrollRun.findUnique({
-    where: { id: runId },
-    include: { items: { include: { user: { select: { id: true, name: true, role: true } } } } },
-  });
-  if (!run) return NextResponse.json({ ok: false, error: "Run not found" }, { status: 404 });
+  const existing = await prisma.payrollRun.findUnique({ where: { id: runId } });
+  if (!existing) return NextResponse.json({ ok: false, error: "Run not found" }, { status: 404 });
+
+  // Always regenerate from current User.baseSalary + PAID orders before confirming.
+  // This makes "ยืนยัน / ยืนยันใหม่" pick up the latest staff page edits.
+  const run = await generatePayrollRun(existing.month, existing.year);
 
   const totalAllowances = run.items.reduce((s, i) => s + getAllowance(i.user.role), 0);
   const totalItems = run.items.reduce((s, i) => s + i.totalAmount, 0);
@@ -55,17 +57,17 @@ export async function POST(req: NextRequest) {
     }
 
     await tx.payrollRun.update({
-      where: { id: runId },
+      where: { id: run.id },
       data: { status: "CONFIRMED" },
     });
   });
 
   await prisma.auditLog.create({
-    data: { action: "CONFIRM_PAYROLL", entity: "PayrollRun", entityId: runId, detail: JSON.stringify({ totalPayroll }) },
+    data: { action: "CONFIRM_PAYROLL", entity: "PayrollRun", entityId: run.id, detail: JSON.stringify({ totalPayroll }) },
   });
 
   const updated = await prisma.payrollRun.findUnique({
-    where: { id: runId },
+    where: { id: run.id },
     include: { items: { include: { user: { select: { id: true, name: true, role: true } } } } },
   });
   return NextResponse.json({ ok: true, run: updated, totalPayroll });

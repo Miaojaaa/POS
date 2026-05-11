@@ -11,11 +11,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const baseSalary = body.baseSalary != null ? Number(body.baseSalary) : current.baseSalary;
   const totalAmount = baseSalary + current.poolCommission + current.retailCommission;
 
-  const updated = await prisma.payrollItem.update({
-    where: { id },
-    data: { baseSalary, totalAmount },
-    include: { user: { select: { id: true, name: true, role: true } } },
-  });
+  // Update both PayrollItem and User.baseSalary so the staff page and payroll stay in sync
+  const [, updated] = await prisma.$transaction([
+    prisma.user.update({ where: { id: current.userId }, data: { baseSalary } }),
+    prisma.payrollItem.update({
+      where: { id },
+      data: { baseSalary, totalAmount },
+      include: { user: { select: { id: true, name: true, role: true } } },
+    }),
+  ]);
 
   return NextResponse.json(updated);
 }

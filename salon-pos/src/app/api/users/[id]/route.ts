@@ -5,7 +5,7 @@ import { verifyPin } from "@/lib/auth";
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
-    const { name, email, phone, role, ownerPin } = await req.json();
+    const { name, email, phone, role, baseSalary, ownerPin } = await req.json();
 
     if (!ownerPin) return NextResponse.json({ error: "ต้องใช้ Owner PIN" }, { status: 400 });
 
@@ -14,8 +14,32 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const user = await prisma.user.update({
       where: { id },
-      data: { name, email, phone: phone || null, role },
+      data: {
+        name,
+        email,
+        phone: phone || null,
+        role,
+        ...(baseSalary != null ? { baseSalary: Number(baseSalary) } : {}),
+      },
     });
+
+    // Propagate new baseSalary into any existing DRAFT PayrollItems for this user
+    // (CONFIRMED runs stay frozen).
+    if (baseSalary != null) {
+      const newBase = Number(baseSalary);
+      const draftItems = await prisma.payrollItem.findMany({
+        where: { userId: id, payrollRun: { status: "DRAFT" } },
+      });
+      for (const it of draftItems) {
+        await prisma.payrollItem.update({
+          where: { id: it.id },
+          data: {
+            baseSalary: newBase,
+            totalAmount: newBase + it.poolCommission + it.retailCommission,
+          },
+        });
+      }
+    }
 
     return NextResponse.json({ id: user.id, name: user.name, role: user.role });
   } catch (err: any) {

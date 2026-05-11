@@ -18,7 +18,18 @@
       "Bash(mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\api\\\\retail-products\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\api\\\\retail-products\\\\[id]\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\settings\\\\retail-products\" 2>&1; echo done)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\" -Recurse -Directory)",
       "Bash(Select-Object -First 50 FullName)",
-      "Bash(mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\pos\\\\history\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\pos\\\\edit\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\pos\\\\edit\\\\[id]\" 2>&1; echo done)"
+      "Bash(mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\pos\\\\history\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\pos\\\\edit\" 2>&1; mkdir \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\\\\src\\\\app\\\\\\(main\\)\\\\pos\\\\edit\\\\[id]\" 2>&1; echo done)",
+      "Bash(node -e 'const{PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);p.$queryRawUnsafe\\(\"PRAGMA table_info\\('\\\\''User'\\\\''\\);\"\\).then\\(r=>console.log\\(JSON.stringify\\(r,null,2\\)\\)\\).catch\\(e=>console.error\\(e.message\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\);')",
+      "Bash(node -e 'const{PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);p.$queryRawUnsafe\\(\"PRAGMA table_info\\('\\\\''User'\\\\''\\);\"\\).then\\(r=>console.log\\(JSON.stringify\\(r\\)\\)\\).catch\\(e=>console.error\\(e.message\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\);')",
+      "Bash(DATABASE_URL=\"file:./prisma/dev.db\" npx prisma db execute --file /tmp/q.sql)",
+      "Bash(stat -c '%y %s %n' dev.db prisma/dev.db 2>&1)",
+      "Read(//c/Users/dudek/OneDrive/Desktop/POS/salon-pos/**)",
+      "Bash(node check-db.mjs)",
+      "Bash(DATABASE_URL=\"file:$\\(pwd\\)/dev.db\" npx prisma db push)",
+      "Bash(stat -c '%y %s %n' dev.db 2>&1)",
+      "Bash(find . -name \"dev.db\" 2>&1 | head; ls -la c/ 2>&1 | head; find /c 2>&1 | head -5)",
+      "Read(//c/c/**)",
+      "PowerShell($env:DATABASE_URL=\"file:$\\(Get-Location\\)\\\\dev.db\"; npx prisma db push)"
     ],
     "additionalDirectories": [
       "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\api\\payroll\\items",
