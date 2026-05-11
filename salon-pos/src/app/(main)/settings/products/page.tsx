@@ -10,6 +10,8 @@ type Chemical = {
   unitVolumeG: number;
   costPerUnit: number;
   reorderPoint: number;
+  sellable: boolean;
+  salePrice: number | null;
   mainStock?: { quantity: number };
   subStock?: { quantity: number; currentVolumeG: number };
 };
@@ -19,6 +21,9 @@ type RetailProduct = {
   name: string;
   price: number;
   stock: number;
+  usableAsChemical: boolean;
+  unitVolumeG: number | null;
+  costPerG: number | null;
   isActive: boolean;
 };
 
@@ -35,8 +40,10 @@ export default function ProductsPage() {
   const [tab, setTab] = useState<Category>("ALL");
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<FormType>("CHEMICAL");
-  const [chemForm, setChemForm] = useState({ name: "", unitVolumeG: "", costPerUnit: "", reorderPoint: "", initialMain: "10", initialSub: "2" });
-  const [retailForm, setRetailForm] = useState({ name: "", price: "", stock: "0" });
+  const [chemForm, setChemForm] = useState({ name: "", unitVolumeG: "", costPerUnit: "", reorderPoint: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
+  const [retailForm, setRetailForm] = useState({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
+  const [editingChemId, setEditingChemId] = useState<string | null>(null);
+  const [editingRetailId, setEditingRetailId] = useState<string | null>(null);
 
   // Stock adjust modal (for retail)
   const [adjustTarget, setAdjustTarget] = useState<RetailProduct | null>(null);
@@ -87,43 +94,131 @@ export default function ProductsPage() {
     }
   }
 
+  function openAddForm() {
+    setEditingChemId(null);
+    setEditingRetailId(null);
+    setChemForm({ name: "", unitVolumeG: "", costPerUnit: "", reorderPoint: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
+    setRetailForm({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
+    setShowForm(true);
+  }
+
+  function editChemical(p: Chemical) {
+    setEditingChemId(p.id);
+    setEditingRetailId(null);
+    setFormType("CHEMICAL");
+    setChemForm({
+      name: p.name,
+      unitVolumeG: String(p.unitVolumeG),
+      costPerUnit: String(p.costPerUnit),
+      reorderPoint: String(p.reorderPoint),
+      initialMain: "0",
+      initialSub: "0",
+      sellable: p.sellable,
+      salePrice: p.salePrice != null ? String(p.salePrice) : "",
+    });
+    setShowForm(true);
+  }
+
+  function editRetail(p: RetailProduct) {
+    setEditingRetailId(p.id);
+    setEditingChemId(null);
+    setFormType("RETAIL");
+    setRetailForm({
+      name: p.name,
+      price: String(p.price),
+      stock: String(p.stock),
+      usableAsChemical: p.usableAsChemical,
+      unitVolumeG: p.unitVolumeG != null ? String(p.unitVolumeG) : "",
+      costPerG: p.costPerG != null ? String(p.costPerG) : "",
+    });
+    setShowForm(true);
+  }
+
+  function closeForm() {
+    setShowForm(false);
+    setEditingChemId(null);
+    setEditingRetailId(null);
+  }
+
   async function saveProduct() {
     if (formType === "CHEMICAL") {
       if (!chemForm.name || !chemForm.unitVolumeG || !chemForm.costPerUnit) return alert("กรุณากรอกข้อมูลให้ครบ");
       gate(async () => {
-        await fetch("/api/products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: chemForm.name,
-            unitVolumeG: Number(chemForm.unitVolumeG),
-            costPerUnit: Number(chemForm.costPerUnit),
-            reorderPoint: Number(chemForm.reorderPoint) || 0,
-            initialMain: Number(chemForm.initialMain),
-            initialSub: Number(chemForm.initialSub),
-          }),
-        });
-        setShowForm(false);
-        setChemForm({ name: "", unitVolumeG: "", costPerUnit: "", reorderPoint: "", initialMain: "10", initialSub: "2" });
+        if (editingChemId) {
+          await fetch(`/api/products/${editingChemId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: chemForm.name,
+              unitVolumeG: Number(chemForm.unitVolumeG),
+              costPerUnit: Number(chemForm.costPerUnit),
+              reorderPoint: Number(chemForm.reorderPoint) || 0,
+              sellable: chemForm.sellable,
+              salePrice: chemForm.sellable && chemForm.salePrice ? Number(chemForm.salePrice) : null,
+            }),
+          });
+        } else {
+          await fetch("/api/products", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: chemForm.name,
+              unitVolumeG: Number(chemForm.unitVolumeG),
+              costPerUnit: Number(chemForm.costPerUnit),
+              reorderPoint: Number(chemForm.reorderPoint) || 0,
+              initialMain: Number(chemForm.initialMain),
+              initialSub: Number(chemForm.initialSub),
+              sellable: chemForm.sellable,
+              salePrice: chemForm.sellable && chemForm.salePrice ? Number(chemForm.salePrice) : null,
+            }),
+          });
+        }
+        closeForm();
+        setChemForm({ name: "", unitVolumeG: "", costPerUnit: "", reorderPoint: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
         await load();
       });
     } else {
       if (!retailForm.name || !retailForm.price) return alert("กรุณากรอกข้อมูลให้ครบ");
       gate(async () => {
-        await fetch("/api/retail-products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: retailForm.name,
-            price: Number(retailForm.price),
-            stock: Number(retailForm.stock) || 0,
-          }),
-        });
-        setShowForm(false);
-        setRetailForm({ name: "", price: "", stock: "0" });
+        if (editingRetailId) {
+          await fetch(`/api/retail-products/${editingRetailId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: retailForm.name,
+              price: Number(retailForm.price),
+              usableAsChemical: retailForm.usableAsChemical,
+              unitVolumeG: retailForm.usableAsChemical && retailForm.unitVolumeG ? Number(retailForm.unitVolumeG) : null,
+              costPerG: retailForm.usableAsChemical && retailForm.costPerG ? Number(retailForm.costPerG) : null,
+            }),
+          });
+        } else {
+          await fetch("/api/retail-products", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: retailForm.name,
+              price: Number(retailForm.price),
+              stock: Number(retailForm.stock) || 0,
+              usableAsChemical: retailForm.usableAsChemical,
+              unitVolumeG: retailForm.usableAsChemical && retailForm.unitVolumeG ? Number(retailForm.unitVolumeG) : null,
+              costPerG: retailForm.usableAsChemical && retailForm.costPerG ? Number(retailForm.costPerG) : null,
+            }),
+          });
+        }
+        closeForm();
+        setRetailForm({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
         await load();
       });
     }
+  }
+
+  async function removeChemical(id: string, name: string) {
+    if (!confirm(`ลบเคมี "${name}"?`)) return;
+    gate(async () => {
+      await fetch(`/api/products/${id}`, { method: "DELETE" });
+      await load();
+    });
   }
 
   async function applyRetailAdjust() {
@@ -164,11 +259,27 @@ export default function ProductsPage() {
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📦 จัดการสต๊อก</h1>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           {unlocked ? (
-            <span style={{ fontSize: "0.8rem", color: "var(--success-green, #2d6a4f)", fontWeight: 600 }}>🔓 ปลดล็อกแล้ว</span>
+            <button
+              className="btn-secondary"
+              onClick={() => setUnlocked(false)}
+            >
+              ล็อกสิทธิ์แก้ไข
+            </button>
           ) : (
-            <span style={{ fontSize: "0.8rem", color: "#888" }}>🔒 ต้องการ Manager PIN</span>
+            <button
+              className="btn-secondary"
+              onClick={() => { setPin(""); setPinError(""); setPendingAction(null); setShowPinModal(true); }}
+            >
+              ปลดล็อกสิทธิ์แก้ไข
+            </button>
           )}
-          <button className="btn-primary" onClick={() => setShowForm(true)}>+ เพิ่มสินค้า</button>
+          <button
+            className="btn-primary"
+            onClick={openAddForm}
+            style={{ opacity: unlocked ? 1 : 0.6 }}
+          >
+            + เพิ่มสินค้า
+          </button>
         </div>
       </div>
 
@@ -198,11 +309,19 @@ export default function ProductsPage() {
         })}
       </div>
 
-      <div className="card" style={{ marginBottom: "1rem", background: "#fff8e1", border: "1px solid #facc15" }}>
-        <p style={{ margin: 0, fontSize: "0.85rem", color: "#854d0e" }}>
-          ⚠️ การ <strong>เพิ่ม/ลด/แก้ไข/ลบ</strong> สินค้าและสต๊อกต้องใช้ Manager PIN
-        </p>
-      </div>
+      {!unlocked ? (
+        <div className="card" style={{ marginBottom: "1rem", background: "#fff8e1", border: "1px solid #facc15" }}>
+          <p style={{ margin: 0, fontSize: "0.85rem", color: "#854d0e" }}>
+            ⚠️ กดปุ่ม <strong>ปลดล็อกสิทธิ์แก้ไข</strong> ก่อน เพื่อเพิ่ม/ปรับสต๊อก/แก้ไข/ลบสินค้า
+          </p>
+        </div>
+      ) : (
+        <div className="card" style={{ marginBottom: "1rem", background: "#dcfce7", border: "1px solid #86efac" }}>
+          <p style={{ margin: 0, fontSize: "0.85rem", color: "#15803d" }}>
+            ปลดล็อกแล้ว — สามารถเพิ่ม/ปรับสต๊อก/แก้ไข/ลบสินค้าได้
+          </p>
+        </div>
+      )}
 
       {/* Chemicals table */}
       {showChem && chemicals.length > 0 && (
@@ -212,12 +331,14 @@ export default function ProductsPage() {
             <thead>
               <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
                 <th style={{ textAlign: "left", padding: "8px 12px" }}>ชื่อสินค้า</th>
-                <th style={{ textAlign: "center", padding: "8px 12px" }}>หมวด</th>
+                <th style={{ textAlign: "center", padding: "8px 12px" }}>การใช้งาน</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>ปริมาณ/ขวด</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ต้นทุน/ขวด</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคา/ก.</th>
+                <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาขาย</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหลัก</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหน้าร้าน</th>
+                <th style={{ textAlign: "center", padding: "8px 12px", width: 160 }}>จัดการ</th>
               </tr>
             </thead>
             <tbody>
@@ -225,16 +346,36 @@ export default function ProductsPage() {
                 <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                   <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <span style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 12, background: CATEGORY_BADGE.CHEMICAL.bg, color: CATEGORY_BADGE.CHEMICAL.color }}>
-                      {CATEGORY_BADGE.CHEMICAL.label}
-                    </span>
+                    <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 12, background: CATEGORY_BADGE.CHEMICAL.bg, color: CATEGORY_BADGE.CHEMICAL.color }}>
+                        ใช้ในบริการ
+                      </span>
+                      {p.sellable && (
+                        <span style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 12, background: CATEGORY_BADGE.RETAIL.bg, color: CATEGORY_BADGE.RETAIL.color }}>
+                          ขายได้
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>{(p.unitVolumeG / 1000).toFixed(0)} ก.</td>
                   <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{p.costPerUnit.toLocaleString()}</td>
                   <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{(p.costPerUnit / p.unitVolumeG).toFixed(4)}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right" }}>
+                    {p.sellable && p.salePrice != null ? `฿${p.salePrice.toLocaleString()}` : <span style={{ color: "#bbb" }}>—</span>}
+                  </td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>{p.mainStock?.quantity ?? 0} ขวด</td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
                     {p.subStock?.quantity ?? 0} ขวด + {((p.subStock?.currentVolumeG ?? 0) / 1000).toFixed(0)} ก.
+                  </td>
+                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                    <button onClick={() => editChemical(p)}
+                      style={{ background: "var(--olive)", color: "white", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", marginRight: 4, fontSize: "0.75rem" }}>
+                      แก้ไข
+                    </button>
+                    <button onClick={() => removeChemical(p.id, p.name)}
+                      style={{ background: "none", border: "1px solid #dc2626", color: "#dc2626", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontSize: "0.75rem" }}>
+                      ลบ
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -251,10 +392,12 @@ export default function ProductsPage() {
             <thead>
               <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
                 <th style={{ textAlign: "left", padding: "8px 12px" }}>ชื่อสินค้า</th>
-                <th style={{ textAlign: "center", padding: "8px 12px" }}>หมวด</th>
+                <th style={{ textAlign: "center", padding: "8px 12px" }}>การใช้งาน</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาขาย</th>
+                <th style={{ textAlign: "right", padding: "8px 12px" }}>ปริมาณ/ชิ้น</th>
+                <th style={{ textAlign: "right", padding: "8px 12px" }}>ต้นทุน/ก.</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>สต๊อก</th>
-                <th style={{ width: 240 }}></th>
+                <th style={{ width: 280 }}></th>
               </tr>
             </thead>
             <tbody>
@@ -262,20 +405,37 @@ export default function ProductsPage() {
                 <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                   <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <span style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 12, background: CATEGORY_BADGE.RETAIL.bg, color: CATEGORY_BADGE.RETAIL.color }}>
-                      {CATEGORY_BADGE.RETAIL.label}
-                    </span>
+                    <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 12, background: CATEGORY_BADGE.RETAIL.bg, color: CATEGORY_BADGE.RETAIL.color }}>
+                        ขายได้
+                      </span>
+                      {p.usableAsChemical && (
+                        <span style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: 12, background: CATEGORY_BADGE.CHEMICAL.bg, color: CATEGORY_BADGE.CHEMICAL.color }}>
+                          ใช้เป็นเคมี
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{p.price.toLocaleString()}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right" }}>
+                    {p.usableAsChemical && p.unitVolumeG != null ? `${p.unitVolumeG} ก.` : <span style={{ color: "#bbb" }}>—</span>}
+                  </td>
+                  <td style={{ padding: "8px 12px", textAlign: "right" }}>
+                    {p.usableAsChemical && p.costPerG != null ? `฿${p.costPerG.toFixed(4)}` : <span style={{ color: "#bbb" }}>—</span>}
+                  </td>
                   <td style={{ padding: "8px 12px", textAlign: "right" }}>
                     <span style={{ color: p.stock <= 0 ? "var(--alert-red)" : p.stock <= 5 ? "#d97706" : "inherit", fontWeight: 600 }}>
                       {p.stock} ชิ้น
                     </span>
                   </td>
                   <td style={{ padding: "8px 12px", textAlign: "right" }}>
-                    <button onClick={() => setAdjustTarget(p)}
+                    <button onClick={() => editRetail(p)}
                       style={{ background: "var(--olive)", color: "white", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", marginRight: 4, fontSize: "0.75rem" }}>
-                      ⚙️ ปรับสต๊อก
+                      แก้ไข
+                    </button>
+                    <button onClick={() => setAdjustTarget(p)}
+                      style={{ background: "var(--beige-dark)", color: "var(--text-dark)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", marginRight: 4, fontSize: "0.75rem" }}>
+                      ปรับสต๊อก
                     </button>
                     <button onClick={() => removeRetail(p.id, p.name)}
                       style={{ background: "none", border: "1px solid #dc2626", color: "#dc2626", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontSize: "0.75rem" }}>
@@ -296,52 +456,108 @@ export default function ProductsPage() {
         <div className="card" style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ยังไม่มีสินค้า Retail</div>
       )}
 
-      {/* Add Form Modal */}
+      {/* Add/Edit Form Modal */}
       {showForm && (
         <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: 500 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>เพิ่มสินค้า</h3>
+          <div className="modal" style={{ maxWidth: 500, position: "relative" }}>
+            <button
+              onClick={closeForm}
+              style={{
+                position: "absolute", top: "0.75rem", right: "1rem",
+                background: "none", border: "none", fontSize: "1.5rem",
+                cursor: "pointer", color: "#999", lineHeight: 1,
+              }}
+            >
+              ×
+            </button>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>
+              {editingChemId || editingRetailId ? "แก้ไขสินค้า" : "เพิ่มสินค้า"}
+            </h3>
 
-            <div style={{ marginBottom: "1rem" }}>
-              <label className="label">ประเภท</label>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                {(["CHEMICAL", "RETAIL"] as const).map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setFormType(t)}
-                    style={{
-                      flex: 1,
-                      padding: "0.625rem",
-                      borderRadius: 8,
-                      border: `2px solid ${formType === t ? "var(--olive)" : "var(--beige-dark)"}`,
-                      background: formType === t ? "#f0f5e8" : "white",
-                      cursor: "pointer",
-                      fontSize: "0.875rem",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {CATEGORY_BADGE[t].label}
-                  </button>
-                ))}
+            {!(editingChemId || editingRetailId) && (
+              <div style={{ marginBottom: "1rem" }}>
+                <label className="label">ประเภท</label>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  {(["CHEMICAL", "RETAIL"] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setFormType(t)}
+                      style={{
+                        flex: 1,
+                        padding: "0.625rem",
+                        borderRadius: 8,
+                        border: `2px solid ${formType === t ? "var(--olive)" : "var(--beige-dark)"}`,
+                        background: formType === t ? "#f0f5e8" : "white",
+                        cursor: "pointer",
+                        fontSize: "0.875rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {CATEGORY_BADGE[t].label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {formType === "CHEMICAL" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 <div><label className="label">ชื่อสินค้า</label><input className="input" value={chemForm.name} onChange={e => setChemForm({ ...chemForm, name: e.target.value })} /></div>
-                <div><label className="label">ปริมาณต่อขวด (มิลลิกรัม)</label><input type="number" className="input" value={chemForm.unitVolumeG} onChange={e => setChemForm({ ...chemForm, unitVolumeG: e.target.value })} placeholder="500000 = 500g" /></div>
+                <div><label className="label">ปริมาณต่อขวด (กรัม)</label><input type="number" className="input" value={chemForm.unitVolumeG} onChange={e => setChemForm({ ...chemForm, unitVolumeG: e.target.value })} placeholder="500" /></div>
                 <div><label className="label">ราคาต้นทุนต่อขวด (บาท)</label><input type="number" className="input" value={chemForm.costPerUnit} onChange={e => setChemForm({ ...chemForm, costPerUnit: e.target.value })} /></div>
-                <div><label className="label">Reorder Point (มก.)</label><input type="number" className="input" value={chemForm.reorderPoint} onChange={e => setChemForm({ ...chemForm, reorderPoint: e.target.value })} placeholder="1000000 = 1kg" /></div>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <div style={{ flex: 1 }}><label className="label">คลังหลักเริ่มต้น (ขวด)</label><input type="number" className="input" value={chemForm.initialMain} onChange={e => setChemForm({ ...chemForm, initialMain: e.target.value })} /></div>
-                  <div style={{ flex: 1 }}><label className="label">คลังหน้าร้านเริ่มต้น (ขวด)</label><input type="number" className="input" value={chemForm.initialSub} onChange={e => setChemForm({ ...chemForm, initialSub: e.target.value })} /></div>
+                <div><label className="label">Reorder Point (ก.)</label><input type="number" className="input" value={chemForm.reorderPoint} onChange={e => setChemForm({ ...chemForm, reorderPoint: e.target.value })} placeholder="1000" /></div>
+                {!editingChemId && (
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <div style={{ flex: 1 }}><label className="label">คลังหลักเริ่มต้น (ขวด)</label><input type="number" className="input" value={chemForm.initialMain} onChange={e => setChemForm({ ...chemForm, initialMain: e.target.value })} /></div>
+                    <div style={{ flex: 1 }}><label className="label">คลังหน้าร้านเริ่มต้น (ขวด)</label><input type="number" className="input" value={chemForm.initialSub} onChange={e => setChemForm({ ...chemForm, initialSub: e.target.value })} /></div>
+                  </div>
+                )}
+                <div style={{ borderTop: "1px dashed var(--beige-dark)", paddingTop: "0.75rem" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.9rem", marginBottom: chemForm.sellable ? "0.5rem" : 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={chemForm.sellable}
+                      onChange={e => setChemForm({ ...chemForm, sellable: e.target.checked })}
+                    />
+                    <span>เปิดให้ขายเป็น Retail ได้ <span style={{ color: "#888", fontSize: "0.8rem" }}>(ไม่ติ๊ก = ใช้ในงานบริการเท่านั้น)</span></span>
+                  </label>
+                  {chemForm.sellable && (
+                    <div>
+                      <label className="label">ราคาขาย (บาท/ขวด)</label>
+                      <input type="number" className="input" value={chemForm.salePrice} onChange={e => setChemForm({ ...chemForm, salePrice: e.target.value })} placeholder="ราคาที่ขายให้ลูกค้า" />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 <div><label className="label">ชื่อสินค้า</label><input className="input" placeholder="เช่น แชมพู Brand X" value={retailForm.name} onChange={e => setRetailForm({ ...retailForm, name: e.target.value })} /></div>
                 <div><label className="label">ราคาขาย (บาท)</label><input type="number" className="input" value={retailForm.price} onChange={e => setRetailForm({ ...retailForm, price: e.target.value })} /></div>
-                <div><label className="label">สต๊อกเริ่มต้น (ชิ้น)</label><input type="number" className="input" value={retailForm.stock} onChange={e => setRetailForm({ ...retailForm, stock: e.target.value })} /></div>
+                {!editingRetailId && (
+                  <div><label className="label">สต๊อกเริ่มต้น (ชิ้น)</label><input type="number" className="input" value={retailForm.stock} onChange={e => setRetailForm({ ...retailForm, stock: e.target.value })} /></div>
+                )}
+                <div style={{ borderTop: "1px dashed var(--beige-dark)", paddingTop: "0.75rem" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.9rem", marginBottom: retailForm.usableAsChemical ? "0.5rem" : 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={retailForm.usableAsChemical}
+                      onChange={e => setRetailForm({ ...retailForm, usableAsChemical: e.target.checked })}
+                    />
+                    <span>ใช้เป็นเคมีในงานบริการได้ (แบ่งใช้เป็นกรัม)</span>
+                  </label>
+                  {retailForm.usableAsChemical && (
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <div style={{ flex: 1 }}>
+                        <label className="label">ปริมาณ/ชิ้น (กรัม)</label>
+                        <input type="number" className="input" value={retailForm.unitVolumeG} onChange={e => setRetailForm({ ...retailForm, unitVolumeG: e.target.value })} placeholder="500" />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label className="label">ต้นทุน/กรัม (บาท)</label>
+                        <input type="number" step="0.0001" className="input" value={retailForm.costPerG} onChange={e => setRetailForm({ ...retailForm, costPerG: e.target.value })} placeholder="0.5" />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -349,7 +565,7 @@ export default function ProductsPage() {
               <button className="btn-primary" style={{ flex: 1 }} onClick={saveProduct}>
                 บันทึก {!unlocked && "(ต้องใช้ PIN)"}
               </button>
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowForm(false)}>ยกเลิก</button>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={closeForm}>ยกเลิก</button>
             </div>
           </div>
         </div>

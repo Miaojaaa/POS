@@ -74,6 +74,8 @@ model Product {
   unitVolumeG  Int     @map("unitVolumeMg")
   costPerUnit  Float
   reorderPoint Int     @default(0)
+  sellable     Boolean @default(false)
+  salePrice    Float?
   isActive     Boolean @default(true)
   createdAt    DateTime @default(now())
 
@@ -129,13 +131,16 @@ model Order {
 }
 
 model RetailProduct {
-  id          String  @id @default(cuid())
-  name        String
-  price       Float
-  stock       Int     @default(0)
-  isActive    Boolean @default(true)
-  createdAt   DateTime @default(now())
-  orderItems  OrderRetailItem[]
+  id               String  @id @default(cuid())
+  name             String
+  price            Float
+  stock            Int     @default(0)
+  usableAsChemical Boolean @default(false)
+  unitVolumeG      Int?
+  costPerG         Float?
+  isActive         Boolean @default(true)
+  createdAt        DateTime @default(now())
+  orderItems       OrderRetailItem[]
 }
 
 model OrderRetailItem {

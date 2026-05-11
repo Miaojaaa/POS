@@ -9,6 +9,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.price != null) data.price = Number(body.price);
   if (body.stock != null) data.stock = Number(body.stock);
   if (body.isActive != null) data.isActive = Boolean(body.isActive);
+  if (body.usableAsChemical != null) data.usableAsChemical = Boolean(body.usableAsChemical);
+  if (body.unitVolumeG !== undefined) data.unitVolumeG = body.unitVolumeG === "" || body.unitVolumeG == null ? null : Number(body.unitVolumeG);
+  if (body.costPerG !== undefined) data.costPerG = body.costPerG === "" || body.costPerG == null ? null : Number(body.costPerG);
 
   const item = await prisma.retailProduct.update({ where: { id }, data });
 

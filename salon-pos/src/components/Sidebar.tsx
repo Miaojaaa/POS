@@ -30,6 +30,7 @@ const menuItems = [
     children: [
       { href: "/erp/main", label: "คลังหลัก" },
       { href: "/erp/sub", label: "คลังหน้าร้าน" },
+      { href: "/erp/retail", label: "คลัง Retail" },
       { href: "/erp/transfers", label: "โอนสินค้า" },
       { href: "/erp/report", label: "รายงานสต็อก" },
     ],

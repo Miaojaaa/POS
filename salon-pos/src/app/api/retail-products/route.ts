@@ -18,7 +18,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { name, price, stock } = await req.json();
+  const body = await req.json();
+  const { name, price, stock, usableAsChemical, unitVolumeG, costPerG } = body;
   if (!name || price == null) return NextResponse.json({ error: "name and price required" }, { status: 400 });
 
   const item = await prisma.retailProduct.create({
@@ -26,6 +27,9 @@ export async function POST(req: NextRequest) {
       name,
       price: Number(price),
       stock: stock != null ? Number(stock) : 0,
+      usableAsChemical: Boolean(usableAsChemical),
+      unitVolumeG: usableAsChemical && unitVolumeG ? Number(unitVolumeG) : null,
+      costPerG: usableAsChemical && costPerG ? Number(costPerG) : null,
     },
   });
 

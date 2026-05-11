@@ -23,6 +23,8 @@ export async function POST(req: NextRequest) {
       unitVolumeG: body.unitVolumeG,
       costPerUnit: body.costPerUnit,
       reorderPoint: body.reorderPoint || 0,
+      sellable: Boolean(body.sellable),
+      salePrice: body.salePrice != null && body.salePrice !== "" ? Number(body.salePrice) : null,
       mainStock: { create: { quantity: body.initialMain || 0 } },
       subStock: { create: { quantity: body.initialSub || 0, currentVolumeG: body.unitVolumeG } },
     },

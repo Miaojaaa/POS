@@ -44,21 +44,35 @@ export default function MainStockPage() {
   }
 
   async function saveEdit(id: string) {
-    if (editQty < 0) return;
-    setSaving(true);
-    const res = await fetch("/api/stock", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, mainQty: editQty }),
-    });
-    
-    if (res.ok) {
-      setEditingId(null);
-      await load();
-    } else {
-      alert("เกิดข้อผิดพลาดในการบันทึก");
+    const qty = Number(editQty);
+    if (!Number.isFinite(qty) || qty < 0) {
+      alert("กรุณากรอกตัวเลขที่ถูกต้อง (>= 0)");
+      return;
     }
-    setSaving(false);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/stock", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, mainQty: qty }),
+      });
+      if (res.ok) {
+        setEditingId(null);
+        await load();
+      } else {
+        let msg = `บันทึกไม่สำเร็จ (HTTP ${res.status})`;
+        try {
+          const err = await res.json();
+          if (err?.error) msg += ` — ${err.error}`;
+        } catch {}
+        alert(msg);
+      }
+    } catch (err) {
+      console.error("Save main stock error:", err);
+      alert(`การเชื่อมต่อล้มเหลว — ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -91,13 +105,18 @@ export default function MainStockPage() {
                 <td style={{ padding: "8px 12px", textAlign: "center" }}>{(p.unitVolumeG).toLocaleString()}</td>
                 <td style={{ padding: "8px 12px", textAlign: "center" }}>
                   {editingId === p.id ? (
-                    <input 
-                      type="number" 
-                      className="input" 
+                    <input
+                      type="number"
+                      className="input"
                       style={{ width: "80px", textAlign: "center", padding: "4px" }}
-                      value={editQty} 
+                      value={editQty}
                       onChange={e => setEditQty(Number(e.target.value))}
-                      min="0"
+                      onKeyDown={e => {
+                        if (e.key === "Enter") saveEdit(p.id);
+                        if (e.key === "Escape") cancelEdit();
+                      }}
+                      min={0}
+                      autoFocus
                     />
                   ) : (
                     <span style={{ fontWeight: 700 }}>{p.mainQty}</span>
