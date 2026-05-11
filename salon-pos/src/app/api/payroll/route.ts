@@ -6,24 +6,44 @@ export async function GET(req: NextRequest) {
   const month = parseInt(searchParams.get("month") || `${new Date().getMonth() + 1}`);
   const year = parseInt(searchParams.get("year") || `${new Date().getFullYear()}`);
 
-  const run = await prisma.payrollRun.findFirst({
+  let run = await prisma.payrollRun.findFirst({
     where: { month, year },
     include: { items: { include: { user: { select: { id: true, name: true, role: true } } } } },
   });
 
+  // If no run yet, OR run is still DRAFT, regenerate from current PAID transactions
+  // (preserves baseSalary). Once CONFIRMED, the run is frozen.
+  if (!run || run.status === "DRAFT") {
+    run = await generateRun(month, year);
+  }
+
   return NextResponse.json(run);
 }
 
-export async function POST(req: NextRequest) {
-  const { month, year } = await req.json();
+async function generateRun(month: number, year: number) {
   const startOfMonth = new Date(year, month - 1, 1);
   const endOfMonth = new Date(year, month, 0, 23, 59, 59);
+
+  // Preserve baseSalary from any existing run before deleting
+  const existing = await prisma.payrollRun.findFirst({
+    where: { month, year },
+    include: { items: true },
+  });
+  const baseSalaryByUser = new Map<string, number>();
+  if (existing) {
+    for (const it of existing.items) {
+      if (it.baseSalary > 0) baseSalaryByUser.set(it.userId, it.baseSalary);
+    }
+    await prisma.payrollItem.deleteMany({ where: { payrollRunId: existing.id } });
+    await prisma.payrollRun.delete({ where: { id: existing.id } });
+  }
 
   const pools = await prisma.commissionPool.findMany({ where: { isActive: true } });
   const users = await prisma.user.findMany({ where: { isActive: true } });
 
+  // Source-of-truth: PAID orders only (same as ประวัติ Transaction page)
   const orders = await prisma.order.findMany({
-    where: { status: { in: ["DONE", "PAID"] }, completedAt: { gte: startOfMonth, lte: endOfMonth } },
+    where: { status: "PAID", completedAt: { gte: startOfMonth, lte: endOfMonth } },
     include: { items: true, chemicals: true, assistants: true },
   });
 
@@ -40,25 +60,38 @@ export async function POST(req: NextRequest) {
   const techPoolAmount = techPool ? (netRevenue * techPool.percentage) / 100 : 0;
   const assistPoolAmount = assistPool ? (netRevenue * assistPool.percentage) / 100 : 0;
 
-  const run = await prisma.payrollRun.create({
+  return prisma.payrollRun.create({
     data: {
       month,
       year,
       status: "DRAFT",
       items: {
         create: users.map(u => {
-          const myOrders = orders.filter(o => o.technicianId === u.id);
+          const myOrders = orders.filter(o =>
+            o.technicianId === u.id || o.assistants.some(a => a.userId === u.id)
+          );
           const orderCount = myOrders.length;
           let poolCommission = 0;
           const roles = u.role.split(",");
           if (roles.includes("TECHNICIAN") && techCount > 0) poolCommission = techPoolAmount / techCount;
           else if (roles.includes("ASSISTANT") && assistCount > 0) poolCommission = assistPoolAmount / assistCount;
-          return { userId: u.id, poolCommission, baseSalary: 0, totalAmount: poolCommission, orderCount };
+          const baseSalary = baseSalaryByUser.get(u.id) || 0;
+          return {
+            userId: u.id,
+            poolCommission,
+            baseSalary,
+            totalAmount: poolCommission + baseSalary,
+            orderCount,
+          };
         }),
       },
     },
     include: { items: { include: { user: { select: { id: true, name: true, role: true } } } } },
   });
+}
 
+export async function POST(req: NextRequest) {
+  const { month, year } = await req.json();
+  const run = await generateRun(month, year);
   return NextResponse.json(run);
 }

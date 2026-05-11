@@ -15,6 +15,7 @@ type OrderRow = {
   createdAt: string;
   completedAt?: string | null;
   technician: { name: string };
+  assistants?: { user: { id: string; name: string } }[];
   items: { id: string; price: number; service: { name: string } }[];
   chemicals: { product: { name: string }; amountG: number; totalCost: number }[];
   retailItems?: { id: string; quantity: number; price: number; retailProduct: { name: string } }[];
@@ -120,6 +121,7 @@ export default function HistoryPage() {
                 <th style={{ textAlign: "left", padding: "8px 12px" }}>เลขใบเสร็จ</th>
                 <th style={{ textAlign: "left", padding: "8px 12px" }}>ลูกค้า</th>
                 <th style={{ textAlign: "left", padding: "8px 12px" }}>ช่าง</th>
+                <th style={{ textAlign: "left", padding: "8px 12px" }}>ผู้ช่วยช่าง</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ยอดรวม</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>การชำระ</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>สถานะ</th>
@@ -145,6 +147,9 @@ export default function HistoryPage() {
                       {o.customerPhone && <div style={{ fontSize: "0.75rem", color: "#888" }}>{o.customerPhone}</div>}
                     </td>
                     <td style={{ padding: "8px 12px" }}>{o.technician.name}</td>
+                    <td style={{ padding: "8px 12px", color: o.assistants && o.assistants.length > 0 ? "#444" : "#bbb", fontSize: "0.85rem" }}>
+                      {o.assistants && o.assistants.length > 0 ? o.assistants.map(a => a.user.name).join(", ") : "-"}
+                    </td>
                     <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: o.status === "CANCELLED" ? "#aaa" : "var(--olive)" }}>
                       {o.status === "CANCELLED" ? <s>฿{o.total.toLocaleString()}</s> : `฿${o.total.toLocaleString()}`}
                     </td>
@@ -182,6 +187,12 @@ export default function HistoryPage() {
             <div style={{ marginBottom: "0.75rem" }}>
               <div><strong>ลูกค้า:</strong> {selected.customerName} {selected.customerPhone && `(${selected.customerPhone})`}</div>
               <div><strong>ช่าง:</strong> {selected.technician.name}</div>
+              <div>
+                <strong>ผู้ช่วยช่าง:</strong>{" "}
+                {selected.assistants && selected.assistants.length > 0
+                  ? selected.assistants.map(a => a.user.name).join(", ")
+                  : <span style={{ color: "#aaa" }}>—</span>}
+              </div>
               <div><strong>วันที่:</strong> {new Date(selected.completedAt || selected.createdAt).toLocaleString("th-TH")}</div>
               <div><strong>สถานะ:</strong> <span style={{ padding: "2px 10px", borderRadius: 12, background: STATUS_BG[selected.status], color: STATUS_COLOR[selected.status], fontSize: "0.8rem" }}>{STATUS_LABEL[selected.status]}</span></div>
             </div>
