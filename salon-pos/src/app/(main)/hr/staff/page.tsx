@@ -6,19 +6,25 @@ type User = { id: string; name: string; email: string; role: string; phone?: str
 
 const ROLE_ORDER = ["OWNER", "MANAGER", "CASHIER", "TECHNICIAN", "ASSISTANT"];
 const ROLES: Record<string, string> = {
-  OWNER: "👑 เจ้าของร้าน",
-  MANAGER: "👔 ผู้จัดการ",
-  CASHIER: "💵 แคชเชียร์",
-  TECHNICIAN: "✂️ ช่าง",
-  ASSISTANT: "🧴 ผู้ช่วยช่าง",
+  OWNER: "เจ้าของร้าน",
+  MANAGER: "ผู้จัดการ",
+  CASHIER: "แคชเชียร์",
+  TECHNICIAN: "ช่าง",
+  ASSISTANT: "ผู้ช่วยช่าง",
 };
+
+function rolePriority(role: string): number {
+  const roles = role.split(",");
+  const idxs = roles.map(r => ROLE_ORDER.indexOf(r)).map(i => (i === -1 ? 99 : i));
+  return Math.min(...idxs);
+}
 
 export default function StaffPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0, positionAllowance: 0 });
-  
+
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -30,7 +36,6 @@ export default function StaffPage() {
     const original = users.find(u => u.id === editingId);
     if (!original) return false;
 
-    // Normalize values for comparison
     const currentPhone = form.phone || "";
     const originalPhone = original.phone || "";
 
@@ -79,9 +84,7 @@ export default function StaffPage() {
     if (!targetUser) return;
     if (confirm(`คุณต้องการลบรายชื่อพนักงาน: ${targetUser.name} ใช่หรือไม่?`)) {
       try {
-        const res = await fetch(`/api/users/${id}?ownerPin=${ownerPinStr}`, {
-          method: "DELETE",
-        });
+        const res = await fetch(`/api/users/${id}?ownerPin=${ownerPinStr}`, { method: "DELETE" });
         if (res.ok) {
           setShowForm(false);
           fetch("/api/users").then(r => r.json()).then(setUsers);
@@ -116,14 +119,14 @@ export default function StaffPage() {
       } else {
         alert("รหัส PIN ไม่ถูกต้อง");
       }
-    } catch (err) {
+    } catch {
       alert("ไม่สามารถเชื่อมต่อระบบตรวจสอบ PIN ได้");
     }
   }
 
   async function handleSave() {
     if (!form.name || !form.email) { alert("กรุณากรอกชื่อและอีเมล"); return; }
-    
+
     try {
       if (editingId) {
         if (!ownerPinStr) { alert("กรุณาปลดล็อกด้วย Owner PIN ก่อน"); return; }
@@ -169,21 +172,6 @@ export default function StaffPage() {
     }
   }
 
-  const byRole = users.reduce<Record<string, User[]>>((acc, u) => {
-    const roles = u.role.split(",");
-    roles.forEach(r => {
-      if (!acc[r]) acc[r] = [];
-      acc[r].push(u);
-    });
-    return acc;
-  }, {});
-
-  const sortedRoles = Object.keys(byRole).sort((a, b) => {
-    const ia = ROLE_ORDER.indexOf(a);
-    const ib = ROLE_ORDER.indexOf(b);
-    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-  });
-
   const toggleRole = (r: string) => {
     const currentRoles = form.role.split(",").filter(Boolean);
     if (currentRoles.includes(r)) {
@@ -197,23 +185,29 @@ export default function StaffPage() {
     }
   };
 
+  const sortedUsers = users.slice().sort((a, b) => {
+    const pa = rolePriority(a.role);
+    const pb = rolePriority(b.role);
+    if (pa !== pb) return pa - pb;
+    return a.name.localeCompare(b.name, "th");
+  });
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>👤 พนักงาน</h1>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>พนักงาน</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          {!isUnlocked && (
+          {!isUnlocked ? (
             <button className="btn-secondary" onClick={() => setShowUnlockModal(true)}>
-              🔒 ปลดล็อกสิทธิ์แก้ไข
+              ปลดล็อกสิทธิ์แก้ไข
             </button>
-          )}
-          {isUnlocked && (
+          ) : (
             <button className="btn-secondary" onClick={() => { setIsUnlocked(false); setOwnerPinStr(""); }}>
-              🔓 ล็อกสิทธิ์แก้ไข
+              ล็อกสิทธิ์แก้ไข
             </button>
           )}
-          <button 
-            className="btn-primary" 
+          <button
+            className="btn-primary"
             onClick={handleAddClick}
             style={{ opacity: isUnlocked ? 1 : 0.6 }}
           >
@@ -222,60 +216,73 @@ export default function StaffPage() {
         </div>
       </div>
 
-      {sortedRoles.map((role) => {
-        const staff = byRole[role];
-        return (
-        <div key={role} style={{ marginBottom: "1.5rem" }}>
-          <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--olive)", marginBottom: "0.75rem" }}>
-            {ROLES[role] || role} ({staff.length} คน)
-          </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "0.75rem" }}>
-            {staff.map(u => (
-              <div key={u.id} className="card" style={{ position: "relative" }}>
+      <div className="card">
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+          <thead>
+            <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
+              <th style={{ textAlign: "left", padding: "8px 12px" }}>ชื่อ</th>
+              <th style={{ textAlign: "left", padding: "8px 12px" }}>ตำแหน่ง</th>
+              <th style={{ textAlign: "left", padding: "8px 12px" }}>อีเมล</th>
+              <th style={{ textAlign: "left", padding: "8px 12px" }}>เบอร์โทร</th>
+              <th style={{ textAlign: "right", padding: "8px 12px" }}>เงินเดือนพื้นฐาน</th>
+              <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าตำแหน่ง</th>
+              {isUnlocked && <th style={{ textAlign: "center", padding: "8px 12px", width: 80 }}>จัดการ</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedUsers.length === 0 ? (
+              <tr><td colSpan={isUnlocked ? 7 : 6} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มีพนักงาน</td></tr>
+            ) : sortedUsers.map(u => (
+              <tr key={u.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                <td style={{ padding: "8px 12px", fontWeight: 500 }}>{u.name}</td>
+                <td style={{ padding: "8px 12px", color: "#666" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {u.role.split(",").map(r => (
+                      <span key={r} style={{ fontSize: "0.75rem", background: "#f5f5f5", padding: "2px 8px", borderRadius: 8 }}>
+                        {ROLES[r] || r}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+                <td style={{ padding: "8px 12px", color: "#666", fontSize: "0.8rem" }}>{u.email}</td>
+                <td style={{ padding: "8px 12px", color: "#666", fontSize: "0.8rem" }}>{u.phone || "-"}</td>
+                <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: (u.baseSalary || 0) > 0 ? "var(--olive)" : "#aaa" }}>
+                  ฿{(u.baseSalary || 0).toLocaleString()}
+                </td>
+                <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: (u.positionAllowance || 0) > 0 ? "var(--olive)" : "#aaa" }}>
+                  ฿{(u.positionAllowance || 0).toLocaleString()}
+                </td>
                 {isUnlocked && (
-                  <button 
-                    onClick={() => handleEditClick(u)}
-                    style={{ position: "absolute", top: 8, right: 8, background: "none", border: "none", cursor: "pointer", fontSize: "1.2rem" }}
-                    title="แก้ไข"
-                  >
-                    ✏️
-                  </button>
+                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                    <button
+                      onClick={() => handleEditClick(u)}
+                      style={{
+                        background: "var(--olive)", color: "white", border: "none",
+                        borderRadius: 6, padding: "4px 12px", cursor: "pointer", fontSize: "0.75rem",
+                      }}
+                    >
+                      แก้ไข
+                    </button>
+                  </td>
                 )}
-                <div style={{ fontWeight: 700, marginBottom: 4 }}>{u.name}</div>
-                <div style={{ fontSize: "0.8rem", color: "#888" }}>{u.email}</div>
-                {u.phone && <div style={{ fontSize: "0.8rem", color: "#888" }}>📞 {u.phone}</div>}
-                <div style={{ fontSize: "0.8rem", marginTop: 4, color: (u.baseSalary || 0) > 0 ? "var(--olive)" : "#aaa", fontWeight: 600 }}>
-                  💰 เงินเดือน: ฿{(u.baseSalary || 0).toLocaleString()}
-                </div>
-                <div style={{ fontSize: "0.8rem", color: (u.positionAllowance || 0) > 0 ? "var(--olive)" : "#aaa", fontWeight: 600 }}>
-                  🎖️ ค่าตำแหน่ง: ฿{(u.positionAllowance || 0).toLocaleString()}
-                </div>
-                <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                  {u.role.split(",").map(r => (
-                    <span key={r} style={{ fontSize: "0.75rem", background: "#f5f5f5", padding: "2px 8px", borderRadius: 8, color: "#666" }}>
-                      {ROLES[r] || r}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              </tr>
             ))}
-          </div>
-        </div>
-        );
-      })}
+          </tbody>
+        </table>
+      </div>
 
       {showUnlockModal && (
         <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: 300 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>🔒 ปลดล็อกสิทธิ์แก้ไข</h3>
+          <div className="modal" style={{ maxWidth: 320 }}>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ปลดล็อกสิทธิ์แก้ไข</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div>
                 <label className="label">รหัส Owner PIN</label>
-                <input 
-                  type="password" 
-                  placeholder="ใส่รหัส" 
-                  className="input" 
-                  value={unlockPin} 
+                <input
+                  type="password"
+                  placeholder="ใส่รหัส"
+                  className="input"
+                  value={unlockPin}
                   onChange={e => setUnlockPin(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleUnlock()}
                   autoFocus
@@ -293,18 +300,12 @@ export default function StaffPage() {
       {showForm && (
         <div className="modal-overlay">
           <div className="modal" style={{ position: "relative" }}>
-            <button 
+            <button
               onClick={handleClose}
               style={{
-                position: "absolute",
-                top: "1rem",
-                right: "1rem",
-                background: "none",
-                border: "none",
-                fontSize: "1.5rem",
-                cursor: "pointer",
-                color: "#999",
-                lineHeight: 1
+                position: "absolute", top: "1rem", right: "1rem",
+                background: "none", border: "none", fontSize: "1.5rem",
+                cursor: "pointer", color: "#999", lineHeight: 1,
               }}
             >
               ×
@@ -325,7 +326,7 @@ export default function StaffPage() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                 <div>
-                  <label className="label">💰 เงินเดือนพื้นฐาน (บาท)</label>
+                  <label className="label">เงินเดือนพื้นฐาน (บาท)</label>
                   <input
                     type="number"
                     className="input"
@@ -337,7 +338,7 @@ export default function StaffPage() {
                   />
                 </div>
                 <div>
-                  <label className="label">🎖️ ค่าตำแหน่ง (บาท)</label>
+                  <label className="label">ค่าตำแหน่ง (บาท)</label>
                   <input
                     type="number"
                     className="input"
@@ -357,10 +358,10 @@ export default function StaffPage() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", padding: "0.5rem", background: "#f9f9f9", borderRadius: 8 }}>
                   {Object.entries(ROLES).map(([k, v]) => (
                     <label key={k} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", cursor: "pointer" }}>
-                      <input 
-                        type="checkbox" 
-                        checked={form.role.split(",").includes(k)} 
-                        onChange={() => toggleRole(k)} 
+                      <input
+                        type="checkbox"
+                        checked={form.role.split(",").includes(k)}
+                        onChange={() => toggleRole(k)}
                       />
                       {v}
                     </label>
@@ -375,9 +376,9 @@ export default function StaffPage() {
               )}
             </div>
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
-              <button 
-                className="btn-primary" 
-                style={{ flex: 1, opacity: isChanged() ? 1 : 0.5, cursor: isChanged() ? "pointer" : "not-allowed" }} 
+              <button
+                className="btn-primary"
+                style={{ flex: 1, opacity: isChanged() ? 1 : 0.5, cursor: isChanged() ? "pointer" : "not-allowed" }}
                 onClick={handleSave}
                 disabled={!isChanged()}
               >
@@ -401,16 +402,16 @@ export default function StaffPage() {
               ข้อมูลที่คุณแก้ไขยังไม่ได้บันทึก ต้องการยกเลิกการแก้ไขใช่หรือไม่?
             </p>
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button 
-                className="btn-secondary" 
-                style={{ flex: 1, background: "#dc3545", color: "white", border: "none" }} 
+              <button
+                className="btn-secondary"
+                style={{ flex: 1, background: "#dc3545", color: "white", border: "none" }}
                 onClick={() => { setShowExitConfirm(false); setShowForm(false); }}
               >
                 ใช่, ยกเลิก
               </button>
-              <button 
-                className="btn-primary" 
-                style={{ flex: 1 }} 
+              <button
+                className="btn-primary"
+                style={{ flex: 1 }}
                 onClick={() => setShowExitConfirm(false)}
               >
                 ไม่, แก้ไขต่อ
