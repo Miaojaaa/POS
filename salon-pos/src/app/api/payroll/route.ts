@@ -12,10 +12,36 @@ export async function GET(req: NextRequest) {
     include: { items: { include: { user: { select: { id: true, name: true, role: true } } } } },
   });
 
-  // If no run yet, OR run is still DRAFT, regenerate from current PAID transactions
-  // and User.baseSalary. Once CONFIRMED, the run is frozen.
   if (!run || run.status === "DRAFT") {
+    // DRAFT (or first visit): full regen — pulls latest PAID orders + User salary/allowance
     run = await generatePayrollRun(month, year);
+  } else {
+    // CONFIRMED: keep order counts + commissions frozen, but live-sync baseSalary and
+    // positionAllowance from the User table so changes on the staff page reflect here
+    // immediately. The Expense entry in /reports/expenses stays frozen until the user
+    // re-confirms.
+    const userIds = run.items.map(i => i.userId);
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, baseSalary: true, positionAllowance: true },
+    });
+    const userMap = new Map(users.map(u => [u.id, u]));
+    for (const it of run.items) {
+      const u = userMap.get(it.userId);
+      if (!u) continue;
+      const newBase = u.baseSalary ?? 0;
+      const newAllow = u.positionAllowance ?? 0;
+      if (it.baseSalary !== newBase || it.positionAllowance !== newAllow) {
+        const newTotal = newBase + it.poolCommission + it.retailCommission;
+        await prisma.payrollItem.update({
+          where: { id: it.id },
+          data: { baseSalary: newBase, positionAllowance: newAllow, totalAmount: newTotal },
+        });
+        it.baseSalary = newBase;
+        it.positionAllowance = newAllow;
+        it.totalAmount = newTotal;
+      }
+    }
   }
 
   return NextResponse.json(run);

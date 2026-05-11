@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 
 type PayrollItem = {
@@ -60,15 +60,32 @@ export default function PayrollPage() {
   const [txOrders, setTxOrders] = useState<TxOrder[]>([]);
   const [txLoading, setTxLoading] = useState(false);
 
-  async function load() {
-    setLoading(true);
-    const res = await fetch(`/api/payroll?month=${month}&year=${year}`);
-    const data = await res.json();
-    setRun(data);
-    setLoading(false);
-  }
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const res = await fetch(`/api/payroll?month=${month}&year=${year}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setRun(data);
+    } catch {
+      // transient network error — ignore
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [month, year]);
 
-  useEffect(() => { load(); }, [month, year]);
+  useEffect(() => {
+    load();
+    // Auto-refresh when the user returns to this tab (e.g. after editing staff)
+    const onFocus = () => load(true);
+    window.addEventListener("focus", onFocus);
+    // Poll every 8s so changes from another window/tab show up automatically
+    const interval = setInterval(() => load(true), 8000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      clearInterval(interval);
+    };
+  }, [load]);
 
   async function openTx(item: PayrollItem) {
     setTxUser(item);
@@ -129,6 +146,7 @@ export default function PayrollPage() {
           <select className="input" style={{ width: 100 }} value={year} onChange={e => setYear(Number(e.target.value))}>
             {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y + 543}</option>)}
           </select>
+          <button className="btn-secondary" onClick={() => load()} title="ดึงข้อมูลล่าสุด">🔄 รีเฟรช</button>
         </div>
       </div>
 
@@ -156,8 +174,8 @@ export default function PayrollPage() {
             <Link href="/pos/history" style={{ color: "var(--olive)", textDecoration: "underline" }}>ดูประวัติ Transaction</Link>
             <span style={{ marginLeft: "auto", color: "#888" }}>
               {isConfirmed
-                ? "ล็อกแล้ว — กด \"🔁 ยืนยันใหม่\" เพื่อดึงข้อมูลพนักงาน/ออร์เดอร์ล่าสุด"
-                : "ตัวเลขอัปเดตอัตโนมัติทุกครั้งที่เปิดหน้านี้"}
+                ? "ล็อกแล้ว — กด \"✓ ยืนยันข้อมูล\" เพื่อดึงข้อมูลพนักงาน/ออร์เดอร์ล่าสุด"
+                : "อัปเดตอัตโนมัติทุก 8 วินาที"}
             </span>
           </div>
 
