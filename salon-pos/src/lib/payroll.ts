@@ -50,10 +50,12 @@ export async function generatePayrollRun(month: number, year: number) {
           if (roles.includes("TECHNICIAN") && techCount > 0) poolCommission = techPoolAmount / techCount;
           else if (roles.includes("ASSISTANT") && assistCount > 0) poolCommission = assistPoolAmount / assistCount;
           const baseSalary = u.baseSalary ?? 0;
+          const positionAllowance = u.positionAllowance ?? 0;
           return {
             userId: u.id,
             poolCommission,
             baseSalary,
+            positionAllowance,
             totalAmount: poolCommission + baseSalary,
             orderCount,
           };

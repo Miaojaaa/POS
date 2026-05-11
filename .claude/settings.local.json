@@ -29,7 +29,9 @@
       "Bash(stat -c '%y %s %n' dev.db 2>&1)",
       "Bash(find . -name \"dev.db\" 2>&1 | head; ls -la c/ 2>&1 | head; find /c 2>&1 | head -5)",
       "Read(//c/c/**)",
-      "PowerShell($env:DATABASE_URL=\"file:$\\(Get-Location\\)\\\\dev.db\"; npx prisma db push)"
+      "PowerShell($env:DATABASE_URL=\"file:$\\(Get-Location\\)\\\\dev.db\"; npx prisma db push)",
+      "PowerShell(Set-Location salon-pos; $env:DATABASE_URL=\"file:$\\(Get-Location\\)\\\\dev.db\"; npx prisma db push; npx prisma generate)",
+      "Bash(node seed-allowance.mjs)"
     ],
     "additionalDirectories": [
       "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\api\\payroll\\items",

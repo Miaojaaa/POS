@@ -5,7 +5,7 @@ import { verifyPin } from "@/lib/auth";
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
-    const { name, email, phone, role, baseSalary, ownerPin } = await req.json();
+    const { name, email, phone, role, baseSalary, positionAllowance, ownerPin } = await req.json();
 
     if (!ownerPin) return NextResponse.json({ error: "ต้องใช้ Owner PIN" }, { status: 400 });
 
@@ -20,21 +20,24 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         phone: phone || null,
         role,
         ...(baseSalary != null ? { baseSalary: Number(baseSalary) } : {}),
+        ...(positionAllowance != null ? { positionAllowance: Number(positionAllowance) } : {}),
       },
     });
 
-    // Propagate new baseSalary into any existing DRAFT PayrollItems for this user
-    // (CONFIRMED runs stay frozen).
-    if (baseSalary != null) {
-      const newBase = Number(baseSalary);
+    // Propagate new baseSalary / positionAllowance into any existing DRAFT
+    // PayrollItems for this user. CONFIRMED runs stay frozen.
+    if (baseSalary != null || positionAllowance != null) {
       const draftItems = await prisma.payrollItem.findMany({
         where: { userId: id, payrollRun: { status: "DRAFT" } },
       });
       for (const it of draftItems) {
+        const newBase = baseSalary != null ? Number(baseSalary) : it.baseSalary;
+        const newAllow = positionAllowance != null ? Number(positionAllowance) : it.positionAllowance;
         await prisma.payrollItem.update({
           where: { id: it.id },
           data: {
             baseSalary: newBase,
+            positionAllowance: newAllow,
             totalAmount: newBase + it.poolCommission + it.retailCommission,
           },
         });

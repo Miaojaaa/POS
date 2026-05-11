@@ -7,6 +7,7 @@ type PayrollItem = {
   id: string;
   userId: string;
   baseSalary: number;
+  positionAllowance: number;
   poolCommission: number;
   retailCommission: number;
   totalAmount: number;
@@ -38,13 +39,6 @@ function formatReceiptNo(seq: number, completedAt: string | Date) {
 }
 
 const ROLES: Record<string, string> = { OWNER: "เจ้าของ", MANAGER: "ผู้จัดการ", CASHIER: "แคชเชียร์", TECHNICIAN: "ช่าง", ASSISTANT: "ผู้ช่วย" };
-const POSITION_ALLOWANCES: Record<string, number> = {
-  OWNER: 15000,
-  MANAGER: 8000,
-  CASHIER: 2000,
-  TECHNICIAN: 3000,
-  ASSISTANT: 1500,
-};
 
 export default function PayrollPage() {
   const today = new Date();
@@ -108,13 +102,8 @@ export default function PayrollPage() {
     setConfirming(false);
   }
 
-  const getAllowance = (roleStr: string) => {
-    const roles = roleStr.split(",");
-    return Math.max(0, ...roles.map(r => POSITION_ALLOWANCES[r] || 0));
-  };
-
   const totalBase = run?.items.reduce((s, i) => s + i.baseSalary, 0) ?? 0;
-  const totalAllowances = run?.items.reduce((s, i) => s + getAllowance(i.user.role), 0) ?? 0;
+  const totalAllowances = run?.items.reduce((s, i) => s + (i.positionAllowance || 0), 0) ?? 0;
   const totalPayroll = (run?.items.reduce((s, i) => s + i.totalAmount, 0) ?? 0) + totalAllowances;
   const isConfirmed = run?.status === "CONFIRMED";
 
@@ -190,7 +179,7 @@ export default function PayrollPage() {
                 {run.items.length === 0 ? (
                   <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มีพนักงาน — กรุณาเพิ่มพนักงานก่อน</td></tr>
                 ) : run.items.slice().sort((a, b) => b.totalAmount - a.totalAmount).map(item => {
-                  const allowance = getAllowance(item.user.role);
+                  const allowance = item.positionAllowance || 0;
                   const rowTotal = item.totalAmount + allowance;
 
                   return (

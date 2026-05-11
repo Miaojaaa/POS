@@ -3,19 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { verifyPin } from "@/lib/auth";
 import { generatePayrollRun } from "@/lib/payroll";
 
-const POSITION_ALLOWANCES: Record<string, number> = {
-  OWNER: 15000,
-  MANAGER: 8000,
-  CASHIER: 2000,
-  TECHNICIAN: 3000,
-  ASSISTANT: 1500,
-};
-
-function getAllowance(roleStr: string): number {
-  const roles = roleStr.split(",");
-  return Math.max(0, ...roles.map(r => POSITION_ALLOWANCES[r] || 0));
-}
-
 export async function POST(req: NextRequest) {
   const { runId, pin } = await req.json();
   if (!runId || !pin) return NextResponse.json({ ok: false, error: "Missing runId/pin" }, { status: 400 });
@@ -30,7 +17,7 @@ export async function POST(req: NextRequest) {
   // This makes "ยืนยัน / ยืนยันใหม่" pick up the latest staff page edits.
   const run = await generatePayrollRun(existing.month, existing.year);
 
-  const totalAllowances = run.items.reduce((s, i) => s + getAllowance(i.user.role), 0);
+  const totalAllowances = run.items.reduce((s, i) => s + (i.positionAllowance || 0), 0);
   const totalItems = run.items.reduce((s, i) => s + i.totalAmount, 0);
   const totalPayroll = totalItems + totalAllowances;
 

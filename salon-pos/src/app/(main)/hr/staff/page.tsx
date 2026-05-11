@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type User = { id: string; name: string; email: string; role: string; phone?: string; baseSalary?: number; isActive: boolean };
+type User = { id: string; name: string; email: string; role: string; phone?: string; baseSalary?: number; positionAllowance?: number; isActive: boolean };
 
 const ROLE_ORDER = ["OWNER", "MANAGER", "CASHIER", "TECHNICIAN", "ASSISTANT"];
 const ROLES: Record<string, string> = {
@@ -17,7 +17,7 @@ export default function StaffPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0 });
+  const [form, setForm] = useState({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0, positionAllowance: 0 });
   
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -39,7 +39,8 @@ export default function StaffPage() {
       form.email !== original.email ||
       currentPhone !== originalPhone ||
       form.role !== original.role ||
-      Number(form.baseSalary) !== Number(original.baseSalary || 0)
+      Number(form.baseSalary) !== Number(original.baseSalary || 0) ||
+      Number(form.positionAllowance) !== Number(original.positionAllowance || 0)
     );
   };
 
@@ -62,13 +63,13 @@ export default function StaffPage() {
       return;
     }
     setEditingId(null);
-    setForm({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0 });
+    setForm({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0, positionAllowance: 0 });
     setShowForm(true);
   }
 
   function handleEditClick(u: User) {
     setEditingId(u.id);
-    setForm({ name: u.name, email: u.email, password: "", role: u.role, phone: u.phone || "", baseSalary: u.baseSalary || 0 });
+    setForm({ name: u.name, email: u.email, password: "", role: u.role, phone: u.phone || "", baseSalary: u.baseSalary || 0, positionAllowance: u.positionAllowance || 0 });
     setShowForm(true);
   }
 
@@ -246,6 +247,9 @@ export default function StaffPage() {
                 <div style={{ fontSize: "0.8rem", marginTop: 4, color: (u.baseSalary || 0) > 0 ? "var(--olive)" : "#aaa", fontWeight: 600 }}>
                   💰 เงินเดือน: ฿{(u.baseSalary || 0).toLocaleString()}
                 </div>
+                <div style={{ fontSize: "0.8rem", color: (u.positionAllowance || 0) > 0 ? "var(--olive)" : "#aaa", fontWeight: 600 }}>
+                  🎖️ ค่าตำแหน่ง: ฿{(u.positionAllowance || 0).toLocaleString()}
+                </div>
                 <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: "4px" }}>
                   {u.role.split(",").map(r => (
                     <span key={r} style={{ fontSize: "0.75rem", background: "#f5f5f5", padding: "2px 8px", borderRadius: 8, color: "#666" }}>
@@ -319,18 +323,32 @@ export default function StaffPage() {
                 <label className="label">เบอร์โทร</label>
                 <input className="input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
               </div>
-              <div>
-                <label className="label">💰 เงินเดือนพื้นฐาน (บาท)</label>
-                <input
-                  type="number"
-                  className="input"
-                  min={0}
-                  step={100}
-                  placeholder="0"
-                  value={form.baseSalary || ""}
-                  onChange={e => setForm({ ...form, baseSalary: Number(e.target.value) || 0 })}
-                />
-                <div style={{ fontSize: "0.75rem", color: "#888", marginTop: 2 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                <div>
+                  <label className="label">💰 เงินเดือนพื้นฐาน (บาท)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    min={0}
+                    step={100}
+                    placeholder="0"
+                    value={form.baseSalary || ""}
+                    onChange={e => setForm({ ...form, baseSalary: Number(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <label className="label">🎖️ ค่าตำแหน่ง (บาท)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    min={0}
+                    step={100}
+                    placeholder="0"
+                    value={form.positionAllowance || ""}
+                    onChange={e => setForm({ ...form, positionAllowance: Number(e.target.value) || 0 })}
+                  />
+                </div>
+                <div style={{ gridColumn: "1 / -1", fontSize: "0.75rem", color: "#888", marginTop: -2 }}>
                   จะแสดงในหน้า เงินเดือน &amp; ค่าคอม โดยอัตโนมัติ
                 </div>
               </div>

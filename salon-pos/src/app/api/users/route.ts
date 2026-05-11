@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 export async function GET() {
   const users = await prisma.user.findMany({
     where: { isActive: true },
-    select: { id: true, name: true, role: true, email: true, phone: true, baseSalary: true, isActive: true },
+    select: { id: true, name: true, role: true, email: true, phone: true, baseSalary: true, positionAllowance: true, isActive: true },
     orderBy: { name: "asc" },
   });
   return NextResponse.json(users);
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
         role: body.role,
         phone: body.phone || null,
         baseSalary: body.baseSalary != null ? Number(body.baseSalary) : 0,
+        positionAllowance: body.positionAllowance != null ? Number(body.positionAllowance) : 0,
       },
     });
     return NextResponse.json({ id: user.id, name: user.name, role: user.role });
