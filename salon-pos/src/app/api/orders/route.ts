@@ -2,33 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const status = searchParams.get("status");
-  const startDate = searchParams.get("startDate");
-  const endDate = searchParams.get("endDate");
+  try {
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get("status");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
 
-  const where: any = {};
-  if (status) {
-    where.status = { in: status.split(",") };
-  }
-  if (startDate || endDate) {
-    where.completedAt = {};
-    if (startDate) where.completedAt.gte = new Date(startDate);
-    if (endDate) where.completedAt.lte = new Date(endDate);
-  }
+    const where: any = {};
+    if (status) {
+      where.status = { in: status.split(",") };
+    }
+    if (startDate || endDate) {
+      where.completedAt = {};
+      if (startDate) where.completedAt.gte = new Date(startDate);
+      if (endDate) where.completedAt.lte = new Date(endDate);
+    }
 
-  const orders = await prisma.order.findMany({
-    where,
-    include: {
-      technician: { select: { id: true, name: true } },
-      assistants: { include: { user: { select: { id: true, name: true } } } },
-      items: { include: { service: true } },
-      chemicals: { include: { product: true } },
-      payments: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json(orders);
+    const orders = await prisma.order.findMany({
+      where,
+      include: {
+        technician: { select: { id: true, name: true } },
+        assistants: { include: { user: { select: { id: true, name: true } } } },
+        items: { include: { service: true } },
+        chemicals: { include: { product: true } },
+        payments: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(orders);
+  } catch (err) {
+    console.error("GET orders error:", err);
+    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {

@@ -30,6 +30,19 @@ export default function KPIPage() {
         fetch("/api/users"),
         fetch(`/api/orders?status=DONE,PAID&startDate=${startOfMonth}&endDate=${endOfMonth}`),
       ]);
+
+      if (!usersRes.ok || !ordersRes.ok) {
+        const usersText = await usersRes.text();
+        const ordersText = await ordersRes.text();
+        console.error("Fetch failed:", { 
+          usersStatus: usersRes.status, 
+          usersText,
+          ordersStatus: ordersRes.status,
+          ordersText
+        });
+        throw new Error(`Failed to fetch data: Users ${usersRes.status}, Orders ${ordersRes.status}`);
+      }
+
       const users = await usersRes.json();
       const orders = await ordersRes.json();
 
