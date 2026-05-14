@@ -4,6 +4,15 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type Service = { id: string; name: string; price: number; duration: number; category: { name: string } };
+
+type ServiceGroup = "HAIR" | "NAIL" | "SPA" | "OTHER";
+function classifyCategory(name: string | undefined | null): ServiceGroup {
+  if (!name) return "OTHER";
+  if (/เล็บ|มือ|เท้า|ทาสี|งานต่อ|งานถอด|งานเทคนิค/.test(name)) return "NAIL";
+  if (/ผม|ตัด|สระ|ยืด|ดัด|ทรีทเมนท์/.test(name)) return "HAIR";
+  if (/สปา/.test(name)) return "SPA";
+  return "OTHER";
+}
 type User = { id: string; name: string; role: string };
 type Product = { id: string; name: string; unitVolumeG: number; costPerUnit: number };
 type CustomerDetail = {
@@ -61,6 +70,9 @@ export default function NewOrderPage() {
 
   // Alert modal
   const [alertMsg, setAlertMsg] = useState<string | null>(null);
+
+  // Service category quick filter
+  const [serviceGroupFilter, setServiceGroupFilter] = useState<"ALL" | ServiceGroup>("ALL");
 
   // PIN modal for price editing
   const [showPinModal, setShowPinModal] = useState(false);
@@ -236,11 +248,19 @@ export default function NewOrderPage() {
   const chemCost = selectedChems.reduce((s, c) => s + c.totalCost, 0);
   const grandTotal = subtotal + retailSubtotal;
   const servicesByCategory = services.reduce<Record<string, Service[]>>((acc, svc) => {
+    if (serviceGroupFilter !== "ALL" && classifyCategory(svc.category.name) !== serviceGroupFilter) return acc;
     const cat = svc.category.name;
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(svc);
     return acc;
   }, {});
+  const groupCounts: Record<"ALL" | ServiceGroup, number> = {
+    ALL: services.length,
+    HAIR: services.filter(s => classifyCategory(s.category.name) === "HAIR").length,
+    NAIL: services.filter(s => classifyCategory(s.category.name) === "NAIL").length,
+    SPA: services.filter(s => classifyCategory(s.category.name) === "SPA").length,
+    OTHER: services.filter(s => classifyCategory(s.category.name) === "OTHER").length,
+  };
 
   const tagStyle = (primary: boolean): React.CSSProperties => ({
     display: "flex", alignItems: "center", gap: 4,
@@ -540,7 +560,36 @@ export default function NewOrderPage() {
         {/* Right: Services + Summary */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div className="card">
-            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>💇 เลือกบริการ</h3>
+            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>💇 เลือกบริการ</h3>
+            <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+              {([
+                { key: "ALL", label: "ทั้งหมด", emoji: "📋" },
+                { key: "HAIR", label: "ผม", emoji: "💇" },
+                { key: "NAIL", label: "เล็บ", emoji: "💅" },
+                { key: "SPA", label: "สปา", emoji: "🧖" },
+                { key: "OTHER", label: "อื่นๆ", emoji: "✨" },
+              ] as const).map(g => {
+                const active = serviceGroupFilter === g.key;
+                const count = groupCounts[g.key];
+                if (count === 0 && g.key !== "ALL") return null;
+                return (
+                  <button
+                    key={g.key}
+                    onClick={() => setServiceGroupFilter(g.key)}
+                    style={{
+                      padding: "5px 12px", borderRadius: 18,
+                      border: `2px solid ${active ? "var(--olive)" : "var(--beige-dark)"}`,
+                      background: active ? "var(--olive)" : "white",
+                      color: active ? "white" : "var(--text-dark, #333)",
+                      cursor: "pointer", fontSize: "0.8rem",
+                      fontWeight: active ? 700 : 500,
+                    }}
+                  >
+                    {g.emoji} {g.label} <span style={{ opacity: 0.7, fontSize: "0.75rem" }}>({count})</span>
+                  </button>
+                );
+              })}
+            </div>
             {Object.entries(servicesByCategory).map(([cat, svcs]) => (
               <div key={cat} style={{ marginBottom: "1rem" }}>
                 <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#666", marginBottom: "0.5rem" }}>{cat}</div>

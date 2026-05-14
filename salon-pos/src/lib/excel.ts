@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 export type OrderForExport = {
   id: string;
   receiptNumber?: number | null;
+  receiptType?: string | null;
   completedAt?: string | null;
   createdAt: string;
   customerName: string;
@@ -29,12 +30,13 @@ const METHOD_LABEL: Record<string, string> = {
 };
 
 function pad4(n: number) { return String(n).padStart(4, "0"); }
-function formatReceiptNo(seq: number, completedAt: string | Date | null | undefined) {
-  if (!completedAt || !seq) return "-";
+function formatReceiptNo(seq: number, type: string | null | undefined, completedAt: string | Date | null | undefined) {
+  if (!completedAt || !seq || !type) return "ยังไม่พิมพ์";
   const d = new Date(completedAt);
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yyyy = String(d.getFullYear());
+  if (type === "FULL") return `LNDSFULL${yyyy}${mm}${dd}${pad4(seq)}`;
   return `LNDS${pad4(seq)}${dd}${mm}${yyyy}`;
 }
 
@@ -65,7 +67,7 @@ export function exportTransactionsXlsx(
 
     rows.push([
       dateStr,
-      formatReceiptNo(o.receiptNumber || 0, refDate),
+      formatReceiptNo(o.receiptNumber || 0, o.receiptType, refDate),
       o.customerName,
       o.customerPhone || "",
       o.technician.name,
