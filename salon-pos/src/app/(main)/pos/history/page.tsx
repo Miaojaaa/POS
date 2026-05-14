@@ -1,45 +1,26 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { buildReceiptHtml, type ReceiptData as PrintableReceipt } from "@/lib/receipt";
 
 type OrderRow = {
   id: string;
   receiptNumber?: number | null;
-  receiptType?: string | null;
   customerName: string;
   customerPhone?: string;
   status: string;
   subtotal: number;
   retailSubtotal: number;
-  serviceCharge: number;
-  vat: number;
-  roundingAdjustment: number;
   total: number;
   discountAmount: number;
   createdAt: string;
   completedAt?: string | null;
   technician: { name: string };
   assistants?: { user: { id: string; name: string } }[];
-  items: { id: string; price: number; service: { name: string; category?: { name: string } | null } }[];
+  items: { id: string; price: number; service: { name: string } }[];
   chemicals: { product: { name: string }; amountG: number; totalCost: number }[];
   retailItems?: { id: string; quantity: number; price: number; retailProduct: { name: string } }[];
   payments: { method: string; amount: number }[];
 };
-
-// Group categories into broad service types so the history filter pills stay simple.
-// NAIL is matched first so "สปามือ / เท้า" lands under NAIL (not SPA).
-type ServiceGroup = "HAIR" | "NAIL" | "SPA" | "OTHER";
-function classifyCategory(name: string | undefined | null): ServiceGroup {
-  if (!name) return "OTHER";
-  if (/เล็บ|มือ|เท้า|ทาสี|งานต่อ|งานถอด|งานเทคนิค/.test(name)) return "NAIL";
-  if (/ผม|ตัด|สระ|ยืด|ดัด|ทรีทเมนท์/.test(name)) return "HAIR";
-  if (/สปา/.test(name)) return "SPA";
-  return "OTHER";
-}
-function orderGroups(o: { items: { service: { category?: { name: string } | null } }[] }): Set<ServiceGroup> {
-  return new Set(o.items.map(it => classifyCategory(it.service.category?.name)));
-}
 
 const STATUS_LABEL: Record<string, string> = { PAID: "ชำระแล้ว", CANCELLED: "ยกเลิก" };
 const STATUS_BG: Record<string, string> = { PAID: "#D4EDDA", CANCELLED: "#F8D7DA" };
@@ -47,13 +28,11 @@ const STATUS_COLOR: Record<string, string> = { PAID: "#155724", CANCELLED: "#721
 const METHOD_LABEL: Record<string, string> = { CASH: "เงินสด", TRANSFER: "โอน", CREDIT_CARD: "บัตร", WALLET: "Wallet" };
 
 function pad4(n: number) { return String(n).padStart(4, "0"); }
-function formatReceiptNo(seq: number, type: string | null | undefined, completedAt: string | Date) {
-  if (!type) return null;
+function formatReceiptNo(seq: number, completedAt: string | Date) {
   const d = new Date(completedAt);
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yyyy = String(d.getFullYear());
-  if (type === "FULL") return `LNDSFULL${yyyy}${mm}${dd}${pad4(seq)}`;
   return `LNDS${pad4(seq)}${dd}${mm}${yyyy}`;
 }
 
@@ -62,116 +41,9 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PAID" | "CANCELLED">("ALL");
-  const [groupFilter, setGroupFilter] = useState<"ALL" | ServiceGroup>("ALL");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [selected, setSelected] = useState<OrderRow | null>(null);
-
-  /* reprint flow: pick mode → enter manager PIN → (if FULL) enter customer info → print */
-  const [reprintMode, setReprintMode] = useState<"SHORT" | "FULL" | null>(null);
-  const [pin, setPin] = useState("");
-  const [pinError, setPinError] = useState("");
-  const [pinVerified, setPinVerified] = useState(false);
-  const [fullCustomerName, setFullCustomerName] = useState("");
-  const [fullCustomerAddress, setFullCustomerAddress] = useState("");
-  const [fullCustomerTaxId, setFullCustomerTaxId] = useState("");
-  const [reprintError, setReprintError] = useState("");
-
-  function startReprint(mode: "SHORT" | "FULL") {
-    setReprintMode(mode);
-    setPin("");
-    setPinError("");
-    setPinVerified(false);
-    setReprintError("");
-    setFullCustomerName(selected?.customerName ?? "");
-    setFullCustomerAddress("");
-    setFullCustomerTaxId("");
-  }
-
-  function cancelReprint() {
-    setReprintMode(null);
-    setPin("");
-    setPinError("");
-    setPinVerified(false);
-    setReprintError("");
-  }
-
-  async function verifyManagerPin() {
-    const res = await fetch("/api/verify-pin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "MANAGER", pin }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      setPinVerified(true);
-      setPinError("");
-    } else {
-      setPinError("PIN ไม่ถูกต้อง (ต้องเป็น Manager หรือ Owner)");
-    }
-  }
-
-  async function doReprint() {
-    if (!selected || !reprintMode) return;
-    if (reprintMode === "FULL") {
-      if (!fullCustomerName.trim()) { setReprintError("กรุณากรอกชื่อผู้ซื้อ"); return; }
-      if (!fullCustomerAddress.trim()) { setReprintError("กรุณากรอกที่อยู่ผู้ซื้อ"); return; }
-      if (!fullCustomerTaxId.trim()) { setReprintError("กรุณากรอกเลขผู้เสียภาษี"); return; }
-    }
-    const refDate = selected.completedAt ? new Date(selected.completedAt) : new Date(selected.createdAt);
-    const baseTotal = selected.subtotal + selected.retailSubtotal - selected.discountAmount;
-    const lineItems = [
-      ...selected.items.map(i => ({ name: i.service.name, qty: 1, unitPrice: i.price, total: i.price })),
-      ...(selected.retailItems || []).map(ri => ({
-        name: ri.retailProduct.name,
-        qty: ri.quantity,
-        unitPrice: ri.price,
-        total: ri.price * ri.quantity,
-      })),
-    ];
-    const totalPaid = selected.payments.reduce((s, p) => s + p.amount, 0);
-    const printable: PrintableReceipt = {
-      orderId: selected.id,
-      customerName: selected.customerName,
-      customerPhone: selected.customerPhone,
-      technicianName: selected.technician.name,
-      items: lineItems,
-      subtotal: selected.subtotal + selected.retailSubtotal,
-      discountTotal: selected.discountAmount,
-      baseTotal,
-      serviceCharge: selected.serviceCharge,
-      vat: selected.vat,
-      roundingAdjustment: selected.roundingAdjustment,
-      finalTotal: selected.total,
-      change: Math.max(0, totalPaid - selected.total),
-      payments: selected.payments,
-      paidAt: refDate,
-      receiptNumber: selected.receiptNumber || 0,
-    };
-    const winSize = reprintMode === "FULL" ? "width=900,height=900" : "width=420,height=640";
-    const win = window.open("", "_blank", winSize);
-    if (!win) { setReprintError("Pop-up ถูกบล็อก — โปรดอนุญาต pop-up แล้วลองอีกครั้ง"); return; }
-    win.document.write(buildReceiptHtml(printable, reprintMode, {
-      customerName: fullCustomerName.trim() || selected.customerName,
-      customerAddress: fullCustomerAddress.trim(),
-      customerTaxId: fullCustomerTaxId.trim(),
-    }));
-    win.document.close();
-    setTimeout(() => win.print(), 400);
-    await fetch(`/api/orders/${selected.id}/mark-printed`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: reprintMode }),
-    }).catch(() => {});
-    // Update local state so UI reflects new receiptType immediately
-    setOrders(prev => prev.map(o => o.id === selected.id
-      ? { ...o, receiptType: o.receiptType === "FULL" ? "FULL" : reprintMode }
-      : o));
-    setSelected(prev => prev && prev.id === selected.id
-      ? { ...prev, receiptType: prev.receiptType === "FULL" ? "FULL" : reprintMode }
-      : prev);
-    cancelReprint();
-  }
 
   useEffect(() => {
     setLoading(true);
@@ -185,7 +57,6 @@ export default function HistoryPage() {
   const filtered = useMemo(() => {
     return orders.filter(o => {
       if (statusFilter !== "ALL" && o.status !== statusFilter) return false;
-      if (groupFilter !== "ALL" && !orderGroups(o).has(groupFilter)) return false;
       if (search) {
         const q = search.toLowerCase();
         const hit = o.customerName.toLowerCase().includes(q)
@@ -201,7 +72,7 @@ export default function HistoryPage() {
       }
       return true;
     });
-  }, [orders, search, statusFilter, groupFilter, fromDate, toDate]);
+  }, [orders, search, statusFilter, fromDate, toDate]);
 
   const totalRevenue = filtered.filter(o => o.status === "PAID").reduce((s, o) => s + o.total, 0);
 
@@ -212,41 +83,6 @@ export default function HistoryPage() {
         <div style={{ fontSize: "0.875rem", color: "#666" }}>
           รายการที่แสดง: <strong>{filtered.length}</strong> · ยอดรวม PAID: <strong style={{ color: "var(--olive)" }}>฿{totalRevenue.toLocaleString()}</strong>
         </div>
-      </div>
-
-      {/* Quick category filter pills */}
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-        {([
-          { key: "ALL", label: "ทั้งหมด", emoji: "📋" },
-          { key: "HAIR", label: "ผม", emoji: "💇" },
-          { key: "NAIL", label: "เล็บ", emoji: "💅" },
-          { key: "SPA", label: "สปา", emoji: "🧖" },
-          { key: "OTHER", label: "อื่นๆ", emoji: "✨" },
-        ] as const).map(g => {
-          const active = groupFilter === g.key;
-          const count = g.key === "ALL"
-            ? orders.length
-            : orders.filter(o => orderGroups(o).has(g.key as ServiceGroup)).length;
-          return (
-            <button
-              key={g.key}
-              onClick={() => setGroupFilter(g.key)}
-              style={{
-                padding: "8px 16px",
-                borderRadius: 20,
-                border: `2px solid ${active ? "var(--olive)" : "var(--beige-dark)"}`,
-                background: active ? "var(--olive)" : "white",
-                color: active ? "white" : "var(--text-dark, #333)",
-                cursor: "pointer",
-                fontSize: "0.875rem",
-                fontWeight: active ? 700 : 500,
-                transition: "all 0.15s",
-              }}
-            >
-              {g.emoji} {g.label} <span style={{ opacity: 0.7, fontSize: "0.8rem" }}>({count})</span>
-            </button>
-          );
-        })}
       </div>
 
       <div className="card" style={{ marginBottom: "1rem" }}>
@@ -304,9 +140,7 @@ export default function HistoryPage() {
                       <span style={{ fontSize: "0.75rem", color: "#888" }}>{new Date(refDate).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}</span>
                     </td>
                     <td style={{ padding: "8px 12px", fontFamily: "monospace", fontSize: "0.8rem" }}>
-                      {o.receiptNumber && o.completedAt && o.receiptType
-                        ? formatReceiptNo(o.receiptNumber, o.receiptType, o.completedAt)
-                        : <span style={{ color: "#bbb", fontStyle: "italic" }}>ยังไม่พิมพ์</span>}
+                      {o.receiptNumber && o.completedAt ? formatReceiptNo(o.receiptNumber, o.completedAt) : "-"}
                     </td>
                     <td style={{ padding: "8px 12px" }}>
                       <div style={{ fontWeight: 500 }}>{o.customerName}</div>
@@ -344,10 +178,9 @@ export default function HistoryPage() {
               <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", fontSize: "1.4rem", cursor: "pointer", color: "#aaa" }}>×</button>
             </div>
 
-            {selected.receiptNumber && selected.completedAt && selected.receiptType && (
+            {selected.receiptNumber && selected.completedAt && (
               <div style={{ background: "#f5f5f5", padding: "0.5rem 0.75rem", borderRadius: 8, marginBottom: "0.75rem", fontFamily: "monospace", fontSize: "0.85rem" }}>
-                <strong>{selected.receiptType === "FULL" ? "เลขใบกำกับภาษีเต็ม" : "เลขใบเสร็จย่อ"}:</strong>{" "}
-                {formatReceiptNo(selected.receiptNumber, selected.receiptType, selected.completedAt)}
+                <strong>เลขใบเสร็จ:</strong> {formatReceiptNo(selected.receiptNumber, selected.completedAt)}
               </div>
             )}
 
@@ -420,83 +253,6 @@ export default function HistoryPage() {
               <div style={{ fontSize: "0.875rem", color: "#666" }}>
                 <strong>การชำระ:</strong> {selected.payments.map(p => `${METHOD_LABEL[p.method] ?? p.method} ฿${p.amount.toLocaleString()}`).join(", ")}
               </div>
-            )}
-
-            {selected.status === "PAID" && (
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--beige-dark)" }}>
-                <button
-                  className="btn-secondary"
-                  style={{ flex: 1, fontSize: "0.875rem" }}
-                  onClick={() => startReprint("SHORT")}
-                  disabled={selected.receiptType === "FULL"}
-                  title={selected.receiptType === "FULL" ? "ออร์เดอร์นี้ออกใบกำกับเต็มไปแล้ว — ออกใบย่อย้อนหลังไม่ได้" : ""}
-                >
-                  🖨 พิมพ์ใบเสร็จย่อ
-                </button>
-                <button
-                  className="btn-primary"
-                  style={{ flex: 1, fontSize: "0.875rem" }}
-                  onClick={() => startReprint("FULL")}
-                >
-                  📋 ออกใบกำกับภาษีเต็ม
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Reprint flow modal */}
-      {reprintMode && selected && (
-        <div className="modal-overlay" onClick={cancelReprint}>
-          <div className="modal" style={{ maxWidth: 420, width: "95vw" }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <h3 style={{ margin: 0, color: "var(--olive)" }}>
-                {reprintMode === "FULL" ? "📋 ออกใบกำกับภาษีเต็ม" : "🖨 พิมพ์ใบเสร็จย่อ"}
-              </h3>
-              <button onClick={cancelReprint} style={{ background: "none", border: "none", fontSize: "1.4rem", cursor: "pointer", color: "#aaa" }}>×</button>
-            </div>
-
-            {!pinVerified ? (
-              <>
-                <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "0.75rem" }}>
-                  กรุณาใส่ Manager PIN เพื่อยืนยันสิทธิ์ในการพิมพ์ใบเสร็จย้อนหลัง
-                </p>
-                <input
-                  type="password"
-                  className="input"
-                  placeholder="Manager PIN"
-                  value={pin}
-                  onChange={e => setPin(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && verifyManagerPin()}
-                  autoFocus
-                  style={{ marginBottom: "0.5rem" }}
-                />
-                {pinError && <div style={{ color: "var(--alert-red, #c0392b)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>{pinError}</div>}
-                <button className="btn-primary" style={{ width: "100%" }} onClick={verifyManagerPin}>ยืนยัน PIN</button>
-              </>
-            ) : reprintMode === "FULL" ? (
-              <>
-                <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "0.75rem" }}>
-                  กรอกข้อมูลผู้ซื้อสำหรับใบกำกับภาษีเต็มรูปแบบ
-                </p>
-                <label className="label">ชื่อผู้ซื้อ</label>
-                <input className="input" value={fullCustomerName} onChange={e => setFullCustomerName(e.target.value)} style={{ marginBottom: "0.5rem" }} />
-                <label className="label">ที่อยู่ผู้ซื้อ</label>
-                <textarea className="input" rows={3} value={fullCustomerAddress} onChange={e => setFullCustomerAddress(e.target.value)} style={{ marginBottom: "0.5rem", resize: "vertical" }} />
-                <label className="label">เลขผู้เสียภาษี</label>
-                <input className="input" value={fullCustomerTaxId} onChange={e => setFullCustomerTaxId(e.target.value)} style={{ marginBottom: "0.5rem" }} />
-                {reprintError && <div style={{ color: "var(--alert-red, #c0392b)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>{reprintError}</div>}
-                <button className="btn-primary" style={{ width: "100%" }} onClick={doReprint}>🖨 พิมพ์ใบกำกับภาษีเต็ม</button>
-              </>
-            ) : (
-              <>
-                <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "0.75rem" }}>
-                  ยืนยัน PIN เรียบร้อย — กด "พิมพ์" เพื่อออกใบเสร็จย่อย้อนหลัง
-                </p>
-                {reprintError && <div style={{ color: "var(--alert-red, #c0392b)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>{reprintError}</div>}
-                <button className="btn-primary" style={{ width: "100%" }} onClick={doReprint}>🖨 พิมพ์ใบเสร็จย่อ</button>
-              </>
             )}
           </div>
         </div>

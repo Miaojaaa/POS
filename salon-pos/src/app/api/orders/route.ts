@@ -23,8 +23,7 @@ export async function GET(req: NextRequest) {
       include: {
         technician: { select: { id: true, name: true } },
         assistants: { include: { user: { select: { id: true, name: true } } } },
-        items: { include: { service: { include: { category: true } } } },
-        retailItems: { include: { retailProduct: true } },
+        items: { include: { service: true } },
         chemicals: { include: { product: true } },
         payments: true,
       },
