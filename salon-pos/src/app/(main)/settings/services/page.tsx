@@ -10,6 +10,7 @@ export default function ServicesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", price: "", duration: "60", categoryId: "" });
   
   const [showPinModal, setShowPinModal] = useState(false);
@@ -26,7 +27,10 @@ export default function ServicesPage() {
     setServices(await res.json());
   }
 
-  function handleEdit(s: Service) {
+  function handleEdit() {
+    const s = services.find(sv => sv.id === selectedServiceId);
+    if (!s) return;
+    
     setEditingId(s.id);
     setForm({
       name: s.name,
@@ -44,11 +48,8 @@ export default function ServicesPage() {
     }
 
     if (editingId) {
-      // Editing requires PIN
       setShowPinModal(true);
     } else {
-      // New service - no PIN required for now (or as per user requirement)
-      // Usually creating new also might need protection, but the prompt says "แก้ได้" (can edit)
       save();
     }
   }
@@ -102,7 +103,19 @@ export default function ServicesPage() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>⚙️ จัดการบริการ</h1>
-        <button className="btn-primary" onClick={() => { setEditingId(null); setForm({ name: "", price: "", duration: "60", categoryId: "" }); setShowForm(true); }}>+ เพิ่มบริการ</button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button 
+            className="btn-secondary" 
+            disabled={!selectedServiceId}
+            onClick={handleEdit}
+            style={{ opacity: selectedServiceId ? 1 : 0.5 }}
+          >
+            แก้ไขบริการ
+          </button>
+          <button className="btn-primary" onClick={() => { setEditingId(null); setSelectedServiceId(null); setForm({ name: "", price: "", duration: "60", categoryId: "" }); setShowForm(true); }}>
+            + เพิ่มบริการ
+          </button>
+        </div>
       </div>
 
       {Object.entries(byCategory).map(([cat, svcs]) => (
@@ -111,21 +124,25 @@ export default function ServicesPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--beige-dark)", color: "#666" }}>
-                <th style={{ textAlign: "left", padding: "6px 8px" }}>บริการ</th>
-                <th style={{ textAlign: "right", padding: "6px 8px" }}>ราคา (฿)</th>
-                <th style={{ textAlign: "center", padding: "6px 8px" }}>เวลา (นาที)</th>
-                <th style={{ textAlign: "center", padding: "6px 8px", width: 80 }}>แก้ไข</th>
+                <th style={{ textAlign: "left", padding: "8px 12px" }}>บริการ</th>
+                <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคา (฿)</th>
+                <th style={{ textAlign: "center", padding: "8px 12px" }}>เวลา (นาที)</th>
               </tr>
             </thead>
             <tbody>
               {svcs.map(s => (
-                <tr key={s.id} style={{ borderBottom: "1px solid #f9f9f9" }}>
-                  <td style={{ padding: "6px 8px" }}>{s.name}</td>
-                  <td style={{ padding: "6px 8px", textAlign: "right" }}>{Math.round(s.price).toLocaleString()}</td>
-                  <td style={{ padding: "6px 8px", textAlign: "center" }}>{s.duration}</td>
-                  <td style={{ padding: "6px 8px", textAlign: "center" }}>
-                    <button className="btn-secondary" style={{ padding: "2px 8px", fontSize: "0.75rem" }} onClick={() => handleEdit(s)}>แก้ไข</button>
-                  </td>
+                <tr 
+                  key={s.id} 
+                  style={{ 
+                    borderBottom: "1px solid #f9f9f9", 
+                    cursor: "pointer",
+                    background: selectedServiceId === s.id ? "#f0f5e8" : "transparent"
+                  }}
+                  onClick={() => setSelectedServiceId(selectedServiceId === s.id ? null : s.id)}
+                >
+                  <td style={{ padding: "8px 12px" }}>{s.name}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right" }}>{Math.round(s.price).toLocaleString()}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "center" }}>{s.duration}</td>
                 </tr>
               ))}
             </tbody>

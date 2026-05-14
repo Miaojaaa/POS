@@ -45,6 +45,9 @@ export default function ProductsPage() {
   const [editingChemId, setEditingChemId] = useState<string | null>(null);
   const [editingRetailId, setEditingRetailId] = useState<string | null>(null);
 
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedProductType, setSelectedProductType] = useState<FormType | null>(null);
+
   // Stock adjust modal (for retail)
   const [adjustTarget, setAdjustTarget] = useState<RetailProduct | null>(null);
   const [adjustDelta, setAdjustDelta] = useState<number | "">("");
@@ -100,6 +103,30 @@ export default function ProductsPage() {
     setChemForm({ name: "", unitVolumeG: "", costPerUnit: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
     setRetailForm({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
     setShowForm(true);
+  }
+
+  function handleEdit() {
+    if (!selectedProductId || !selectedProductType) return;
+
+    if (selectedProductType === "CHEMICAL") {
+      const p = chemicals.find(x => x.id === selectedProductId);
+      if (p) editChemical(p);
+    } else {
+      const p = retails.find(x => x.id === selectedProductId);
+      if (p) editRetail(p);
+    }
+  }
+
+  function handleDelete() {
+    if (!selectedProductId || !selectedProductType) return;
+
+    if (selectedProductType === "CHEMICAL") {
+      const p = chemicals.find(x => x.id === selectedProductId);
+      if (p) removeChemical(p.id, p.name);
+    } else {
+      const p = retails.find(x => x.id === selectedProductId);
+      if (p) removeRetail(p.id, p.name);
+    }
   }
 
   function editChemical(p: Chemical) {
@@ -214,6 +241,7 @@ export default function ProductsPage() {
     if (!confirm(`ลบเคมี "${name}"?`)) return;
     gate(async () => {
       await fetch(`/api/products/${id}`, { method: "DELETE" });
+      setSelectedProductId(null);
       await load();
     });
   }
@@ -243,6 +271,7 @@ export default function ProductsPage() {
     if (!confirm(`ลบสินค้า "${name}"?`)) return;
     gate(async () => {
       await fetch(`/api/retail-products/${id}`, { method: "DELETE" });
+      setSelectedProductId(null);
       await load();
     });
   }
@@ -250,11 +279,39 @@ export default function ProductsPage() {
   const showChem = tab === "ALL" || tab === "CHEMICAL";
   const showRetail = tab === "ALL" || tab === "RETAIL";
 
+  function selectProduct(id: string, type: FormType) {
+    if (selectedProductId === id) {
+      setSelectedProductId(null);
+      setSelectedProductType(null);
+    } else {
+      setSelectedProductId(id);
+      setSelectedProductType(type);
+    }
+  }
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📦 จัดการสต๊อก</h1>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          {selectedProductId && (
+            <>
+              <button 
+                className="btn-danger" 
+                onClick={handleDelete}
+                style={{ fontSize: "0.85rem", padding: "0.5rem 1rem" }}
+              >
+                ลบสินค้า
+              </button>
+              <button 
+                className="btn-secondary" 
+                onClick={handleEdit}
+                style={{ fontSize: "0.85rem", padding: "0.5rem 1rem" }}
+              >
+                แก้ไขสินค้า
+              </button>
+            </>
+          )}
           {unlocked ? (
             <button
               className="btn-secondary"
@@ -288,7 +345,7 @@ export default function ProductsPage() {
           return (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); setSelectedProductId(null); }}
               style={{
                 padding: "0.5rem 1rem",
                 borderRadius: 8,
@@ -335,12 +392,19 @@ export default function ProductsPage() {
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาขาย</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหลัก</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหน้าร้าน</th>
-                <th style={{ textAlign: "center", padding: "8px 12px", width: 160 }}>จัดการ</th>
               </tr>
             </thead>
             <tbody>
               {chemicals.map(p => (
-                <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                <tr 
+                  key={p.id} 
+                  style={{ 
+                    borderBottom: "1px solid #f5f5f5", 
+                    cursor: "pointer",
+                    background: selectedProductId === p.id ? "#f0f5e8" : "transparent"
+                  }}
+                  onClick={() => selectProduct(p.id, "CHEMICAL")}
+                >
                   <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
                     <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" }}>
@@ -364,16 +428,6 @@ export default function ProductsPage() {
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
                     {p.subStock?.quantity ?? 0} ขวด + {((p.subStock?.currentVolumeG ?? 0) / 1000).toFixed(0)} ก.
                   </td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <button onClick={() => editChemical(p)}
-                      style={{ background: "var(--olive)", color: "white", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", marginRight: 4, fontSize: "0.75rem" }}>
-                      แก้ไข
-                    </button>
-                    <button onClick={() => removeChemical(p.id, p.name)}
-                      style={{ background: "none", border: "1px solid #dc2626", color: "#dc2626", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontSize: "0.75rem" }}>
-                      ลบ
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -394,12 +448,20 @@ export default function ProductsPage() {
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ปริมาณ/ชิ้น</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ต้นทุน/ก.</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>สต๊อก</th>
-                <th style={{ width: 280 }}></th>
+                <th style={{ width: 120 }}></th>
               </tr>
             </thead>
             <tbody>
               {retails.map(p => (
-                <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                <tr 
+                  key={p.id} 
+                  style={{ 
+                    borderBottom: "1px solid #f5f5f5", 
+                    cursor: "pointer",
+                    background: selectedProductId === p.id ? "#f0f5e8" : "transparent"
+                  }}
+                  onClick={() => selectProduct(p.id, "RETAIL")}
+                >
                   <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
                     <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" }}>
@@ -426,17 +488,10 @@ export default function ProductsPage() {
                     </span>
                   </td>
                   <td style={{ padding: "8px 12px", textAlign: "right" }}>
-                    <button onClick={() => editRetail(p)}
-                      style={{ background: "var(--olive)", color: "white", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", marginRight: 4, fontSize: "0.75rem" }}>
-                      แก้ไข
-                    </button>
-                    <button onClick={() => setAdjustTarget(p)}
-                      style={{ background: "var(--beige-dark)", color: "var(--text-dark)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", marginRight: 4, fontSize: "0.75rem" }}>
+                    <button onClick={(e) => { e.stopPropagation(); setAdjustTarget(p); }}
+                      className="btn-secondary"
+                      style={{ padding: "4px 10px", fontSize: "0.75rem" }}>
                       ปรับสต๊อก
-                    </button>
-                    <button onClick={() => removeRetail(p.id, p.name)}
-                      style={{ background: "none", border: "1px solid #dc2626", color: "#dc2626", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontSize: "0.75rem" }}>
-                      ลบ
                     </button>
                   </td>
                 </tr>

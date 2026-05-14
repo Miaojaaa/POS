@@ -121,11 +121,11 @@ export default function TicketsPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h3 style={{ margin: 0, fontSize: "1rem", color: "var(--olive)" }}>ประเภทคูปองทั้งหมด ({defs.length})</h3>
           <button
-            className="btn-primary"
+            className={showCreate ? "btn-danger" : "btn-primary"}
             style={{ fontSize: "0.8rem", padding: "0.375rem 0.875rem" }}
             onClick={() => setShowCreate(!showCreate)}
           >
-            {showCreate ? "ยกเลิก" : "+ สร้างคูปองใหม่"}
+            {showCreate ? "ยกเลิก" : "+ คูปอง"}
           </button>
         </div>
 
