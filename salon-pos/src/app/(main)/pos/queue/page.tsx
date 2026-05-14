@@ -48,6 +48,7 @@ type ReceiptData = {
   baseTotal: number;       // after discount, before SC/VAT
   serviceCharge: number;   // 3% if CC
   vat: number;             // 7% on (baseTotal + SC)
+  roundingAdjustment: number; // diff to round final to whole baht (cash/wallet only)
   finalTotal: number;
   change: number;
   payments: Payment[]; paidAt: Date; receiptNumber: number;
@@ -155,6 +156,7 @@ ${r.order.customerPhone ? `<p class="sm">โทร: ${r.order.customerPhone}</p>
   <tr class="net"><td>ยอดสุทธิ (หลังหักส่วนลด)</td><td class="r">${fmt(r.baseTotal)}</td></tr>
   ${hasCC ? `<tr><td>+ Service Charge 3% (CC)</td><td class="r">${fmt(r.serviceCharge)}</td></tr>` : ""}
   <tr><td>+ ภาษีมูลค่าเพิ่ม 7%</td><td class="r">${fmt(r.vat)}</td></tr>
+  ${r.roundingAdjustment !== 0 ? `<tr><td>ค่าปัดเศษ</td><td class="r">${r.roundingAdjustment > 0 ? "+" : ""}${fmt(r.roundingAdjustment)}</td></tr>` : ""}
   <tr class="grand"><td>รวมทั้งสิ้น</td><td class="r">${fmt(r.finalTotal)}</td></tr>
 </table>
 <div class="line"></div>
@@ -235,6 +237,7 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
           ${hasCC ? `<tr><td class="label">+ Service Charge 3% (Credit Card)</td><td class="val">${fmt(r.serviceCharge)} บาท</td></tr>` : ""}
           <tr><td class="label">ราคาไม่รวมภาษีมูลค่าเพิ่ม</td><td class="val">${fmt(priceExclVat)} บาท</td></tr>
           <tr><td class="label">+ ภาษีมูลค่าเพิ่ม 7%</td><td class="val">${fmt(r.vat)} บาท</td></tr>
+          ${r.roundingAdjustment !== 0 ? `<tr><td class="label">ค่าปัดเศษ</td><td class="val">${r.roundingAdjustment > 0 ? "+" : ""}${fmt(r.roundingAdjustment)} บาท</td></tr>` : ""}
           <tr class="total"><td>รวมทั้งสิ้น</td><td class="val">${fmt(r.finalTotal)} บาท</td></tr>
         </table>
       </div>
@@ -380,7 +383,9 @@ export default function QueuePage() {
     const order: OrderDetail = await res.json();
     setCheckoutOrder(order);
     const initialBase = order.subtotal + (order.retailSubtotal || 0);
-    setPayments([{ method: "TRANSFER", amount: initialBase + Math.round(initialBase * 0.07) }]);
+    // TRANSFER is digital → no rounding, keep satang
+    const initialVat = Math.round(initialBase * 0.07 * 100) / 100;
+    setPayments([{ method: "TRANSFER", amount: Math.round((initialBase + initialVat) * 100) / 100 }]);
     setDiscountAmount(0);
     setDiscountPct(0);
     setApprovedById(null);
@@ -435,6 +440,18 @@ export default function QueuePage() {
     });
   }
 
+  // Compute the final amount a single payment should be set to, given the base and method.
+  // Mirrors the finalTotal logic: 2-decimal SC/VAT, round to whole baht only for CASH/WALLET.
+  function computePaymentAmount(base: number, method: string): number {
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    const hasCC = method === "CREDIT_CARD";
+    const sc = hasCC ? r2(base * 0.03) : 0;
+    const v = r2((base + sc) * 0.07);
+    const raw = r2(base + sc + v);
+    const willRound = method === "CASH" || method === "WALLET";
+    return willRound ? Math.round(raw) : raw;
+  }
+
   function recalcPaymentForRetail(lines: RetailLine[]) {
     if (!checkoutOrder) return;
     const retailSub = lines.reduce((s, l) => s + l.price * l.quantity, 0);
@@ -442,10 +459,7 @@ export default function QueuePage() {
     setPayments(prev => {
       if (prev.length !== 1) return prev;
       const base = Math.max(0, checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + retailSub - discountAmount - tDiscount);
-      const hasCC = prev[0].method === "CREDIT_CARD";
-      const sc = hasCC ? Math.round(base * 0.03) : 0;
-      const v = Math.round((base + sc) * 0.07);
-      return [{ ...prev[0], amount: base + sc + v }];
+      return [{ ...prev[0], amount: computePaymentAmount(base, prev[0].method) }];
     });
   }
 
@@ -474,10 +488,7 @@ export default function QueuePage() {
     setPayments(prev => {
       if (prev.length !== 1) return prev;
       const base = Math.max(0, checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + rSub - discountAmount - tDiscount);
-      const hasCC = prev[0].method === "CREDIT_CARD";
-      const sc = hasCC ? Math.round(base * 0.03) : 0;
-      const v = Math.round((base + sc) * 0.07);
-      return [{ ...prev[0], amount: base + sc + v }];
+      return [{ ...prev[0], amount: computePaymentAmount(base, prev[0].method) }];
     });
   }
 
@@ -488,10 +499,7 @@ export default function QueuePage() {
     setPayments(prev => {
       if (prev.length !== 1) return prev;
       const base = Math.max(0, checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + rSub - discountAmount);
-      const hasCC = prev[0].method === "CREDIT_CARD";
-      const sc = hasCC ? Math.round(base * 0.03) : 0;
-      const v = Math.round((base + sc) * 0.07);
-      return [{ ...prev[0], amount: base + sc + v }];
+      return [{ ...prev[0], amount: computePaymentAmount(base, prev[0].method) }];
     });
   }
 
@@ -504,7 +512,7 @@ export default function QueuePage() {
       setDiscountAmount(val);
       setDiscountPct(checkoutOrder.subtotal > 0 ? (val / checkoutOrder.subtotal) * 100 : 0);
     } else {
-      newDiscount = (checkoutOrder.subtotal * val) / 100;
+      newDiscount = Math.round((checkoutOrder.subtotal * val) / 100 * 100) / 100;
       setDiscountPct(val);
       setDiscountAmount(newDiscount);
     }
@@ -514,10 +522,7 @@ export default function QueuePage() {
     setPayments(prev => {
       if (prev.length === 1) {
         const base = Math.max(0, checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + rSub - newDiscount - tDiscount);
-        const hasCC = prev[0].method === "CREDIT_CARD";
-        const sc = hasCC ? Math.round(base * 0.03) : 0;
-        const v = Math.round((base + sc) * 0.07);
-        return [{ ...prev[0], amount: base + sc + v }];
+        return [{ ...prev[0], amount: computePaymentAmount(base, prev[0].method) }];
       }
       return prev;
     });
@@ -555,10 +560,15 @@ export default function QueuePage() {
   });
   const baseTotal = checkoutOrder ? Math.max(0, checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + retailSubtotal - discountAmount - ticketDiscount) : 0;
   const hasCreditCard = payments.some(p => p.method === "CREDIT_CARD");
-  const serviceCharge = hasCreditCard ? Math.round(baseTotal * 0.03) : 0;
-  const vat = Math.round((baseTotal + serviceCharge) * 0.07);
-
-  const finalTotal = baseTotal + serviceCharge + vat;
+  // Thai tax rule: round at the 3rd decimal place (keep 2 decimals)
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const serviceCharge = hasCreditCard ? round2(baseTotal * 0.03) : 0;
+  const vat = round2((baseTotal + serviceCharge) * 0.07);
+  const rawTotal = round2(baseTotal + serviceCharge + vat);
+  // Round to whole baht only when all payments are CASH/WALLET. Track the difference as a separate line.
+  const cashOrWalletOnly = payments.length > 0 && payments.every(p => p.method === "CASH" || p.method === "WALLET");
+  const roundingAdjustment = cashOrWalletOnly ? round2(Math.round(rawTotal) - rawTotal) : 0;
+  const finalTotal = round2(rawTotal + roundingAdjustment);
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
   const change = totalPaid - finalTotal;
 
@@ -571,7 +581,7 @@ export default function QueuePage() {
       body: JSON.stringify({
         payments: payments.filter(p => p.amount > 0),
         discountAmount, discountPct, approvedById,
-        serviceCharge, vat,
+        serviceCharge, vat, roundingAdjustment,
         ticketId: selectedTicket?.id ?? null,
         ticketDiscount,
         retailItems: retailLines.map(l => ({ retailProductId: l.retailProductId, quantity: l.quantity, price: l.price })),
@@ -601,6 +611,7 @@ export default function QueuePage() {
         baseTotal,
         serviceCharge,
         vat,
+        roundingAdjustment,
         finalTotal,
         change: Math.max(0, change),
         payments: payments.filter(p => p.amount > 0),
@@ -902,14 +913,19 @@ export default function QueuePage() {
                   )}
                   {hasCreditCard && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginTop: 4 }}>
-                      <span>Service Charge (3%)</span><span>฿{serviceCharge.toLocaleString()}</span>
+                      <span>Service Charge (3%)</span><span>฿{serviceCharge.toFixed(2)}</span>
                     </div>
                   )}
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginTop: 2 }}>
-                    <span>VAT (7%)</span><span>฿{vat.toLocaleString()}</span>
+                    <span>VAT (7%)</span><span>฿{vat.toFixed(2)}</span>
                   </div>
+                  {roundingAdjustment !== 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginTop: 2, color: "#888" }}>
+                      <span>ค่าปัดเศษ</span><span>{roundingAdjustment > 0 ? "+" : ""}฿{roundingAdjustment.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.1rem", color: "var(--olive)", marginTop: 6 }}>
-                    <span>ยอดสุทธิ</span><span>฿{finalTotal.toLocaleString()}</span>
+                    <span>ยอดสุทธิ</span><span>฿{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
@@ -932,10 +948,7 @@ export default function QueuePage() {
                           const newPayments = prev.map((p, j) => j === i ? { ...p, method: newMethod } : p);
                           if (newPayments.length === 1 && checkoutOrder) {
                             const base = Math.max(0, checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + retailSubtotal - discountAmount - ticketDiscount);
-                            const hasCC = newMethod === "CREDIT_CARD";
-                            const sc = hasCC ? Math.round(base * 0.03) : 0;
-                            const v = Math.round((base + sc) * 0.07);
-                            newPayments[0].amount = base + sc + v;
+                            newPayments[0].amount = computePaymentAmount(base, newMethod);
                           }
                           return newPayments;
                         });
@@ -1075,14 +1088,19 @@ export default function QueuePage() {
               </div>
               {receipt.serviceCharge > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>+ Service Charge 3% (CC)</span><span>฿{receipt.serviceCharge.toLocaleString()}</span>
+                  <span>+ Service Charge 3% (CC)</span><span>฿{receipt.serviceCharge.toFixed(2)}</span>
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>+ ภาษีมูลค่าเพิ่ม 7%</span><span>฿{receipt.vat.toLocaleString()}</span>
+                <span>+ ภาษีมูลค่าเพิ่ม 7%</span><span>฿{receipt.vat.toFixed(2)}</span>
               </div>
+              {receipt.roundingAdjustment !== 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", color: "#888" }}>
+                  <span>ค่าปัดเศษ</span><span>{receipt.roundingAdjustment > 0 ? "+" : ""}฿{receipt.roundingAdjustment.toFixed(2)}</span>
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, borderTop: "2px solid #000", borderBottom: "2px solid #000", marginTop: 4, padding: "4px 0" }}>
-                <span>รวมทั้งสิ้น</span><span>฿{receipt.finalTotal.toLocaleString()}</span>
+                <span>รวมทั้งสิ้น</span><span>฿{receipt.finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div style={{ borderTop: "1px dashed #aaa", margin: "6px 0" }} />
               {receipt.payments.map((p, i) => (

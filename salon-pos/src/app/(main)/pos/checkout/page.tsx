@@ -105,9 +105,16 @@ function CheckoutContent() {
 
   const baseTotal = selectedOrder ? Math.max(0, selectedOrder.subtotal - discountAmount - ticketDiscount) : 0;
   const hasCreditCard = payments.some(p => p.method === "CREDIT_CARD");
-  const serviceCharge = hasCreditCard ? Math.round(baseTotal * 0.03) : 0;
-  const vat = Math.round((baseTotal + serviceCharge) * 0.07);
-  const finalTotal = baseTotal + serviceCharge + vat;
+  // Thai tax-office rule: round at the 3rd decimal place (keep 2 decimals / satang)
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const serviceCharge = hasCreditCard ? round2(baseTotal * 0.03) : 0;
+  const vat = round2((baseTotal + serviceCharge) * 0.07);
+  const rawTotal = round2(baseTotal + serviceCharge + vat);
+  // Cash/Wallet only → round final total to whole baht via a separate "rounding adjustment" line.
+  // Any other method (transfer/credit card/ticket) → no rounding.
+  const cashOrWalletOnly = payments.length > 0 && payments.every(p => p.method === "CASH" || p.method === "WALLET");
+  const roundingAdjustment = cashOrWalletOnly ? round2(Math.round(rawTotal) - rawTotal) : 0;
+  const finalTotal = round2(rawTotal + roundingAdjustment);
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
   const change = totalPaid - finalTotal;
 
@@ -118,9 +125,12 @@ function CheckoutContent() {
       const base = Math.max(0, selectedOrder.subtotal - manualDiscount - tDiscount);
       const method = overrideMethod ?? prev[0].method;
       const hasCC = method === "CREDIT_CARD";
-      const sc = hasCC ? Math.round(base * 0.03) : 0;
-      const v = Math.round((base + sc) * 0.07);
-      return [{ ...prev[0], amount: base + sc + v }];
+      const sc = hasCC ? Math.round(base * 0.03 * 100) / 100 : 0;
+      const v = Math.round((base + sc) * 0.07 * 100) / 100;
+      const raw = Math.round((base + sc + v) * 100) / 100;
+      const willRound = method === "CASH" || method === "WALLET";
+      const final = willRound ? Math.round(raw) : raw;
+      return [{ ...prev[0], amount: final }];
     });
   }
 
@@ -132,7 +142,7 @@ function CheckoutContent() {
       setDiscountAmount(val);
       setDiscountPct(selectedOrder.subtotal > 0 ? (val / selectedOrder.subtotal) * 100 : 0);
     } else {
-      newDiscount = (selectedOrder.subtotal * val) / 100;
+      newDiscount = Math.round((selectedOrder.subtotal * val) / 100 * 100) / 100;
       setDiscountPct(val);
       setDiscountAmount(newDiscount);
     }
@@ -187,6 +197,7 @@ function CheckoutContent() {
         approvedById,
         serviceCharge,
         vat,
+        roundingAdjustment,
         ticketId: selectedTicket?.id ?? null,
         ticketDiscount,
       }),
@@ -337,16 +348,22 @@ function CheckoutContent() {
               {hasCreditCard && (
                 <div style={{ marginTop: "0.5rem", display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
                   <span>Service Charge (3%)</span>
-                  <span>฿{serviceCharge.toLocaleString()}</span>
+                  <span>฿{serviceCharge.toFixed(2)}</span>
                 </div>
               )}
               <div style={{ marginTop: "0.25rem", display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
                 <span>VAT (7%)</span>
-                <span>฿{vat.toLocaleString()}</span>
+                <span>฿{vat.toFixed(2)}</span>
               </div>
+              {roundingAdjustment !== 0 && (
+                <div style={{ marginTop: "0.25rem", display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "#888" }}>
+                  <span>ค่าปัดเศษ</span>
+                  <span>{roundingAdjustment > 0 ? "+" : ""}฿{roundingAdjustment.toFixed(2)}</span>
+                </div>
+              )}
               <div style={{ marginTop: "0.75rem", display: "flex", justifyContent: "space-between", fontSize: "1.1rem", fontWeight: 700, color: "var(--olive)" }}>
                 <span>ยอดสุทธิ</span>
-                <span>฿{finalTotal.toLocaleString()}</span>
+                <span>฿{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
 

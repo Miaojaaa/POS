@@ -20,7 +20,11 @@ export async function GET(req: NextRequest) {
     include: { items: { include: { service: { include: { category: true } } } }, chemicals: true },
   });
 
-  const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
+  const totalGross = orders.reduce((s, o) => s + o.total, 0);          // = total (รวม VAT)
+  const totalVat = orders.reduce((s, o) => s + (o.vat || 0), 0);        // VAT 7% รวม
+  const totalSC = orders.reduce((s, o) => s + (o.serviceCharge || 0), 0); // Service Charge 3% รวม
+  const totalNet = totalGross - totalVat;                                // ก่อน VAT (รวม SC)
+  const totalRevenue = totalGross;  // เก็บไว้เพื่อ backward-compat
   const totalChemCost = orders.reduce((s, o) => s + o.chemicalCost, 0);
 
   const expenses = await prisma.expense.findMany({
@@ -56,14 +60,18 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({
-    totalRevenue,
+    totalRevenue,   // = totalGross (backward-compat)
+    totalGross,
+    totalNet,       // ก่อน VAT (รวม Service Charge แล้ว)
+    totalVat,
+    totalSC,
     totalChemCost,
     totalExpense,
-    netProfit: totalRevenue - totalChemCost - totalExpense,
+    netProfit: totalNet - totalChemCost - totalExpense,  // ใช้ Net (VAT ไม่ใช่เงินร้าน)
     orderCount: orders.length,
     topServices: Object.values(serviceStats).sort((a, b) => b.revenue - a.revenue).slice(0, 5),
     topTechs: Object.values(techStats).sort((a, b) => b.revenue - a.revenue).slice(0, 5),
     expenses,
-    allServices: Object.values(serviceStats), // Also include for potential full lists
+    allServices: Object.values(serviceStats),
   });
 }

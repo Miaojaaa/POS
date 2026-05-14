@@ -52,9 +52,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const chemicals: ChemInput[] = Array.isArray(body.chemicals) ? body.chemicals : [];
   const retailItems: RetailInput[] = Array.isArray(body.retailItems) ? body.retailItems : [];
 
-  const subtotal = items.reduce((s, i) => s + Number(i.price), 0);
-  const chemicalCost = chemicals.reduce((s, c) => s + Number(c.totalCost), 0);
-  const retailSubtotal = retailItems.reduce((s, r) => s + Number(r.price) * Number(r.quantity), 0);
+  const subtotal = items.reduce((s, i) => s + Math.round(Number(i.price)), 0);
+  const chemicalCost = chemicals.reduce((s, c) => s + Math.round(Number(c.totalCost)), 0);
+  const retailSubtotal = retailItems.reduce((s, r) => s + Math.round(Number(r.price)) * Math.round(Number(r.quantity)), 0);
 
   const updated = await prisma.$transaction(async (tx) => {
     const existing = await tx.order.findUnique({

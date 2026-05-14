@@ -109,11 +109,14 @@ model Order {
   status         String   @default("WAITING")
   notes          String?
   receiptNumber  Int?
-  subtotal       Float    @default(0)
-  retailSubtotal Float    @default(0)
-  discountAmount Float    @default(0)
-  discountPct    Float    @default(0)
-  total          Int      @default(0)
+  subtotal           Int      @default(0)
+  retailSubtotal     Int      @default(0)
+  discountAmount     Float    @default(0)
+  discountPct        Float    @default(0)
+  serviceCharge      Float    @default(0)
+  vat                Float    @default(0)
+  roundingAdjustment Float    @default(0)
+  total              Float    @default(0)
   chemicalCost   Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

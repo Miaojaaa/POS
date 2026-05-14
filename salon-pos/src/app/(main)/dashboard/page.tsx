@@ -31,9 +31,9 @@ export default async function DashboardPage() {
   const monthRevenue = monthOrders.reduce((sum, o) => sum + o.total, 0);
   const todayCount = todayOrders.length;
 
-  const cards = [
-    { label: "ยอดขายวันนี้", value: `฿${todayRevenue.toLocaleString()}`, color: "#6B7C45" },
-    { label: "ยอดขายเดือนนี้", value: `฿${monthRevenue.toLocaleString()}`, color: "#8FA65A" },
+  const cards: { label: string; value: string; color: string; sub?: string }[] = [
+    { label: "ยอดขายวันนี้", value: `฿${todayRevenue.toLocaleString()}`, color: "#6B7C45", sub: "(รวม VAT 7%)" },
+    { label: "ยอดขายเดือนนี้", value: `฿${monthRevenue.toLocaleString()}`, color: "#8FA65A", sub: "(รวม VAT 7%)" },
     { label: "ออร์เดอร์จ่ายแล้ววันนี้", value: `${todayCount} ออร์เดอร์`, color: "#5A7CA6" },
     { label: "คิวที่รออยู่", value: `${queueCount} คิว`, color: "#C4863B" },
     { label: "สมาชิกทั้งหมด", value: `${memberCount} คน`, color: "#A65A7C" },
@@ -53,6 +53,7 @@ export default async function DashboardPage() {
           <div key={card.label} className="card" style={{ textAlign: "center" }}>
             <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: 4 }}>{card.label}</div>
             <div style={{ fontSize: "1.4rem", fontWeight: 700, color: card.color }}>{card.value}</div>
+            {card.sub && <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 2 }}>{card.sub}</div>}
           </div>
         ))}
       </div>

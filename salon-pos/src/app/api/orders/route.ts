@@ -54,13 +54,13 @@ export async function POST(req: NextRequest) {
   let retailSubtotal = 0;
 
   for (const item of items) {
-    subtotal += item.price;
+    subtotal += Math.round(Number(item.price));
   }
   for (const chem of chemicals) {
-    chemicalCost += chem.totalCost;
+    chemicalCost += Math.round(Number(chem.totalCost));
   }
   for (const r of ri) {
-    retailSubtotal += Number(r.price) * Number(r.quantity);
+    retailSubtotal += Math.round(Number(r.price)) * Math.round(Number(r.quantity));
   }
 
   const order = await prisma.$transaction(async (tx) => {

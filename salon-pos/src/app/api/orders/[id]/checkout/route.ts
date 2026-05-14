@@ -10,6 +10,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     approvedById,
     serviceCharge = 0,
     vat = 0,
+    roundingAdjustment = 0,
     ticketId = null,
     ticketDiscount = 0,
     retailItems = [],
@@ -23,9 +24,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   type RetailItemInput = { retailProductId: string; quantity: number; price: number };
   const ri: RetailItemInput[] = Array.isArray(retailItems) ? retailItems : [];
-  const newRetailSubtotal = ri.reduce((s, r) => s + Number(r.price) * Number(r.quantity), 0);
+  const newRetailSubtotal = ri.reduce((s, r) => s + Math.round(Number(r.price)) * Math.round(Number(r.quantity)), 0);
   const finalRetailSubtotal = (order.retailSubtotal || 0) + newRetailSubtotal;
-  const total = order.subtotal + finalRetailSubtotal - (discountAmount || 0) - (ticketDiscount || 0) + serviceCharge + vat;
+  // Keep monetary precision at 2 decimals (สตางค์) per Thai VAT rules
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const safeDiscount = round2(Number(discountAmount) || 0);
+  const safeTicketDiscount = round2(Number(ticketDiscount) || 0);
+  const safeSC = round2(Number(serviceCharge) || 0);
+  const safeVat = round2(Number(vat) || 0);
+  const safeRounding = round2(Number(roundingAdjustment) || 0);
+  const total = round2(order.subtotal + finalRetailSubtotal - safeDiscount - safeTicketDiscount + safeSC + safeVat + safeRounding);
 
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -40,9 +48,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       where: { id },
       data: {
         status: "PAID",
-        discountAmount: discountAmount || 0,
+        discountAmount: safeDiscount,
         discountPct: discountPct || 0,
         retailSubtotal: finalRetailSubtotal,
+        serviceCharge: safeSC,
+        vat: safeVat,
+        roundingAdjustment: safeRounding,
         total,
         receiptNumber,
         completedAt: now,
