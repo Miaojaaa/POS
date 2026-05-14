@@ -40,7 +40,7 @@ export default function ProductsPage() {
   const [tab, setTab] = useState<Category>("ALL");
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<FormType>("CHEMICAL");
-  const [chemForm, setChemForm] = useState({ name: "", unitVolumeG: "", costPerUnit: "", reorderPoint: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
+  const [chemForm, setChemForm] = useState({ name: "", unitVolumeG: "", costPerUnit: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
   const [retailForm, setRetailForm] = useState({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
   const [editingChemId, setEditingChemId] = useState<string | null>(null);
   const [editingRetailId, setEditingRetailId] = useState<string | null>(null);
@@ -97,7 +97,7 @@ export default function ProductsPage() {
   function openAddForm() {
     setEditingChemId(null);
     setEditingRetailId(null);
-    setChemForm({ name: "", unitVolumeG: "", costPerUnit: "", reorderPoint: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
+    setChemForm({ name: "", unitVolumeG: "", costPerUnit: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
     setRetailForm({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
     setShowForm(true);
   }
@@ -110,7 +110,6 @@ export default function ProductsPage() {
       name: p.name,
       unitVolumeG: String(p.unitVolumeG),
       costPerUnit: String(p.costPerUnit),
-      reorderPoint: String(p.reorderPoint),
       initialMain: "0",
       initialSub: "0",
       sellable: p.sellable,
@@ -152,7 +151,6 @@ export default function ProductsPage() {
               name: chemForm.name,
               unitVolumeG: Number(chemForm.unitVolumeG),
               costPerUnit: Number(chemForm.costPerUnit),
-              reorderPoint: Number(chemForm.reorderPoint) || 0,
               sellable: chemForm.sellable,
               salePrice: chemForm.sellable && chemForm.salePrice ? Number(chemForm.salePrice) : null,
             }),
@@ -165,7 +163,6 @@ export default function ProductsPage() {
               name: chemForm.name,
               unitVolumeG: Number(chemForm.unitVolumeG),
               costPerUnit: Number(chemForm.costPerUnit),
-              reorderPoint: Number(chemForm.reorderPoint) || 0,
               initialMain: Number(chemForm.initialMain),
               initialSub: Number(chemForm.initialSub),
               sellable: chemForm.sellable,
@@ -174,7 +171,7 @@ export default function ProductsPage() {
           });
         }
         closeForm();
-        setChemForm({ name: "", unitVolumeG: "", costPerUnit: "", reorderPoint: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
+        setChemForm({ name: "", unitVolumeG: "", costPerUnit: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
         await load();
       });
     } else {
@@ -333,7 +330,7 @@ export default function ProductsPage() {
                 <th style={{ textAlign: "left", padding: "8px 12px" }}>ชื่อสินค้า</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>การใช้งาน</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>ปริมาณ/ขวด</th>
-                <th style={{ textAlign: "right", padding: "8px 12px" }}>ต้นทุน/ขวด</th>
+                <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาต้นทุน</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคา/ก.</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคาขาย</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>คลังหลัก</th>
@@ -505,7 +502,6 @@ export default function ProductsPage() {
                 <div><label className="label">ชื่อสินค้า</label><input className="input" value={chemForm.name} onChange={e => setChemForm({ ...chemForm, name: e.target.value })} /></div>
                 <div><label className="label">ปริมาณต่อขวด (กรัม)</label><input type="number" className="input" value={chemForm.unitVolumeG} onChange={e => setChemForm({ ...chemForm, unitVolumeG: e.target.value })} placeholder="500" /></div>
                 <div><label className="label">ราคาต้นทุนต่อขวด (บาท)</label><input type="number" className="input" value={chemForm.costPerUnit} onChange={e => setChemForm({ ...chemForm, costPerUnit: e.target.value })} /></div>
-                <div><label className="label">Reorder Point (ก.)</label><input type="number" className="input" value={chemForm.reorderPoint} onChange={e => setChemForm({ ...chemForm, reorderPoint: e.target.value })} placeholder="1000" /></div>
                 {!editingChemId && (
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <div style={{ flex: 1 }}><label className="label">คลังหลักเริ่มต้น (ขวด)</label><input type="number" className="input" value={chemForm.initialMain} onChange={e => setChemForm({ ...chemForm, initialMain: e.target.value })} /></div>
