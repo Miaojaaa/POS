@@ -2,20 +2,30 @@
 
 import { useEffect, useState } from "react";
 
-type Customer = { id: string; name: string; phone: string; walletBalance: number; memberLevel: string };
+type Customer = { 
+  id: string; 
+  name: string; 
+  phone: string; 
+  walletBalance: number; 
+  memberLevel: string;
+  birthdate?: string;
+  allergyHistory?: string;
+};
 
 export default function MembersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({ 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ 
     name: "", 
     phone: "", 
     memberLevel: "BASIC",
     birthdate: "",
     allergyHistory: ""
   });
+  const [initialData, setInitialData] = useState<typeof formData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,25 +41,53 @@ export default function MembersPage() {
     fetchCustomers();
   }, []);
 
-  const handleAddMember = async (e: React.FormEvent) => {
+  const openAddModal = () => {
+    setEditingId(null);
+    const emptyData = { name: "", phone: "", memberLevel: "BASIC", birthdate: "", allergyHistory: "" };
+    setFormData(emptyData);
+    setInitialData(null);
+    setError("");
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (c: Customer) => {
+    setEditingId(c.id);
+    const data = { 
+      name: c.name, 
+      phone: c.phone, 
+      memberLevel: c.memberLevel,
+      birthdate: c.birthdate || "",
+      allergyHistory: c.allergyHistory || ""
+    };
+    setFormData(data);
+    setInitialData(data);
+    setError("");
+    setIsModalOpen(true);
+  };
+
+  const isChanged = editingId ? JSON.stringify(formData) !== JSON.stringify(initialData) : true;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCustomer.name || !newCustomer.phone) return;
+    if (!formData.name || !formData.phone) return;
 
     setIsSaving(true);
     setError("");
     try {
+      const method = editingId ? "PUT" : "POST";
+      const body = editingId ? { id: editingId, ...formData } : formData;
+      
       const res = await fetch("/api/customers", {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCustomer),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
         setIsModalOpen(false);
-        setNewCustomer({ name: "", phone: "", memberLevel: "BASIC", birthdate: "", allergyHistory: "" });
         fetchCustomers();
       } else {
         const data = await res.json();
-        setError(data.error || "ไม่สามารถเพิ่มสมาชิกได้ กรุณาลองใหม่อีกครั้ง");
+        setError(data.error || `ไม่สามารถ${editingId ? 'แก้ไข' : 'เพิ่ม'}สมาชิกได้ กรุณาลองใหม่อีกครั้ง`);
       }
     } catch (error) {
       setError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
@@ -75,10 +113,7 @@ export default function MembersPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <button className="btn-primary" onClick={() => {
-            setIsModalOpen(true);
-            setError("");
-          }}>+ เพิ่มสมาชิก</button>
+          <button className="btn-primary" onClick={openAddModal}>+ เพิ่มสมาชิก</button>
         </div>
       </div>
 
@@ -108,7 +143,13 @@ export default function MembersPage() {
                   </td>
                   <td style={{ padding: "8px 12px", textAlign: "right" }}>{c.walletBalance.toLocaleString()}</td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <button className="btn-secondary" style={{ padding: "2px 8px", fontSize: "0.75rem" }}>รายละเอียด</button>
+                    <button 
+                      className="btn-secondary" 
+                      style={{ padding: "2px 8px", fontSize: "0.75rem" }}
+                      onClick={() => openEditModal(c)}
+                    >
+                      แก้ไข/รายละเอียด
+                    </button>
                   </td>
                 </tr>
               ))
@@ -120,7 +161,7 @@ export default function MembersPage() {
       {isModalOpen && (
         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>➕ เพิ่มสมาชิกใหม่</h2>
+            <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>{editingId ? "📝 แก้ไขข้อมูลสมาชิก" : "➕ เพิ่มสมาชิกใหม่"}</h2>
             
             {error && (
               <div style={{ color: "var(--alert-red)", background: "#FFF0F0", padding: "0.75rem", borderRadius: "8px", marginBottom: "1rem", fontSize: "0.875rem" }}>
@@ -128,15 +169,15 @@ export default function MembersPage() {
               </div>
             )}
 
-            <form onSubmit={handleAddMember}>
+            <form onSubmit={handleSubmit}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
                 <div>
                   <label className="label">ชื่อ-นามสกุล</label>
                   <input 
                     className="input" 
                     required 
-                    value={newCustomer.name}
-                    onChange={e => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
                     autoFocus
                   />
                 </div>
@@ -145,8 +186,8 @@ export default function MembersPage() {
                   <input 
                     className="input" 
                     required 
-                    value={newCustomer.phone}
-                    onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                    value={formData.phone}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
               </div>
@@ -157,16 +198,16 @@ export default function MembersPage() {
                   <input 
                     className="input" 
                     type="date"
-                    value={newCustomer.birthdate}
-                    onChange={e => setNewCustomer({ ...newCustomer, birthdate: e.target.value })}
+                    value={formData.birthdate}
+                    onChange={e => setFormData({ ...formData, birthdate: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="label">ระดับสมาชิก</label>
                   <select 
                     className="input"
-                    value={newCustomer.memberLevel}
-                    onChange={e => setNewCustomer({ ...newCustomer, memberLevel: e.target.value })}
+                    value={formData.memberLevel}
+                    onChange={e => setFormData({ ...formData, memberLevel: e.target.value })}
                   >
                     <option value="BASIC">BASIC</option>
                     <option value="SILVER">SILVER</option>
@@ -181,15 +222,15 @@ export default function MembersPage() {
                 <textarea 
                   className="input" 
                   style={{ height: "80px", resize: "none" }}
-                  value={newCustomer.allergyHistory}
-                  onChange={e => setNewCustomer({ ...newCustomer, allergyHistory: e.target.value })}
+                  value={formData.allergyHistory}
+                  onChange={e => setFormData({ ...formData, allergyHistory: e.target.value })}
                 />
               </div>
 
               <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
                 <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>ยกเลิก</button>
-                <button type="submit" className="btn-primary" disabled={isSaving}>
-                  {isSaving ? "กำลังบันทึก..." : "บันทึกสมาชิก"}
+                <button type="submit" className="btn-primary" disabled={isSaving || !isChanged}>
+                  {isSaving ? "กำลังบันทึก..." : editingId ? "บันทึกการแก้ไข" : "บันทึกสมาชิก"}
                 </button>
               </div>
             </form>

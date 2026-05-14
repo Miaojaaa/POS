@@ -33,7 +33,13 @@ export async function PUT(req: NextRequest) {
   const { id, ...data } = body;
   const customer = await prisma.customer.update({
     where: { id },
-    data: { name: data.name, phone: data.phone, birthdate: data.birthdate || null, memberLevel: data.memberLevel },
+    data: { 
+      name: data.name, 
+      phone: data.phone, 
+      birthdate: data.birthdate || null, 
+      memberLevel: data.memberLevel,
+      allergyHistory: data.allergyHistory || null
+    },
   });
   return NextResponse.json(customer);
 }
