@@ -257,16 +257,40 @@ export default function NewOrderPage() {
   const retailSubtotal = selectedRetail.reduce((s, r) => s + r.price * r.quantity, 0);
   const chemCost = selectedChems.reduce((s, c) => s + c.totalCost, 0);
   const grandTotal = subtotal + retailSubtotal;
-  const servicesByCategory = services.reduce<Record<string, Service[]>>((acc, svc) => {
+
+  // Branch-specific service restrictions
+  // "second" branch → only Hair (ผม) categories
+  const branchAllowedGroups: Record<string, string[] | null> = {
+    "second": ["💇 ผม"],
+  };
+  const allowedGroups = branchAllowedGroups[selectedBranchId] ?? null; // null = all groups
+  const allowedCategories = allowedGroups
+    ? allowedGroups.flatMap(g => tabGroups[g] || [])
+    : null; // null = all categories
+
+  const branchFilteredServices = allowedCategories
+    ? services.filter(svc => allowedCategories.includes(svc.category.name))
+    : services;
+
+  const servicesByCategory = branchFilteredServices.reduce<Record<string, Service[]>>((acc, svc) => {
     const cat = svc.category.name;
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(svc);
     return acc;
   }, {});
-  const filteredServicesByCategory = selectedTab === "ทั้งหมด"
+
+  // Dynamic tabs: only show tabs that have services for this branch
+  const visibleTabs = allowedGroups
+    ? ["ทั้งหมด", ...allowedGroups]
+    : tabNames;
+
+  // Reset tab if current tab is hidden
+  const effectiveTab = visibleTabs.includes(selectedTab) ? selectedTab : "ทั้งหมด";
+
+  const filteredServicesByCategory = effectiveTab === "ทั้งหมด"
     ? servicesByCategory
     : Object.fromEntries(
-        (tabGroups[selectedTab] || []).filter(cat => servicesByCategory[cat]).map(cat => [cat, servicesByCategory[cat]])
+        (tabGroups[effectiveTab] || []).filter(cat => servicesByCategory[cat]).map(cat => [cat, servicesByCategory[cat]])
       );
 
   const tagStyle = (primary: boolean): React.CSSProperties => ({
@@ -583,8 +607,8 @@ export default function NewOrderPage() {
               marginBottom: "0.75rem", borderBottom: "1px solid var(--beige-dark)",
               scrollbarWidth: "none", msOverflowStyle: "none",
             }}>
-              {tabNames.map(tab => {
-                const isActive = selectedTab === tab;
+              {visibleTabs.map(tab => {
+                const isActive = effectiveTab === tab;
                 return (
                   <button
                     key={tab}
@@ -610,7 +634,7 @@ export default function NewOrderPage() {
             <div style={{ maxHeight: 420, overflowY: "auto" }}>
               {Object.entries(filteredServicesByCategory).map(([cat, svcs]) => (
                 <div key={cat} style={{ marginBottom: "1rem" }}>
-                  {(selectedTab === "ทั้งหมด" || (tabGroups[selectedTab] || []).length > 1) && (
+                  {(effectiveTab === "ทั้งหมด" || (tabGroups[effectiveTab] || []).length > 1) && (
                     <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#666", marginBottom: "0.5rem" }}>{cat}</div>
                   )}
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
