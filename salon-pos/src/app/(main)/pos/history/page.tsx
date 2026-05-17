@@ -1,11 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-<<<<<<< Updated upstream
 import { useBranch } from "@/context/BranchContext";
-=======
 import { buildReceiptHtml, type ReceiptData as PrintableReceipt } from "@/lib/receipt";
->>>>>>> Stashed changes
 
 type Branch = { id: string; name: string };
 type OrderRow = {
