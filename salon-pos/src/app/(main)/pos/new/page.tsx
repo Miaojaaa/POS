@@ -84,6 +84,15 @@ export default function NewOrderPage() {
   const [priceUnlocked, setPriceUnlocked] = useState(false);
   const [pendingPriceEdit, setPendingPriceEdit] = useState<{ serviceId: string; price: number } | null>(null);
 
+  // Category tab filter — 3 high-level groups
+  const [selectedTab, setSelectedTab] = useState<string>("ทั้งหมด");
+  const tabGroups: Record<string, string[]> = {
+    "💇 ผม": ["ตัด & สระไดร์", "ทรีทเมนท์", "สีผม", "ยืด ดัด"],
+    "💅 เล็บ": ["ทาสีเล็บ (มือ / เท้า)", "งานต่อ / งานถอด", "งานเทคนิค"],
+    "🧖 สปา": ["สปามือ / เท้า"],
+  };
+  const tabNames = ["ทั้งหมด", ...Object.keys(tabGroups)];
+
   useEffect(() => {
     const fetchData = async (url: string, setter: (data: any) => void) => {
       try {
@@ -266,6 +275,11 @@ export default function NewOrderPage() {
     acc[cat].push(svc);
     return acc;
   }, {});
+  const filteredServicesByCategory = selectedTab === "ทั้งหมด"
+    ? servicesByCategory
+    : Object.fromEntries(
+        (tabGroups[selectedTab] || []).filter(cat => servicesByCategory[cat]).map(cat => [cat, servicesByCategory[cat]])
+      );
 
   const tagStyle = (primary: boolean): React.CSSProperties => ({
     display: "flex", alignItems: "center", gap: 4,
@@ -573,32 +587,68 @@ export default function NewOrderPage() {
         {/* Right: Services + Summary */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div className="card">
-            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>💇 เลือกบริการ</h3>
-            {Object.entries(servicesByCategory).map(([cat, svcs]) => (
-              <div key={cat} style={{ marginBottom: "1rem" }}>
-                <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#666", marginBottom: "0.5rem" }}>{cat}</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                  {svcs.map(svc => {
-                    const selected = selectedItems.find(i => i.serviceId === svc.id);
-                    return (
-                      <button
-                        key={svc.id}
-                        onClick={() => selected ? removeService(svc.id) : addService(svc)}
-                        style={{
-                          padding: "6px 12px", borderRadius: 8, border: "1px solid",
-                          borderColor: selected ? "var(--olive)" : "var(--beige-dark)",
-                          background: selected ? "var(--olive)" : "white",
-                          color: selected ? "white" : "var(--text-dark)",
-                          fontSize: "0.8rem", cursor: "pointer",
-                        }}
-                      >
-                        {svc.name} (฿{svc.price.toLocaleString()})
-                      </button>
-                    );
-                  })}
+            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>💇 เลือกบริการ</h3>
+
+            {/* Category Tab Bar */}
+            <div style={{
+              display: "flex", gap: "0.4rem", overflowX: "auto", paddingBottom: "0.75rem",
+              marginBottom: "0.75rem", borderBottom: "1px solid var(--beige-dark)",
+              scrollbarWidth: "none", msOverflowStyle: "none",
+            }}>
+              {tabNames.map(tab => {
+                const isActive = selectedTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setSelectedTab(tab)}
+                    style={{
+                      padding: "8px 20px", borderRadius: 20, border: "1.5px solid",
+                      borderColor: isActive ? "var(--olive)" : "var(--beige-dark)",
+                      background: isActive ? "var(--olive)" : "white",
+                      color: isActive ? "white" : "#666",
+                      fontSize: "0.85rem", fontWeight: isActive ? 700 : 500,
+                      cursor: "pointer", whiteSpace: "nowrap",
+                      transition: "all 0.2s ease",
+                      boxShadow: isActive ? "0 2px 8px rgba(0,0,0,0.12)" : "none",
+                    }}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Filtered Services */}
+            <div style={{ maxHeight: 420, overflowY: "auto" }}>
+              {Object.entries(filteredServicesByCategory).map(([cat, svcs]) => (
+                <div key={cat} style={{ marginBottom: "1rem" }}>
+                  {(selectedTab === "ทั้งหมด" || (tabGroups[selectedTab] || []).length > 1) && (
+                    <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#666", marginBottom: "0.5rem" }}>{cat}</div>
+                  )}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                    {svcs.map(svc => {
+                      const selected = selectedItems.find(i => i.serviceId === svc.id);
+                      return (
+                        <button
+                          key={svc.id}
+                          onClick={() => selected ? removeService(svc.id) : addService(svc)}
+                          style={{
+                            padding: "6px 12px", borderRadius: 8, border: "1px solid",
+                            borderColor: selected ? "var(--olive)" : "var(--beige-dark)",
+                            background: selected ? "var(--olive)" : "white",
+                            color: selected ? "white" : "var(--text-dark)",
+                            fontSize: "0.8rem", cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          {svc.name} (฿{svc.price.toLocaleString()})
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           {/* Order Summary with inline price edit */}
