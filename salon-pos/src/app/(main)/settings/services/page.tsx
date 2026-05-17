@@ -125,12 +125,11 @@ export default function ServicesPage() {
       {Object.entries(byCategory).map(([cat, svcs]) => (
         <div key={cat} className="card" style={{ marginBottom: "1rem" }}>
           <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>{cat}</h3>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem", tableLayout: "fixed" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--beige-dark)", color: "#666" }}>
-                <th style={{ textAlign: "left", padding: "8px 12px" }}>บริการ</th>
-                <th style={{ textAlign: "right", padding: "8px 12px" }}>ราคา (฿)</th>
-                <th style={{ textAlign: "center", padding: "8px 12px" }}>เวลา (นาที)</th>
+                <th style={{ textAlign: "left", padding: "8px 12px", width: "70%" }}>บริการ</th>
+                <th style={{ textAlign: "right", padding: "8px 12px", width: "30%" }}>ราคา (฿)</th>
               </tr>
             </thead>
             <tbody>
@@ -144,9 +143,8 @@ export default function ServicesPage() {
                   }}
                   onClick={() => setSelectedServiceId(selectedServiceId === s.id ? null : s.id)}
                 >
-                  <td style={{ padding: "8px 12px" }}>{s.name}</td>
+                  <td style={{ padding: "8px 12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</td>
                   <td style={{ padding: "8px 12px", textAlign: "right" }}>{Math.round(s.price).toLocaleString()}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>{s.duration}</td>
                 </tr>
               ))}
             </tbody>
@@ -173,10 +171,6 @@ export default function ServicesPage() {
               <div>
                 <label className="label">ราคา (บาท)</label>
                 <input type="number" className="input" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
-              </div>
-              <div>
-                <label className="label">เวลา (นาที)</label>
-                <input type="number" className="input" value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value })} />
               </div>
             </div>
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
