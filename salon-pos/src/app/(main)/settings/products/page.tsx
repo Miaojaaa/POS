@@ -13,7 +13,7 @@ type Chemical = {
   sellable: boolean;
   salePrice: number | null;
   mainStock?: { quantity: number };
-  subStock?: { quantity: number; currentVolumeG: number };
+  subStocks: { quantity: number; currentVolumeG: number }[];
 };
 
 type RetailProduct = {

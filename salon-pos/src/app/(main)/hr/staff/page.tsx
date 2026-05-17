@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-type User = { id: string; name: string; email: string; role: string; phone?: string; baseSalary?: number; positionAllowance?: number; isActive: boolean };
+type Branch = { id: string; name: string };
+type User = { id: string; name: string; email: string; role: string; phone?: string; baseSalary?: number; positionAllowance?: number; isActive: boolean; branchId: string };
 
 const ROLE_ORDER = ["OWNER", "MANAGER", "CASHIER", "TECHNICIAN", "ASSISTANT"];
 const ROLES: Record<string, string> = {
@@ -20,10 +21,13 @@ function rolePriority(role: string): number {
 }
 
 export default function StaffPage() {
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
+  
   const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0, positionAllowance: 0 });
+  const [form, setForm] = useState({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0, positionAllowance: 0, branchId: "main" });
 
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -45,6 +49,7 @@ export default function StaffPage() {
       form.email !== original.email ||
       currentPhone !== originalPhone ||
       form.role !== original.role ||
+      form.branchId !== original.branchId ||
       Number(form.baseSalary) !== Number(original.baseSalary || 0) ||
       Number(form.positionAllowance) !== Number(original.positionAllowance || 0)
     );
@@ -59,7 +64,12 @@ export default function StaffPage() {
   };
 
   useEffect(() => {
-    fetch("/api/users").then(r => r.json()).then(setUsers);
+    fetch("/api/branches").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setBranches(data);
+    });
+    fetch("/api/users").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setUsers(data);
+    });
   }, []);
 
   function handleAddClick() {
@@ -69,13 +79,13 @@ export default function StaffPage() {
       return;
     }
     setEditingId(null);
-    setForm({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0, positionAllowance: 0 });
+    setForm({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0, positionAllowance: 0, branchId: branches[0]?.id || "main" });
     setShowForm(true);
   }
 
   function handleEditClick(u: User) {
     setEditingId(u.id);
-    setForm({ name: u.name, email: u.email, password: "", role: u.role, phone: u.phone || "", baseSalary: u.baseSalary || 0, positionAllowance: u.positionAllowance || 0 });
+    setForm({ name: u.name, email: u.email, password: "", role: u.role, phone: u.phone || "", baseSalary: u.baseSalary || 0, positionAllowance: u.positionAllowance || 0, branchId: u.branchId });
     setShowForm(true);
   }
 
@@ -88,7 +98,7 @@ export default function StaffPage() {
         const res = await fetch(`/api/users/${id}?ownerPin=${ownerPinStr}`, { method: "DELETE" });
         if (res.ok) {
           setShowForm(false);
-          fetch("/api/users").then(r => r.json()).then(setUsers);
+          fetch("/api/users").then(r => r.json()).then(data => { if (Array.isArray(data)) setUsers(data); });
         } else {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
@@ -138,7 +148,7 @@ export default function StaffPage() {
         });
         if (res.ok) {
           setShowForm(false);
-          fetch("/api/users").then(r => r.json()).then(setUsers);
+          fetch("/api/users").then(r => r.json()).then(data => { if (Array.isArray(data)) setUsers(data); });
         } else {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
@@ -156,7 +166,7 @@ export default function StaffPage() {
         });
         if (res.ok) {
           setShowForm(false);
-          fetch("/api/users").then(r => r.json()).then(setUsers);
+          fetch("/api/users").then(r => r.json()).then(data => { if (Array.isArray(data)) setUsers(data); });
         } else {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
@@ -186,7 +196,11 @@ export default function StaffPage() {
     }
   };
 
-  const sortedUsers = users.slice().sort((a, b) => {
+  const filteredUsers = Array.isArray(users) 
+    ? users.filter(u => selectedBranchId === "all" || u.branchId === selectedBranchId)
+    : [];
+
+  const sortedUsers = filteredUsers.slice().sort((a, b) => {
     const pa = rolePriority(a.role);
     const pb = rolePriority(b.role);
     if (pa !== pb) return pa - pb;
@@ -198,6 +212,18 @@ export default function StaffPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>พนักงาน</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
+          <select 
+            className="input" 
+            style={{ width: 160, marginBottom: 0 }}
+            value={selectedBranchId}
+            onChange={e => setSelectedBranchId(e.target.value)}
+          >
+            <option value="all">ทุกสาขา</option>
+            {branches.map(b => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+
           {!isUnlocked ? (
             <button className="btn-secondary" onClick={() => setShowUnlockModal(true)}>
               ปลดล็อกสิทธิ์แก้ไข
@@ -222,9 +248,9 @@ export default function StaffPage() {
           <thead>
             <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
               <th style={{ textAlign: "left", padding: "8px 12px" }}>ชื่อ</th>
+              <th style={{ textAlign: "left", padding: "8px 12px" }}>สาขา</th>
               <th style={{ textAlign: "left", padding: "8px 12px" }}>ตำแหน่ง</th>
               <th style={{ textAlign: "left", padding: "8px 12px" }}>อีเมล</th>
-              <th style={{ textAlign: "left", padding: "8px 12px" }}>เบอร์โทร</th>
               <th style={{ textAlign: "right", padding: "8px 12px" }}>เงินเดือนพื้นฐาน</th>
               <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าตำแหน่ง</th>
               {isUnlocked && <th style={{ textAlign: "center", padding: "8px 12px", width: 80 }}>จัดการ</th>}
@@ -232,10 +258,15 @@ export default function StaffPage() {
           </thead>
           <tbody>
             {sortedUsers.length === 0 ? (
-              <tr><td colSpan={isUnlocked ? 7 : 6} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มีพนักงาน</td></tr>
+              <tr><td colSpan={isUnlocked ? 7 : 6} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่พบพนักงาน</td></tr>
             ) : sortedUsers.map(u => (
               <tr key={u.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                 <td style={{ padding: "8px 12px", fontWeight: 500 }}>{u.name}</td>
+                <td style={{ padding: "8px 12px", color: "#666" }}>
+                  <span style={{ fontSize: "0.8rem", background: "#f0f0f0", padding: "2px 6px", borderRadius: 4 }}>
+                    {branches.find(b => b.id === u.branchId)?.name || u.branchId}
+                  </span>
+                </td>
                 <td style={{ padding: "8px 12px", color: "#666" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                     {u.role.split(",").map(r => (
@@ -246,7 +277,6 @@ export default function StaffPage() {
                   </div>
                 </td>
                 <td style={{ padding: "8px 12px", color: "#666", fontSize: "0.8rem" }}>{u.email}</td>
-                <td style={{ padding: "8px 12px", color: "#666", fontSize: "0.8rem" }}>{u.phone || "-"}</td>
                 <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: (u.baseSalary || 0) > 0 ? "var(--olive)" : "#aaa" }}>
                   ฿{(u.baseSalary || 0).toLocaleString()}
                 </td>
@@ -317,9 +347,19 @@ export default function StaffPage() {
                 <label className="label">ชื่อ</label>
                 <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
               </div>
-              <div>
-                <label className="label">อีเมล</label>
-                <input type="email" className="input" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                <div>
+                  <label className="label">อีเมล</label>
+                  <input type="email" className="input" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+                </div>
+                <div>
+                  <label className="label">สาขา</label>
+                  <select className="input" value={form.branchId} onChange={e => setForm({ ...form, branchId: e.target.value })}>
+                    {branches.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="label">เบอร์โทร</label>
@@ -349,9 +389,6 @@ export default function StaffPage() {
                     value={form.positionAllowance || ""}
                     onChange={e => setForm({ ...form, positionAllowance: Number(e.target.value) || 0 })}
                   />
-                </div>
-                <div style={{ gridColumn: "1 / -1", fontSize: "0.75rem", color: "#888", marginTop: -2 }}>
-                  จะแสดงในหน้า เงินเดือน &amp; ค่าคอม โดยอัตโนมัติ
                 </div>
               </div>
               <div>

@@ -4,9 +4,12 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 
 /* ─────────────────────────── types ─────────────────────────── */
+type Branch = { id: string; name: string };
 type OrderSummary = {
   id: string; customerName: string; customerPhone?: string; status: string;
   subtotal: number; total: number; createdAt: string; notes?: string;
+  branch: { name: string };
+  branchId: string;
   technician: { name: string };
   items: { service: { name: string }; price: number }[];
   chemicals: { product: { name: string }; amountG: number }[];
@@ -311,6 +314,8 @@ ${buildPage("COPY")}
 
 /* ─────────────────────────── main component ─────────────────── */
 export default function QueuePage() {
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -348,10 +353,20 @@ export default function QueuePage() {
   const [fullCustomerName, setFullCustomerName] = useState("");
   const [fullCustomerAddress, setFullCustomerAddress] = useState("");
 
+  /* ── initial load ── */
+  useEffect(() => {
+    fetch("/api/branches").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setBranches(data);
+    });
+  }, []);
+
   /* ── queue load ── */
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/orders?status=WAITING,IN_PROGRESS,DONE,PAID,CANCELLED");
+      const url = selectedBranchId === "all" 
+        ? "/api/orders?status=WAITING,IN_PROGRESS,DONE,PAID,CANCELLED"
+        : `/api/orders?status=WAITING,IN_PROGRESS,DONE,PAID,CANCELLED&branchId=${selectedBranchId}`;
+      const res = await fetch(url);
       if (!res.ok) return;
       const data = await res.json();
       if (Array.isArray(data)) setOrders(data);
@@ -360,7 +375,7 @@ export default function QueuePage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedBranchId]);
 
   useEffect(() => {
     load();
@@ -550,7 +565,7 @@ export default function QueuePage() {
 
   /* ── checkout submit ── */
   const ticketDiscount = getTicketDiscount(selectedTicket, checkoutOrder);
-  const retailSubtotal = retailLines.reduce((s, l) => s + l.price * l.quantity, 0);
+  const retailTotal = retailLines.reduce((s, l) => s + l.price * l.quantity, 0);
   const applicableTickets = customerTickets.filter(t => {
     if (t.ticketDef.type === "FIXED") return true;
     if (t.ticketDef.type === "SERVICE" && t.ticketDef.serviceId) {
@@ -558,30 +573,30 @@ export default function QueuePage() {
     }
     return false;
   });
-  const baseTotal = checkoutOrder ? Math.max(0, checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + retailSubtotal - discountAmount - ticketDiscount) : 0;
+  const currentBaseTotal = checkoutOrder ? Math.max(0, checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + retailTotal - discountAmount - ticketDiscount) : 0;
   const hasCreditCard = payments.some(p => p.method === "CREDIT_CARD");
   // Thai tax rule: round at the 3rd decimal place (keep 2 decimals)
   const round2 = (n: number) => Math.round(n * 100) / 100;
-  const serviceCharge = hasCreditCard ? round2(baseTotal * 0.03) : 0;
-  const vat = round2((baseTotal + serviceCharge) * 0.07);
-  const rawTotal = round2(baseTotal + serviceCharge + vat);
+  const currentServiceCharge = hasCreditCard ? round2(currentBaseTotal * 0.03) : 0;
+  const currentVat = round2((currentBaseTotal + currentServiceCharge) * 0.07);
+  const currentRawTotal = round2(currentBaseTotal + currentServiceCharge + currentVat);
   // Round to whole baht only when all payments are CASH/WALLET. Track the difference as a separate line.
   const cashOrWalletOnly = payments.length > 0 && payments.every(p => p.method === "CASH" || p.method === "WALLET");
-  const roundingAdjustment = cashOrWalletOnly ? round2(Math.round(rawTotal) - rawTotal) : 0;
-  const finalTotal = round2(rawTotal + roundingAdjustment);
+  const currentRoundingAdjustment = cashOrWalletOnly ? round2(Math.round(currentRawTotal) - currentRawTotal) : 0;
+  const currentFinalTotal = round2(currentRawTotal + currentRoundingAdjustment);
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
-  const change = totalPaid - finalTotal;
+  const currentChange = totalPaid - currentFinalTotal;
 
   async function handleCheckout() {
     if (!checkoutOrder) return;
-    if (change < -0.01) { showAlert("ยอดชำระไม่ครบ กรุณาตรวจสอบ"); return; }
+    if (currentChange < -0.01) { showAlert("ยอดชำระไม่ครบ กรุณาตรวจสอบ"); return; }
     setProcessing(true);
     const res = await fetch(`/api/orders/${checkoutOrder.id}/checkout`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         payments: payments.filter(p => p.amount > 0),
         discountAmount, discountPct, approvedById,
-        serviceCharge, vat, roundingAdjustment,
+        serviceCharge: currentServiceCharge, vat: currentVat, roundingAdjustment: currentRoundingAdjustment,
         ticketId: selectedTicket?.id ?? null,
         ticketDiscount,
         retailItems: retailLines.map(l => ({ retailProductId: l.retailProductId, quantity: l.quantity, price: l.price })),
@@ -603,17 +618,17 @@ export default function QueuePage() {
           })),
         ],
       };
-      const receiptSubtotal = checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + retailSubtotal;
+      const receiptSubtotal = checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + retailTotal;
       const receiptPayload: ReceiptData = {
         order: receiptOrder,
         subtotal: receiptSubtotal,
         discountTotal: discountAmount + ticketDiscount,
-        baseTotal,
-        serviceCharge,
-        vat,
-        roundingAdjustment,
-        finalTotal,
-        change: Math.max(0, change),
+        baseTotal: currentBaseTotal,
+        serviceCharge: currentServiceCharge,
+        vat: currentVat,
+        roundingAdjustment: currentRoundingAdjustment,
+        finalTotal: currentFinalTotal,
+        change: Math.max(0, currentChange),
         payments: payments.filter(p => p.amount > 0),
         paidAt: new Date(),
         receiptNumber: data.receiptNumber ?? 1,
@@ -673,6 +688,7 @@ export default function QueuePage() {
           </span>
         </div>
         <div style={{ fontSize: "0.85rem", color: "#555", marginBottom: 6 }}>ช่าง: <strong>{order.technician.name}</strong></div>
+        <div style={{ fontSize: "0.85rem", color: "#777", marginBottom: 6 }}>สาขา: {order.branch?.name || order.branchId}</div>
         <div style={{ fontSize: "0.85rem", marginBottom: 4 }}>{order.items.map(i => i.service.name).join(" · ")}</div>
         {order.chemicals.length > 0 && (
           <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: 4 }}>
@@ -723,7 +739,18 @@ export default function QueuePage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📋 คิวลูกค้า</h1>
-        <div style={{ display: "flex", gap: "0.75rem" }}>
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+          <select 
+            className="input" 
+            style={{ width: 160, marginBottom: 0 }}
+            value={selectedBranchId}
+            onChange={e => setSelectedBranchId(e.target.value)}
+          >
+            <option value="all">ทุกสาขา</option>
+            {branches.map(b => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
           <Link href="/pos/new" className="btn-primary" style={{ textDecoration: "none" }}>+ รับออร์เดอร์ใหม่</Link>
           <Link href="/pos/history" className="btn-secondary" style={{ textDecoration: "none" }}>📜 ประวัติ Transaction</Link>
           <button className="btn-secondary" onClick={load}>🔄 รีเฟรช</button>
@@ -832,7 +859,7 @@ export default function QueuePage() {
                         </div>
                       ))}
                       <div style={{ borderTop: "1px solid var(--beige-dark)", marginTop: 6, paddingTop: 6, display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "0.875rem" }}>
-                        <span>รวมสินค้า</span><span>฿{retailSubtotal.toLocaleString()}</span>
+                        <span>รวมสินค้า</span><span>฿{retailTotal.toLocaleString()}</span>
                       </div>
                     </>
                   )}
@@ -896,9 +923,9 @@ export default function QueuePage() {
                       <span>สินค้า Retail (จากออร์เดอร์)</span><span>฿{checkoutOrder.retailSubtotal.toLocaleString()}</span>
                     </div>
                   )}
-                  {retailSubtotal > 0 && (
+                  {retailTotal > 0 && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
-                      <span>สินค้า Retail (เพิ่มที่ checkout)</span><span>฿{retailSubtotal.toLocaleString()}</span>
+                      <span>สินค้า Retail (เพิ่มที่ checkout)</span><span>฿{retailTotal.toLocaleString()}</span>
                     </div>
                   )}
                   {discountAmount > 0 && (
@@ -913,19 +940,19 @@ export default function QueuePage() {
                   )}
                   {hasCreditCard && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginTop: 4 }}>
-                      <span>Service Charge (3%)</span><span>฿{serviceCharge.toFixed(2)}</span>
+                      <span>Service Charge (3%)</span><span>฿{currentServiceCharge.toFixed(2)}</span>
                     </div>
                   )}
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginTop: 2 }}>
-                    <span>VAT (7%)</span><span>฿{vat.toFixed(2)}</span>
+                    <span>VAT (7%)</span><span>฿{currentVat.toFixed(2)}</span>
                   </div>
-                  {roundingAdjustment !== 0 && (
+                  {currentRoundingAdjustment !== 0 && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginTop: 2, color: "#888" }}>
-                      <span>ค่าปัดเศษ</span><span>{roundingAdjustment > 0 ? "+" : ""}฿{roundingAdjustment.toFixed(2)}</span>
+                      <span>ค่าปัดเศษ</span><span>{currentRoundingAdjustment > 0 ? "+" : ""}฿{currentRoundingAdjustment.toFixed(2)}</span>
                     </div>
                   )}
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "1.1rem", color: "var(--olive)", marginTop: 6 }}>
-                    <span>ยอดสุทธิ</span><span>฿{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span>ยอดสุทธิ</span><span>฿{currentFinalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
@@ -947,7 +974,7 @@ export default function QueuePage() {
                         setPayments(prev => {
                           const newPayments = prev.map((p, j) => j === i ? { ...p, method: newMethod } : p);
                           if (newPayments.length === 1 && checkoutOrder) {
-                            const base = Math.max(0, checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + retailSubtotal - discountAmount - ticketDiscount);
+                            const base = Math.max(0, checkoutOrder.subtotal + (checkoutOrder.retailSubtotal || 0) + retailTotal - discountAmount - ticketDiscount);
                             newPayments[0].amount = computePaymentAmount(base, newMethod);
                           }
                           return newPayments;
@@ -975,14 +1002,14 @@ export default function QueuePage() {
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginBottom: 4 }}>
                     <span>รวมยอดชำระ</span><span style={{ fontWeight: 700 }}>฿{totalPaid.toLocaleString()}</span>
                   </div>
-                  {change > 0.01 && (
+                  {currentChange > 0.01 && (
                     <div style={{ display: "flex", justifyContent: "space-between", color: "#2d6a4f", fontWeight: 700 }}>
-                      <span>เงินทอน</span><span>฿{change.toLocaleString()}</span>
+                      <span>เงินทอน</span><span>฿{currentChange.toLocaleString()}</span>
                     </div>
                   )}
-                  {change < -0.01 && (
+                  {currentChange < -0.01 && (
                     <div style={{ display: "flex", justifyContent: "space-between", color: "var(--alert-red, #c0392b)", fontWeight: 700 }}>
-                      <span>ยังขาดอีก</span><span>฿{(-change).toLocaleString()}</span>
+                      <span>ยังขาดอีก</span><span>฿{(-currentChange).toLocaleString()}</span>
                     </div>
                   )}
                 </div>

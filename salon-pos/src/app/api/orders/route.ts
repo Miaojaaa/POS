@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    const branchId = searchParams.get("branchId");
 
     const where: any = {};
     if (status) {
@@ -17,10 +18,14 @@ export async function GET(req: NextRequest) {
       if (startDate) where.completedAt.gte = new Date(startDate);
       if (endDate) where.completedAt.lte = new Date(endDate);
     }
+    if (branchId) {
+      where.branchId = branchId;
+    }
 
     const orders = await prisma.order.findMany({
       where,
       include: {
+        branch: { select: { name: true } },
         technician: { select: { id: true, name: true } },
         assistants: { include: { user: { select: { id: true, name: true } } } },
         items: { include: { service: true } },
@@ -43,7 +48,7 @@ export async function POST(req: NextRequest) {
     customerName, customerPhone, customerId,
     technicianId, assistantIds = [],
     items = [], chemicals = [], retailItems = [],
-    notes,
+    notes, branchId = "main",
   } = body;
 
   type RetailItemInput = { retailProductId: string; quantity: number; price: number };
@@ -70,6 +75,7 @@ export async function POST(req: NextRequest) {
         customerPhone,
         customerId: customerId || null,
         technicianId,
+        branchId,
         notes,
         subtotal,
         retailSubtotal,

@@ -49,6 +49,9 @@ export default function PayrollPage() {
 
   // confirm flow
   const [showConfirmWarning, setShowConfirmWarning] = useState(false);
+  const [showKPIWarning, setShowKPIWarning] = useState(false);
+  const [lowKPITechs, setLowKPITechs] = useState<PayrollItem[]>([]);
+  
   const [showPinModal, setShowPinModal] = useState(false);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
@@ -80,10 +83,8 @@ export default function PayrollPage() {
 
   useEffect(() => {
     load();
-    // Auto-refresh when the user returns to this tab (e.g. after editing staff)
     const onFocus = () => load(true);
     window.addEventListener("focus", onFocus);
-    // Poll every 8s so changes from another window/tab show up automatically
     const interval = setInterval(() => load(true), 8000);
     return () => {
       window.removeEventListener("focus", onFocus);
@@ -101,6 +102,20 @@ export default function PayrollPage() {
     setTxLoading(false);
   }
 
+  function handleStartConfirm() {
+    if (!run) return;
+    const techs = run.items.filter(i => i.user.role.includes("TECHNICIAN"));
+    const teamAvg = techs.length > 0 ? techs.reduce((s, i) => s + i.orderCount, 0) / techs.length : 0;
+    const low = techs.filter(i => i.orderCount < teamAvg * 0.5);
+    
+    if (low.length > 0) {
+      setLowKPITechs(low);
+      setShowKPIWarning(true);
+    } else {
+      setShowConfirmWarning(true);
+    }
+  }
+
   async function confirmPayroll() {
     if (!run) return;
     setConfirming(true);
@@ -109,7 +124,7 @@ export default function PayrollPage() {
       const res = await fetch("/api/payroll/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ month, year, pin }),
+        body: JSON.stringify({ runId: run.id, pin }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -182,7 +197,7 @@ export default function PayrollPage() {
               <div style={{ fontSize: "0.9rem", color: "#854d0e" }}>
                 ⚠️ รายการยังเป็น <strong>ฉบับร่าง</strong> ยอดจะเปลี่ยนไปตามออร์เดอร์ใหม่ๆ ที่เข้ามา คลิก "ยืนยันยอด" เพื่อล็อกยอดเดือนนี้
               </div>
-              <button className="btn-primary" onClick={() => setShowConfirmWarning(true)}>ยืนยันยอดเดือน {month}</button>
+              <button className="btn-primary" onClick={handleStartConfirm}>ยืนยันยอดเดือน {month}</button>
             </div>
           )}
 
@@ -275,6 +290,33 @@ export default function PayrollPage() {
                   <strong>{txOrders.length} รายการ · ยอดรวม ฿{txOrders.reduce((s, o) => s + o.total, 0).toLocaleString()}</strong>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* KPI Warning Flow */}
+      {showKPIWarning && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 460 }}>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--alert-red)" }}>⚠️ พบช่างที่ KPI ต่ำกว่าเกณฑ์</h3>
+            <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "1rem" }}>
+              ช่างต่อไปนี้มีจำนวนออร์เดอร์ต่ำกว่า 50% ของค่าเฉลี่ยทีมในเดือนนี้:
+            </p>
+            <div style={{ background: "#fff5f5", padding: "1rem", borderRadius: 8, marginBottom: "1.5rem" }}>
+              {lowKPITechs.map(t => (
+                <div key={t.id} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", marginBottom: 4 }}>
+                  <span>• {t.user.name}</span>
+                  <span style={{ fontWeight: 700 }}>{t.orderCount} ออร์เดอร์</span>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: "0.85rem", color: "#888", marginBottom: "1.5rem" }}>
+              คุณต้องการดำเนินการปิดยอดเงินเดือนต่อไปหรือไม่?
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button className="btn-primary" style={{ flex: 1 }} onClick={() => { setShowKPIWarning(false); setShowConfirmWarning(true); }}>ยอมรับและไปต่อ</button>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowKPIWarning(false)}>กลับไปตรวจสอบ</button>
             </div>
           </div>
         </div>

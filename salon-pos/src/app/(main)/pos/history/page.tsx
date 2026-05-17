@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 
+type Branch = { id: string; name: string };
 type OrderRow = {
   id: string;
   receiptNumber?: number | null;
@@ -14,6 +15,8 @@ type OrderRow = {
   discountAmount: number;
   createdAt: string;
   completedAt?: string | null;
+  branch?: { name: string };
+  branchId: string;
   technician: { name: string };
   assistants?: { user: { id: string; name: string } }[];
   items: { id: string; price: number; service: { name: string } }[];
@@ -37,6 +40,8 @@ function formatReceiptNo(seq: number, completedAt: string | Date) {
 }
 
 export default function HistoryPage() {
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState("all");
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -46,13 +51,22 @@ export default function HistoryPage() {
   const [selected, setSelected] = useState<OrderRow | null>(null);
 
   useEffect(() => {
+    fetch("/api/branches").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setBranches(data);
+    });
+  }, []);
+
+  useEffect(() => {
     setLoading(true);
-    fetch("/api/orders?status=PAID,CANCELLED")
+    const url = selectedBranchId === "all" 
+      ? "/api/orders?status=PAID,CANCELLED"
+      : `/api/orders?status=PAID,CANCELLED&branchId=${selectedBranchId}`;
+    fetch(url)
       .then(r => r.json())
       .then(data => { if (Array.isArray(data)) setOrders(data); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedBranchId]);
 
   const filtered = useMemo(() => {
     return orders.filter(o => {
@@ -86,10 +100,19 @@ export default function HistoryPage() {
       </div>
 
       <div className="card" style={{ marginBottom: "1rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "0.75rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr", gap: "0.75rem" }}>
           <div>
             <label className="label">ค้นหา (ชื่อ/เบอร์)</label>
             <input className="input" placeholder="ชื่อลูกค้าหรือเบอร์โทร" value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <div>
+            <label className="label">สาขา</label>
+            <select className="input" value={selectedBranchId} onChange={e => setSelectedBranchId(e.target.value)}>
+              <option value="all">ทุกสาขา</option>
+              {branches.map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="label">สถานะ</label>
@@ -121,7 +144,7 @@ export default function HistoryPage() {
                 <th style={{ textAlign: "left", padding: "8px 12px" }}>เลขใบเสร็จ</th>
                 <th style={{ textAlign: "left", padding: "8px 12px" }}>ลูกค้า</th>
                 <th style={{ textAlign: "left", padding: "8px 12px" }}>ช่าง</th>
-                <th style={{ textAlign: "left", padding: "8px 12px" }}>ผู้ช่วยช่าง</th>
+                <th style={{ textAlign: "left", padding: "8px 12px" }}>สาขา</th>
                 <th style={{ textAlign: "right", padding: "8px 12px" }}>ยอดรวม</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>การชำระ</th>
                 <th style={{ textAlign: "center", padding: "8px 12px" }}>สถานะ</th>
@@ -147,9 +170,7 @@ export default function HistoryPage() {
                       {o.customerPhone && <div style={{ fontSize: "0.75rem", color: "#888" }}>{o.customerPhone}</div>}
                     </td>
                     <td style={{ padding: "8px 12px" }}>{o.technician.name}</td>
-                    <td style={{ padding: "8px 12px", color: o.assistants && o.assistants.length > 0 ? "#444" : "#bbb", fontSize: "0.85rem" }}>
-                      {o.assistants && o.assistants.length > 0 ? o.assistants.map(a => a.user.name).join(", ") : "-"}
-                    </td>
+                    <td style={{ padding: "8px 12px", color: "#666" }}>{o.branch?.name || o.branchId}</td>
                     <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: o.status === "CANCELLED" ? "#aaa" : "var(--olive)" }}>
                       {o.status === "CANCELLED" ? <s>฿{o.total.toLocaleString()}</s> : `฿${o.total.toLocaleString()}`}
                     </td>
@@ -187,6 +208,7 @@ export default function HistoryPage() {
             <div style={{ marginBottom: "0.75rem" }}>
               <div><strong>ลูกค้า:</strong> {selected.customerName} {selected.customerPhone && `(${selected.customerPhone})`}</div>
               <div><strong>ช่าง:</strong> {selected.technician.name}</div>
+              <div><strong>สาขา:</strong> {selected.branch?.name || selected.branchId}</div>
               <div>
                 <strong>ผู้ช่วยช่าง:</strong>{" "}
                 {selected.assistants && selected.assistants.length > 0

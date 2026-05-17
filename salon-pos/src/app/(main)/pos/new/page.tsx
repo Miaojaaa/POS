@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
+type Branch = { id: string; name: string };
 type Service = { id: string; name: string; price: number; duration: number; category: { name: string } };
-type User = { id: string; name: string; role: string };
+type User = { id: string; name: string; role: string; branchId: string };
 type Product = { id: string; name: string; unitVolumeG: number; costPerUnit: number };
 type CustomerDetail = {
   id: string; name: string; phone: string; walletBalance: number;
@@ -27,9 +28,23 @@ type RetailLine = { retailProductId: string; name: string; price: number; quanti
 
 export default function NewOrderPage() {
   const router = useRouter();
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState("main");
+
   const [services, setServices] = useState<Service[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+
+  // Load persisted branch
+  useEffect(() => {
+    const saved = localStorage.getItem("last_selected_branch");
+    if (saved) setSelectedBranchId(saved);
+  }, []);
+
+  const handleBranchChange = (id: string) => {
+    setSelectedBranchId(id);
+    localStorage.setItem("last_selected_branch", id);
+  };
 
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -84,6 +99,7 @@ export default function NewOrderPage() {
       }
     };
 
+    fetchData("/api/branches", setBranches);
     fetchData("/api/services", setServices);
     fetchData("/api/users", setUsers);
     fetchData("/api/products", setProducts);
@@ -107,8 +123,10 @@ export default function NewOrderPage() {
     }
   }, []);
 
-  const technicians = users.filter(u => u.role.split(",").some(r => ["TECHNICIAN", "OWNER", "MANAGER"].includes(r)));
-  const assistants = users.filter(u => u.role.split(",").some(r => ["ASSISTANT", "TECHNICIAN"].includes(r)));
+  // Filter staff by selected branch
+  const branchUsers = users.filter(u => u.branchId === selectedBranchId);
+  const technicians = branchUsers.filter(u => u.role.split(",").some(r => ["TECHNICIAN", "OWNER", "MANAGER"].includes(r)));
+  const assistants = branchUsers.filter(u => u.role.split(",").some(r => ["ASSISTANT", "TECHNICIAN"].includes(r)));
   const availableTechs = technicians.filter(u => !technicianIds.includes(u.id) && !assistantIds.includes(u.id));
   const availableAssists = assistants.filter(u => !assistantIds.includes(u.id) && !technicianIds.includes(u.id));
 
@@ -119,6 +137,12 @@ export default function NewOrderPage() {
   function removeAssistant(id: string) {
     setAssistantIds(prev => prev.filter(a => a !== id));
   }
+
+  // Reset selected staff when branch changes
+  useEffect(() => {
+    setTechnicianIds([]);
+    setAssistantIds([]);
+  }, [selectedBranchId]);
 
   // Chemical search — only show products not yet added
   const filteredChemProducts = products.filter(p =>
@@ -224,6 +248,7 @@ export default function NewOrderPage() {
         chemicals: selectedChems.filter(c => c.amountG > 0),
         retailItems: selectedRetail.map(r => ({ retailProductId: r.retailProductId, quantity: r.quantity, price: r.price })),
         notes,
+        branchId: selectedBranchId,
       }),
     });
     if (res.ok) { router.push("/pos/queue"); }
@@ -250,18 +275,26 @@ export default function NewOrderPage() {
     border: `1px solid ${primary ? "var(--olive)" : "var(--beige-dark)"}`,
   });
 
-  const addBtnStyle: React.CSSProperties = {
-    padding: "0 14px", background: "var(--olive)", color: "white",
-    border: "none", borderRadius: 8, cursor: "pointer",
-    fontSize: "1.25rem", fontWeight: 700, lineHeight: 1,
-    flexShrink: 0,
-  };
-
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", marginBottom: "1.5rem" }}>
-        📋 รับออร์เดอร์ใหม่
-      </h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          📋 รับออร์เดอร์ใหม่
+        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <label style={{ fontSize: "0.9rem", fontWeight: 600, color: "#666" }}>เลือกสาขา:</label>
+          <select 
+            className="input" 
+            style={{ width: 180, marginBottom: 0 }}
+            value={selectedBranchId}
+            onChange={e => setSelectedBranchId(e.target.value)}
+          >
+            {branches.map(b => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
         {/* Left: Customer + Staff + Chemicals */}
@@ -292,7 +325,7 @@ export default function NewOrderPage() {
 
             {/* Technicians — multiple via dropdown + button */}
             <div style={{ marginBottom: "0.75rem" }}>
-              <label className="label">ช่างผู้ดูแล * <span style={{ fontWeight: 400, color: "#888" }}>(เพิ่มได้หลายคน)</span></label>
+              <label className="label">ช่างผู้ดูแล * <span style={{ fontWeight: 400, color: "#888" }}>(เฉพาะสาขาที่เลือก)</span></label>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
                 <select
                   className="input"
@@ -313,7 +346,7 @@ export default function NewOrderPage() {
               </div>
               {technicianIds.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.5rem" }}>
-                  {technicianIds.map((id, idx) => {
+                  {technicianIds.map((id) => {
                     const u = users.find(u => u.id === id);
                     return (
                       <span key={id} style={tagStyle(true)}>
@@ -331,7 +364,7 @@ export default function NewOrderPage() {
 
             {/* Assistants — dropdown + button */}
             <div style={{ marginBottom: "0.75rem" }}>
-              <label className="label">ผู้ช่วยช่าง <span style={{ fontWeight: 400, color: "#888" }}>(เพิ่มได้หลายคน)</span></label>
+              <label className="label">ผู้ช่วยช่าง <span style={{ fontWeight: 400, color: "#888" }}>(เฉพาะสาขาที่เลือก)</span></label>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
                 <select
                   className="input"

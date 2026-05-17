@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+type Branch = { id: string; name: string };
 type Transfer = {
   id: string;
   status: string;
   note?: string;
+  branchId: string;
+  branch?: { name: string };
   createdAt: string;
   approvedAt?: string;
   createdBy: { name: string };
@@ -16,20 +19,52 @@ type Transfer = {
 type Product = { id: string; name: string; mainQty: number };
 
 export default function TransfersPage() {
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranchId, setSelectedBranchId] = useState("all");
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [targetBranchId, setTargetBranchId] = useState("main");
   const [items, setItems] = useState<{ productId: string; quantity: number }[]>([{ productId: "", quantity: 1 }]);
   const [note, setNote] = useState("");
 
   async function load() {
-    const [tRes, pRes] = await Promise.all([fetch("/api/transfers"), fetch("/api/stock")]);
-    setTransfers(await tRes.json());
-    const stock = await pRes.json();
-    setProducts(stock.map((s: { id: string; name: string; mainQty: number }) => ({ id: s.id, name: s.name, mainQty: s.mainQty })));
+    try {
+      const url = selectedBranchId === "all" ? "/api/transfers" : `/api/transfers?branchId=${selectedBranchId}`;
+      const [tRes, pRes, bRes] = await Promise.all([
+        fetch(url), 
+        fetch("/api/stock"),
+        fetch("/api/branches")
+      ]);
+      
+      if (!tRes.ok || !pRes.ok || !bRes.ok) {
+        const tErr = !tRes.ok ? await tRes.text() : "OK";
+        const pErr = !pRes.ok ? await pRes.text() : "OK";
+        const bErr = !bRes.ok ? await bRes.text() : "OK";
+        console.error("Fetch failed", { 
+          tStatus: tRes.status, tErr,
+          pStatus: pRes.status, pErr,
+          bStatus: bRes.status, bErr 
+        });
+        return;
+      }
+
+      const tData = await tRes.json();
+      if (Array.isArray(tData)) setTransfers(tData);
+      
+      const stock = await pRes.json();
+      if (Array.isArray(stock)) {
+        setProducts(stock.map((s: { id: string; name: string; mainQty: number }) => ({ id: s.id, name: s.name, mainQty: s.mainQty })));
+      }
+
+      const bData = await bRes.json();
+      if (Array.isArray(bData)) setBranches(bData);
+    } catch (err) {
+      console.error("Failed to load transfers page data:", err);
+    }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [selectedBranchId]);
 
   async function requestTransfer() {
     const validItems = items.filter(i => i.productId && i.quantity > 0);
@@ -37,7 +72,7 @@ export default function TransfersPage() {
     await fetch("/api/transfers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: validItems, note }),
+      body: JSON.stringify({ items: validItems, note, branchId: targetBranchId }),
     });
     setShowForm(false);
     setItems([{ productId: "", quantity: 1 }]);
@@ -62,7 +97,20 @@ export default function TransfersPage() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>🔄 โอนสินค้า Main → คลังหน้าร้าน</h1>
-        <button className="btn-primary" onClick={() => setShowForm(true)}>+ ขอโอนสินค้า</button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <select 
+            className="input" 
+            style={{ width: 160, marginBottom: 0 }}
+            value={selectedBranchId}
+            onChange={e => setSelectedBranchId(e.target.value)}
+          >
+            <option value="all">ทุกสาขา</option>
+            {branches.map(b => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+          <button className="btn-primary" onClick={() => setShowForm(true)}>+ ขอโอนสินค้า</button>
+        </div>
       </div>
 
       <div className="card">
@@ -77,6 +125,9 @@ export default function TransfersPage() {
                 </span>
                 <span style={{ marginLeft: 8, fontSize: "0.85rem", color: "#666" }}>
                   ขอโดย {t.createdBy.name} · {new Date(t.createdAt).toLocaleDateString("th-TH")}
+                </span>
+                <span style={{ marginLeft: 8, fontSize: "0.85rem", color: "var(--olive)", fontWeight: 600 }}>
+                  ปลายทาง: {t.branch?.name || t.branchId}
                 </span>
                 {t.approvedBy && (
                   <span style={{ marginLeft: 8, fontSize: "0.8rem", color: "#888" }}>
@@ -109,6 +160,14 @@ export default function TransfersPage() {
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 500 }}>
             <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ขอโอนสินค้าจากคลังหลัก</h3>
+            
+            <div style={{ marginBottom: "1rem" }}>
+              <label className="label">โอนไปสาขา</label>
+              <select className="input" value={targetBranchId} onChange={e => setTargetBranchId(e.target.value)}>
+                {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </div>
+
             {items.map((item, i) => (
               <div key={i} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
                 <select

@@ -29,17 +29,31 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const body = await req.json();
-  const { id, ...data } = body;
-  const customer = await prisma.customer.update({
-    where: { id },
-    data: { 
-      name: data.name, 
-      phone: data.phone, 
-      birthdate: data.birthdate || null, 
-      memberLevel: data.memberLevel,
-      allergyHistory: data.allergyHistory || null
-    },
-  });
-  return NextResponse.json(customer);
+  try {
+    const body = await req.json();
+    const { id, ...data } = body;
+
+    const existing = await prisma.customer.findUnique({ where: { id } });
+    if (!existing) return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+
+    // Enforce permanent allergy history (cannot be cleared if it was set)
+    if (existing.allergyHistory && (!data.allergyHistory || !data.allergyHistory.trim())) {
+      return NextResponse.json({ error: "ประวัติการแพ้ไม่สามารถลบออกได้ (Permanent Record)" }, { status: 400 });
+    }
+
+    const customer = await prisma.customer.update({
+      where: { id },
+      data: { 
+        name: data.name, 
+        phone: data.phone, 
+        birthdate: data.birthdate || null, 
+        memberLevel: data.memberLevel,
+        allergyHistory: data.allergyHistory || existing.allergyHistory
+      },
+    });
+    return NextResponse.json(customer);
+  } catch (err) {
+    console.error("PUT customers error:", err);
+    return NextResponse.json({ error: "Failed to update customer" }, { status: 500 });
+  }
 }

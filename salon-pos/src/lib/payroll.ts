@@ -18,7 +18,7 @@ export async function generatePayrollRun(month: number, year: number) {
   // Source-of-truth: PAID orders only (same as ประวัติ Transaction page)
   const orders = await prisma.order.findMany({
     where: { status: "PAID", completedAt: { gte: startOfMonth, lte: endOfMonth } },
-    include: { items: true, chemicals: true, assistants: true },
+    include: { items: true, chemicals: true, assistants: true, retailItems: true },
   });
 
   const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
@@ -44,19 +44,29 @@ export async function generatePayrollRun(month: number, year: number) {
           const myOrders = orders.filter(o =>
             o.technicianId === u.id || o.assistants.some(a => a.userId === u.id)
           );
+          
+          // Retail commission (20% of retail price) goes to the main technician only
+          const myTechOrders = orders.filter(o => o.technicianId === u.id);
+          const retailCommission = myTechOrders.reduce((sum, o) => {
+            const retailSum = o.retailItems.reduce((s, ri) => s + (ri.price * ri.quantity), 0);
+            return sum + (retailSum * 0.20);
+          }, 0);
+
           const orderCount = myOrders.length;
           let poolCommission = 0;
           const roles = u.role.split(",");
           if (roles.includes("TECHNICIAN") && techCount > 0) poolCommission = techPoolAmount / techCount;
           else if (roles.includes("ASSISTANT") && assistCount > 0) poolCommission = assistPoolAmount / assistCount;
+          
           const baseSalary = u.baseSalary ?? 0;
           const positionAllowance = u.positionAllowance ?? 0;
           return {
             userId: u.id,
             poolCommission,
+            retailCommission,
             baseSalary,
             positionAllowance,
-            totalAmount: poolCommission + baseSalary,
+            totalAmount: poolCommission + retailCommission + baseSalary,
             orderCount,
           };
         }),

@@ -7,6 +7,21 @@ datasource db {
   provider = "sqlite"
 }
 
+model Branch {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  address   String?
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  orders         Order[]
+  subStocks      SubStock[]
+  stockTransfers StockTransfer[]
+}
+
 model User {
   id                String   @id @default(cuid())
   name              String
@@ -17,6 +32,8 @@ model User {
   baseSalary        Float    @default(0)
   positionAllowance Float    @default(0)
   isActive          Boolean  @default(true)
+  branchId          String   @default("main")
+  branch            Branch   @relation(fields: [branchId], references: [id])
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -80,7 +97,7 @@ model Product {
   createdAt    DateTime @default(now())
 
   mainStock          MainStock?
-  subStock           SubStock?
+  subStocks          SubStock[]
   orderChemicals     OrderChemical[]
   stockTransferItems StockTransferItem[]
 }
@@ -94,14 +111,20 @@ model MainStock {
 
 model SubStock {
   id              String  @id @default(cuid())
-  productId       String  @unique
+  productId       String
+  branchId        String  @default("main")
+  branch          Branch  @relation(fields: [branchId], references: [id])
   quantity        Int     @default(0)
   currentVolumeG Int     @default(0) @map("currentVolumeMg")
   product         Product @relation(fields: [productId], references: [id])
+
+  @@unique([productId, branchId])
 }
 
 model Order {
   id             String   @id @default(cuid())
+  branchId       String   @default("main")
+  branch         Branch   @relation(fields: [branchId], references: [id])
   customerId     String?
   customerName   String
   customerPhone  String?
@@ -241,6 +264,8 @@ model ServiceHistory {
 
 model StockTransfer {
   id           String   @id @default(cuid())
+  branchId     String   @default("main")
+  branch       Branch   @relation(fields: [branchId], references: [id])
   status       String   @default("PENDING")
   createdById  String
   approvedById String?

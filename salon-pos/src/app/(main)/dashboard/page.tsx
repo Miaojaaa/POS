@@ -1,29 +1,48 @@
 import { prisma } from "@/lib/prisma";
+import BranchSelector from "@/components/BranchSelector";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+type Props = {
+  searchParams: Promise<{ branchId?: string }>;
+};
+
+export default async function DashboardPage({ searchParams }: Props) {
+  const { branchId = "all" } = await searchParams;
+  
   const today = new Date();
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
+  const branches = await prisma.branch.findMany({ where: { isActive: true } });
+
+  const whereBase: any = { createdAt: { gte: startOfDay } };
+  const whereMonth: any = { createdAt: { gte: startOfMonth } };
+  const whereQueue: any = { status: { in: ["WAITING", "IN_PROGRESS"] } };
+
+  if (branchId !== "all") {
+    whereBase.branchId = branchId;
+    whereMonth.branchId = branchId;
+    whereQueue.branchId = branchId;
+  }
+
   const [todayOrders, monthOrders, queueCount, memberCount] = await Promise.all([
     // Revenue counts ONLY from PAID orders
     prisma.order.findMany({
-      where: { createdAt: { gte: startOfDay }, status: "PAID" },
+      where: { ...whereBase, status: "PAID" },
       include: { payments: true },
     }),
     prisma.order.findMany({
-      where: { createdAt: { gte: startOfMonth }, status: "PAID" },
+      where: { ...whereMonth, status: "PAID" },
       include: { payments: true },
     }),
-    prisma.order.count({ where: { status: { in: ["WAITING", "IN_PROGRESS"] } } }),
+    prisma.order.count({ where: whereQueue }),
     prisma.customer.count(),
   ]);
 
   // For the "Recent Orders" table, we might still want to see everything today
   const allTodayOrders = await prisma.order.findMany({
-    where: { createdAt: { gte: startOfDay }, status: { not: "CANCELLED" } },
+    where: { ...whereBase, status: { not: "CANCELLED" } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -41,9 +60,14 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", marginBottom: "0.25rem" }}>
-        ภาพรวมร้านวันนี้
-      </h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          ภาพรวมร้านวันนี้
+        </h1>
+        
+        <BranchSelector branches={branches} currentBranchId={branchId} />
+      </div>
+      
       <p style={{ color: "#888", fontSize: "0.875rem", marginBottom: "1.5rem" }}>
         {today.toLocaleDateString("th-TH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
       </p>
