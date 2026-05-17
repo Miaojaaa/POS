@@ -42,7 +42,9 @@
       "WebFetch(domain:jsat66.medium.com)",
       "WebFetch(domain:www.prosoftwinspeed.com)",
       "PowerShell(npx prisma db push --accept-data-loss --url \"file:$\\(\\(Get-Location\\).Path\\)\\\\dev.db\" 2>&1 | Select-Object -Last 10 | Out-String; npx prisma generate 2>&1 | Select-Object -Last 3 | Out-String)",
-      "PowerShell(Set-Location \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\"; npx prisma db push --accept-data-loss --url \"file:$\\(\\(Get-Location\\).Path\\)\\\\dev.db\" 2>&1 | Select-Object -Last 12 | Out-String)"
+      "PowerShell(Set-Location \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\"; npx prisma db push --accept-data-loss --url \"file:$\\(\\(Get-Location\\).Path\\)\\\\dev.db\" 2>&1 | Select-Object -Last 12 | Out-String)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\"; npx prisma db push --accept-data-loss --url \"file:$\\(\\(Get-Location\\).Path\\)\\\\dev.db\" 2>&1 | Select-Object -Last 3 | Out-String; npx prisma generate 2>&1 | Select-Object -Last 2 | Out-String)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\dudek\\\\OneDrive\\\\Desktop\\\\POS\\\\salon-pos\"; npx prisma db push --accept-data-loss --url \"file:$\\(\\(Get-Location\\).Path\\)\\\\dev.db\" 2>&1 | Out-String)"
     ],
     "additionalDirectories": [
       "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\api\\payroll\\items",

@@ -132,6 +132,7 @@ model Order {
   status         String   @default("WAITING")
   notes          String?
   receiptNumber  Int?
+  receiptType    String?  // "SHORT" or "FULL" — null until customer printed a receipt
   subtotal           Int      @default(0)
   retailSubtotal     Int      @default(0)
   discountAmount     Float    @default(0)

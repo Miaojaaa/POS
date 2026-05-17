@@ -21,6 +21,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     include: { items: true, chemicals: true },
   });
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  if (order.status === "PAID") return NextResponse.json({ error: "Order already paid" }, { status: 400 });
+
+  // FIX #3: Reject discount if no manager approval was provided
+  if (Number(discountAmount) > 0 && !approvedById) {
+    return NextResponse.json({ error: "Discount requires manager approval" }, { status: 403 });
+  }
 
   type RetailItemInput = { retailProductId: string; quantity: number; price: number };
   const ri: RetailItemInput[] = Array.isArray(retailItems) ? retailItems : [];
@@ -76,6 +82,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
 
       if (pay.method === "WALLET" && order.customerId) {
+        // FIX #1: Validate wallet balance before deduction to prevent negative balance
+        const customer = await tx.customer.findUnique({ where: { id: order.customerId }, select: { walletBalance: true } });
+        if (!customer || customer.walletBalance < pay.amount) {
+          throw new Error(`Insufficient wallet balance: available ${customer?.walletBalance ?? 0}, required ${pay.amount}`);
+        }
         await tx.customer.update({
           where: { id: order.customerId },
           data: { walletBalance: { decrement: pay.amount } },
@@ -102,10 +113,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     if (ticketId) {
-      await tx.customerTicket.update({
-        where: { id: ticketId },
+      // FIX #4: Atomic update with ownership + unused verification to prevent double-spending
+      const updatedTicket = await tx.customerTicket.updateMany({
+        where: { id: ticketId, isUsed: false, ...(order.customerId ? { customerId: order.customerId } : {}) },
         data: { isUsed: true, usedOrderId: id, usedAt: new Date() },
       });
+      if (updatedTicket.count === 0) {
+        throw new Error("Invalid, already used, or mismatched ticket");
+      }
     }
 
     for (const chem of order.chemicals as { productId: string; amountG: number }[]) {
@@ -120,10 +135,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       if (!sub) continue;
       let remainG = sub.currentVolumeG - chem.amountG;
       let bottles = sub.quantity;
+      // FIX #2: Use while-loop to correctly handle multi-bottle deduction
       if (remainG < 0) {
-        bottles -= 1;
         const prod = await tx.product.findUnique({ where: { id: chem.productId } });
-        remainG = prod ? prod.unitVolumeG + remainG : 0;
+        if (prod && prod.unitVolumeG > 0) {
+          while (remainG < 0 && bottles > 0) {
+            bottles -= 1;
+            remainG += prod.unitVolumeG;
+          }
+        }
       }
       await tx.subStock.update({
         where: { 
