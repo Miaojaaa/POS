@@ -66,7 +66,11 @@ export default function PayrollPage() {
       const res = await fetch(`/api/payroll?month=${month}&year=${year}`);
       if (!res.ok) return;
       const data = await res.json();
-      setRun(data);
+      if (data && typeof data === "object" && !data.error) {
+        setRun(data);
+      } else {
+        setRun(null);
+      }
     } catch {
       // transient network error — ignore
     } finally {
@@ -99,46 +103,45 @@ export default function PayrollPage() {
 
   async function confirmPayroll() {
     if (!run) return;
-    setPinError("");
     setConfirming(true);
-    const res = await fetch("/api/payroll/confirm", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ runId: run.id, pin }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      setRun(data.run);
-      setShowPinModal(false);
-      setPin("");
-      setToast(`✓ ยืนยันเงินเดือนแล้ว — บันทึก ฿${data.totalPayroll.toLocaleString()} ในรายจ่ายเรียบร้อย`);
-      setTimeout(() => setToast(null), 4000);
-    } else {
-      setPinError(data.error || "ยืนยันไม่สำเร็จ");
+    setPinError("");
+    try {
+      const res = await fetch("/api/payroll/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month, year, pin }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowPinModal(false);
+        setPin("");
+        setToast("✅ ยืนยันเงินเดือนสำเร็จ (รายการถูกล็อกแล้ว)");
+        load();
+        setTimeout(() => setToast(null), 5000);
+      } else {
+        setPinError(data.error || "รหัส PIN ไม่ถูกต้อง");
+      }
+    } catch {
+      setPinError("การเชื่อมต่อล้มเหลว");
+    } finally {
+      setConfirming(false);
     }
-    setConfirming(false);
   }
 
-  const totalBase = run?.items.reduce((s, i) => s + i.baseSalary, 0) ?? 0;
-  const totalAllowances = run?.items.reduce((s, i) => s + (i.positionAllowance || 0), 0) ?? 0;
-  const totalPayroll = (run?.items.reduce((s, i) => s + i.totalAmount, 0) ?? 0) + totalAllowances;
-  const isConfirmed = run?.status === "CONFIRMED";
+  const totalBase = run?.items ? run.items.reduce((s, i) => s + i.baseSalary, 0) : 0;
+  const totalAllowances = run?.items ? run.items.reduce((s, i) => s + (i.positionAllowance || 0), 0) : 0;
+  const totalPayroll = (run?.items ? run.items.reduce((s, i) => s + i.totalAmount, 0) : 0) + totalAllowances;
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>💼 เงินเดือน & ค่าคอม</h1>
-          {run && (
-            <span className="badge" style={{
-              background: isConfirmed ? "#D4EDDA" : "#FFF3CD",
-              color: isConfirmed ? "#155724" : "#856404",
-              fontSize: "0.75rem",
-            }}>
-              {isConfirmed ? "✓ ยืนยันแล้ว" : "ฉบับร่าง"}
-            </span>
-          )}
+    <div style={{ position: "relative" }}>
+      {toast && (
+        <div style={{ position: "fixed", top: "1rem", right: "1rem", background: "white", padding: "1rem 1.5rem", borderRadius: 12, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", zIndex: 2000, border: "2px solid var(--success-green)", color: "var(--success-green)", fontWeight: 700 }}>
+          {toast}
         </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>💸 เงินเดือน &amp; ค่าคอม</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <select className="input" style={{ width: 120 }} value={month} onChange={e => setMonth(Number(e.target.value))}>
             {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={i + 1}>เดือน {i + 1}</option>)}
@@ -146,38 +149,42 @@ export default function PayrollPage() {
           <select className="input" style={{ width: 100 }} value={year} onChange={e => setYear(Number(e.target.value))}>
             {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y + 543}</option>)}
           </select>
-          <button className="btn-secondary" onClick={() => load()} title="ดึงข้อมูลล่าสุด">🔄 รีเฟรช</button>
         </div>
       </div>
 
-      {loading ? (
-        <div>กำลังโหลด...</div>
-      ) : run ? (
+      {!run ? (
+        <div className="card" style={{ textAlign: "center", padding: "4rem", color: "#aaa" }}>
+          {loading ? "กำลังโหลดข้อมูล..." : "ไม่พบข้อมูลสำหรับเดือนนี้"}
+        </div>
+      ) : (
         <>
-          <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
-            <div className="card" style={{ textAlign: "center", flex: 1 }}>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--olive)" }}>฿{totalPayroll.toLocaleString()}</div>
-              <div style={{ color: "#888", fontSize: "0.875rem" }}>ยอดจ่ายรวมทั้งหมด</div>
-            </div>
-            <div className="card" style={{ textAlign: "center", flex: 1 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "1.5rem" }}>
+            <div className="card" style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: 4 }}>ยอดจ่ายเงินเดือนพื้นฐาน</div>
               <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>฿{totalBase.toLocaleString()}</div>
-              <div style={{ color: "#888", fontSize: "0.875rem" }}>เงินเดือนพื้นฐานรวม</div>
             </div>
-            <div className="card" style={{ textAlign: "center", flex: 1 }}>
+            <div className="card" style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: 4 }}>ยอดจ่ายค่าตำแหน่ง</div>
               <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>฿{totalAllowances.toLocaleString()}</div>
-              <div style={{ color: "#888", fontSize: "0.875rem" }}>ค่าตำแหน่งรวม</div>
+            </div>
+            <div className="card" style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: 4 }}>ยอดจ่ายค่าคอมมิชชั่น</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>฿{(totalPayroll - totalBase - totalAllowances).toLocaleString()}</div>
+            </div>
+            <div className="card" style={{ textAlign: "center", background: run.status === "CONFIRMED" ? "var(--success-green)" : "var(--olive)", color: "white" }}>
+              <div style={{ fontSize: "0.8rem", opacity: 0.9, marginBottom: 4 }}>ยอดรวมจ่ายทั้งหมด ({run.status})</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 800 }}>฿{totalPayroll.toLocaleString()}</div>
             </div>
           </div>
 
-          <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            🔗 ข้อมูลค่าคอม Pool และจำนวนออร์เดอร์ดึงจากออร์เดอร์สถานะ <strong>ชำระแล้ว (PAID)</strong> ในเดือนที่เลือก —
-            <Link href="/pos/history" style={{ color: "var(--olive)", textDecoration: "underline" }}>ดูประวัติ Transaction</Link>
-            <span style={{ marginLeft: "auto", color: "#888" }}>
-              {isConfirmed
-                ? "ล็อกแล้ว — กด \"✓ ยืนยันข้อมูล\" เพื่อดึงข้อมูลพนักงาน/ออร์เดอร์ล่าสุด"
-                : "อัปเดตอัตโนมัติทุก 8 วินาที"}
-            </span>
-          </div>
+          {run.status === "DRAFT" && (
+            <div className="card" style={{ background: "#fef9c3", border: "1px solid #facc15", marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: "0.9rem", color: "#854d0e" }}>
+                ⚠️ รายการยังเป็น <strong>ฉบับร่าง</strong> ยอดจะเปลี่ยนไปตามออร์เดอร์ใหม่ๆ ที่เข้ามา คลิก "ยืนยันยอด" เพื่อล็อกยอดเดือนนี้
+              </div>
+              <button className="btn-primary" onClick={() => setShowConfirmWarning(true)}>ยืนยันยอดเดือน {month}</button>
+            </div>
+          )}
 
           <div className="card">
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
@@ -208,231 +215,110 @@ export default function PayrollPage() {
                       </td>
                       <td style={{ padding: "8px 12px", textAlign: "center" }}>
                         {item.orderCount > 0 ? (
-                          <button
-                            onClick={() => openTx(item)}
-                            style={{
-                              background: "transparent", border: "none", padding: 0,
-                              color: "var(--olive)", textDecoration: "underline",
-                              cursor: "pointer", fontSize: "0.875rem", fontWeight: 600,
-                            }}
-                            title="ดูรายการ Transaction"
-                          >
-                            {item.orderCount}
+                          <button onClick={() => openTx(item)} style={{ background: "var(--beige)", border: "1px solid var(--beige-dark)", borderRadius: 6, padding: "2px 8px", cursor: "pointer", fontSize: "0.75rem" }}>
+                            {item.orderCount} งาน
                           </button>
-                        ) : (
-                          <span style={{ color: "#aaa" }}>0</span>
-                        )}
+                        ) : "-"}
                       </td>
-                      <td style={{ padding: "8px 12px", textAlign: "right" }}>
-                        ฿{item.baseSalary.toLocaleString()}
-                      </td>
-                      <td style={{ padding: "8px 12px", textAlign: "right", color: "#666" }}>
-                        ฿{allowance.toLocaleString()}
-                      </td>
-                      <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{item.poolCommission.toLocaleString()}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{item.retailCommission.toLocaleString()}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "var(--olive)" }}>
-                        ฿{rowTotal.toLocaleString()}
-                      </td>
+                      <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{item.baseSalary.toLocaleString()}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", color: allowance > 0 ? "var(--olive)" : "#ccc" }}>฿{allowance.toLocaleString()}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: "var(--olive)" }}>฿{item.poolCommission.toLocaleString()}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: "#d97706" }}>฿{item.retailCommission.toLocaleString()}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, fontSize: "0.95rem" }}>฿{rowTotal.toLocaleString()}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-
-          {isConfirmed && (
-            <div style={{ marginTop: "1rem", padding: "0.75rem 1rem", background: "#D4EDDA", color: "#155724", borderRadius: 8, fontSize: "0.875rem" }}>
-              ✓ ยืนยันเงินเดือนเดือน {run.month}/{run.year} แล้ว — บันทึกในรายจ่ายเรียบร้อย
-            </div>
-          )}
-
-          <div style={{ marginTop: "1.25rem", display: "flex", justifyContent: "center" }}>
-            <button
-              onClick={() => setShowConfirmWarning(true)}
-              disabled={!run || (run.items?.length ?? 0) === 0}
-              style={{
-                background: "#2d6a4f",
-                color: "white",
-                border: "none",
-                borderRadius: 8,
-                padding: "0.75rem 2.5rem",
-                fontSize: "1rem",
-                fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: "0 2px 6px rgba(45, 106, 79, 0.25)",
-                opacity: (!run || (run.items?.length ?? 0) === 0) ? 0.5 : 1,
-              }}
-            >
-              ✓ ยืนยันข้อมูล
-            </button>
-          </div>
         </>
-      ) : (
-        <div className="card" style={{ textAlign: "center", padding: "3rem" }}>
-          <p style={{ color: "#aaa" }}>ไม่สามารถสร้างข้อมูลเงินเดือนได้</p>
-        </div>
       )}
 
-      {/* Confirm warning modal */}
-      {showConfirmWarning && (
-        <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: 420, textAlign: "center" }}>
-            <div style={{ fontSize: "2.25rem", marginBottom: "0.5rem" }}>⚠️</div>
-            <h3 style={{ margin: "0 0 0.75rem", color: "var(--olive)" }}>ยืนยันข้อมูลเงินเดือน</h3>
-            <p style={{ fontSize: "0.9rem", color: "#555", marginBottom: "0.75rem", lineHeight: 1.5 }}>
-              ระบบจะดึงข้อมูล <strong>เงินเดือนพนักงาน</strong> และ <strong>ออร์เดอร์ที่ชำระแล้ว</strong> ของเดือน <strong>{run?.month}/{run?.year}</strong> มาคำนวณใหม่
-              <br />
-              และบันทึกยอดรวม <strong style={{ color: "var(--olive)" }}>฿{totalPayroll.toLocaleString()}</strong> ลงในหน้ารายจ่าย
-            </p>
-            <p style={{ fontSize: "0.875rem", color: "#c0392b", marginBottom: "1.25rem", fontWeight: 600 }}>
-              ต้องการยืนยันใช่หรือไม่?
-            </p>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button
-                className="btn-secondary"
-                style={{ flex: 1 }}
-                onClick={() => setShowConfirmWarning(false)}
-              >
-                ยกเลิก
-              </button>
-              <button
-                style={{
-                  flex: 1,
-                  background: "#2d6a4f",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 8,
-                  padding: "0.625rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-                onClick={() => {
-                  setShowConfirmWarning(false);
-                  setPin("");
-                  setPinError("");
-                  setShowPinModal(true);
-                }}
-              >
-                ✓ ใช่, ยืนยัน
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Owner PIN modal */}
-      {showPinModal && (
-        <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: 360 }}>
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>🔐 Owner PIN</h3>
-            <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "0.75rem" }}>
-              ยืนยันเงินเดือนเดือน {run?.month}/{run?.year} จำนวน <strong>฿{totalPayroll.toLocaleString()}</strong>
-            </p>
-            <p style={{ fontSize: "0.8rem", color: "#888", marginBottom: "1rem" }}>
-              หลังจากยืนยัน ยอดนี้จะถูกบันทึกในหน้ารายจ่ายอัตโนมัติ
-            </p>
-            <input type="password" className="input" placeholder="Owner PIN" value={pin}
-              onChange={e => setPin(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && confirmPayroll()}
-              style={{ marginBottom: "0.5rem" }} autoFocus />
-            {pinError && <div style={{ color: "var(--alert-red)", fontSize: "0.875rem", marginBottom: "0.75rem" }}>{pinError}</div>}
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={confirmPayroll} disabled={confirming || !pin}>
-                {confirming ? "กำลังยืนยัน..." : "ยืนยัน"}
-              </button>
-              <button className="btn-secondary" style={{ flex: 1 }}
-                onClick={() => { setShowPinModal(false); setPin(""); setPinError(""); }} disabled={confirming}>
-                ยกเลิก
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {toast && (
-        <div style={{
-          position: "fixed", bottom: 24, right: 24, zIndex: 50,
-          background: "#155724", color: "white", padding: "0.75rem 1rem", borderRadius: 8,
-          fontSize: "0.875rem", boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-        }}>
-          {toast}
-        </div>
-      )}
-
-      {/* Transaction drill-down modal */}
+      {/* Drill-down Modal */}
       {txUser && (
-        <div className="modal-overlay" onClick={() => setTxUser(null)}>
-          <div className="modal" style={{ maxWidth: 720, width: "95vw", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 800 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <h3 style={{ margin: 0, color: "var(--olive)" }}>
-                📜 รายการ Transaction — {txUser.user.name}
-                <span style={{ fontSize: "0.8rem", color: "#888", marginLeft: 8 }}>เดือน {month}/{year}</span>
-              </h3>
-              <button onClick={() => setTxUser(null)} style={{ background: "none", border: "none", fontSize: "1.4rem", cursor: "pointer", color: "#aaa" }}>×</button>
+              <h3 style={{ margin: 0 }}>รายละเอียดงาน: {txUser.user.name} ({month}/{year + 543})</h3>
+              <button onClick={() => setTxUser(null)} style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer" }}>×</button>
             </div>
-
-            {txLoading ? (
-              <p style={{ textAlign: "center", padding: "2rem", color: "#888" }}>กำลังโหลด...</p>
-            ) : txOrders.length === 0 ? (
-              <p style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มี Transaction ในเดือนนี้</p>
-            ) : (
-              <>
-                <div style={{ background: "var(--beige)", padding: "0.75rem", borderRadius: 8, marginBottom: "0.75rem", display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
-                  <span>จำนวน Transaction</span>
+            
+            <div style={{ maxHeight: 500, overflowY: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
+                <thead>
+                  <tr style={{ textAlign: "left", borderBottom: "2px solid #eee" }}>
+                    <th style={{ padding: 8 }}>วันที่/เวลา</th>
+                    <th style={{ padding: 8 }}>ใบเสร็จ</th>
+                    <th style={{ padding: 8 }}>ลูกค้า</th>
+                    <th style={{ padding: 8 }}>บริการ</th>
+                    <th style={{ padding: 8, textAlign: "right" }}>ยอดรวม</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {txLoading ? (
+                    <tr><td colSpan={5} style={{ textAlign: "center", padding: "2rem" }}>กำลังโหลด...</td></tr>
+                  ) : txOrders.map(o => (
+                    <tr key={o.id} style={{ borderBottom: "1px solid #f9f9f9" }}>
+                      <td style={{ padding: 8 }}>{new Date(o.createdAt).toLocaleString("th-TH")}</td>
+                      <td style={{ padding: 8 }}>{o.receiptNumber ? formatReceiptNo(o.receiptNumber, o.completedAt || o.createdAt) : "-"}</td>
+                      <td style={{ padding: 8 }}>{o.customerName}</td>
+                      <td style={{ padding: 8 }}>
+                        {o.items.map((it, i) => <div key={i}>{it.service.name} (฿{it.price.toLocaleString()})</div>)}
+                      </td>
+                      <td style={{ padding: 8, textAlign: "right", fontWeight: 600 }}>฿{o.total.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!txLoading && (
+                <div style={{ marginTop: "1rem", textAlign: "right", borderTop: "1px solid #eee", paddingTop: "1rem" }}>
                   <strong>{txOrders.length} รายการ · ยอดรวม ฿{txOrders.reduce((s, o) => s + o.total, 0).toLocaleString()}</strong>
                 </div>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.825rem" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
-                      <th style={{ textAlign: "left", padding: "6px 8px" }}>วันที่</th>
-                      <th style={{ textAlign: "left", padding: "6px 8px" }}>ใบเสร็จ</th>
-                      <th style={{ textAlign: "left", padding: "6px 8px" }}>ลูกค้า</th>
-                      <th style={{ textAlign: "left", padding: "6px 8px" }}>บริการ</th>
-                      <th style={{ textAlign: "center", padding: "6px 8px" }}>บทบาท</th>
-                      <th style={{ textAlign: "right", padding: "6px 8px" }}>ยอด</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {txOrders.map(o => {
-                      const isTech = o.technician.id === txUser.userId;
-                      const refDate = o.completedAt || o.createdAt;
-                      return (
-                        <tr key={o.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
-                          <td style={{ padding: "6px 8px" }}>
-                            {new Date(refDate).toLocaleDateString("th-TH")}
-                          </td>
-                          <td style={{ padding: "6px 8px", fontFamily: "monospace", fontSize: "0.75rem" }}>
-                            {o.receiptNumber && o.completedAt ? formatReceiptNo(o.receiptNumber, o.completedAt) : "-"}
-                          </td>
-                          <td style={{ padding: "6px 8px" }}>{o.customerName}</td>
-                          <td style={{ padding: "6px 8px", color: "#666" }}>
-                            {o.items.map(i => i.service.name).join(", ")}
-                          </td>
-                          <td style={{ padding: "6px 8px", textAlign: "center" }}>
-                            <span style={{
-                              fontSize: "0.7rem", padding: "2px 8px", borderRadius: 10,
-                              background: isTech ? "#CCE5FF" : "#FFF3CD",
-                              color: isTech ? "#004085" : "#856404",
-                            }}>
-                              {isTech ? "ช่างหลัก" : "ผู้ช่วย"}
-                            </span>
-                          </td>
-                          <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: "var(--olive)" }}>
-                            ฿{o.total.toLocaleString()}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <div style={{ marginTop: "0.75rem", textAlign: "right" }}>
-                  <Link href="/pos/history" style={{ fontSize: "0.8rem", color: "var(--olive)", textDecoration: "underline" }}>
-                    เปิดหน้าประวัติ Transaction ทั้งหมด →
-                  </Link>
-                </div>
-              </>
-            )}
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Flow */}
+      {showConfirmWarning && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 400 }}>
+            <h3 style={{ margin: "0 0 1rem", color: "#854d0e" }}>⚠️ ยืนยันการปิดยอดเงินเดือน?</h3>
+            <p style={{ fontSize: "0.9rem", color: "#666", lineHeight: 1.5 }}>
+              เมื่อยืนยันแล้ว รายการเงินเดือนของเดือน {month}/{year + 543} จะถูกล็อก <br/>
+              หากมีการแก้ไขงานหรือลบออร์เดอร์ย้อนหลัง จะไม่ส่งผลต่อยอดในเดือนนี้อีก <br/>
+              <strong>ต้องการดำเนินการต่อหรือไม่?</strong>
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.5rem" }}>
+              <button className="btn-primary" style={{ flex: 1 }} onClick={() => { setShowConfirmWarning(false); setShowPinModal(true); }}>ไปต่อ</button>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowConfirmWarning(false)}>ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPinModal && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 320 }}>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ป้อน Owner PIN</h3>
+            <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "1rem" }}>กรุณาระบุ PIN ของเจ้าของร้านเพื่ออนุมัติการจ่ายเงินเดือน</p>
+            <input 
+              type="password" 
+              className="input" 
+              placeholder="Owner PIN" 
+              value={pin} 
+              onChange={e => setPin(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && confirmPayroll()}
+              autoFocus
+            />
+            {pinError && <div style={{ color: "var(--alert-red)", fontSize: "0.8rem", marginTop: 8 }}>{pinError}</div>}
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.5rem" }}>
+              <button className="btn-primary" style={{ flex: 1 }} disabled={confirming} onClick={confirmPayroll}>
+                {confirming ? "กำลังบันทึก..." : "ยืนยันยอด"}
+              </button>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPinModal(false); setPin(""); setPinError(""); }}>ยกเลิก</button>
+            </div>
           </div>
         </div>
       )}

@@ -39,7 +39,13 @@ export default function ProfitPage() {
 
   useEffect(() => {
     if (!unlocked) return;
-    fetch(`/api/reports?month=${month}&year=${year}`).then(r => r.json()).then(setData);
+    fetch(`/api/reports?month=${month}&year=${year}`).then(r => r.json()).then(resp => {
+      if (resp && typeof resp === "object" && !resp.error) {
+        setData(resp);
+      } else {
+        setData(null);
+      }
+    }).catch(() => setData(null));
   }, [month, year, unlocked]);
 
   async function handleExport() {
@@ -48,9 +54,9 @@ export default function ProfitPage() {
       const startOfMonth = new Date(year, month - 1, 1).toISOString();
       const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999).toISOString();
       const res = await fetch(`/api/orders?status=PAID&startDate=${startOfMonth}&endDate=${endOfMonth}`);
-      const orders: OrderForExport[] = await res.json();
+      const orders = await res.json();
       if (!Array.isArray(orders)) { alert("ไม่สามารถดึงข้อมูลออร์เดอร์ได้"); return; }
-      exportTransactionsXlsx(orders, { month, year }, `กำไรจริง-${year}-${String(month).padStart(2, "0")}.xlsx`);
+      exportTransactionsXlsx(orders as OrderForExport[], { month, year }, `กำไรจริง-${year}-${String(month).padStart(2, "0")}.xlsx`);
     } catch (err) {
       console.error("Export error:", err);
       alert(`ส่งออกไม่สำเร็จ — ${err instanceof Error ? err.message : String(err)}`);
@@ -98,107 +104,76 @@ export default function ProfitPage() {
             className="btn-primary"
             onClick={handleExport}
             disabled={exporting || !data || data.orderCount === 0}
-            style={{ background: "#16a34a" }}
+            style={{ padding: "0 1.5rem" }}
           >
-            {exporting ? "กำลังส่งออก..." : "📥 Export Excel"}
+            {exporting ? "กำลังส่งออก..." : "📤 Export Excel"}
           </button>
         </div>
       </div>
 
-      {data && (
-        <>
-          {/* Revenue breakdown: 3 columns */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "1rem" }}>
-            <div className="card" style={{ textAlign: "center", borderLeft: "4px solid var(--olive)" }}>
-              <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: 4 }}>Net Total (รวม SC, ก่อน VAT)</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--olive)" }}>
-                ฿{data.totalNet.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-              </div>
-              {data.totalSC > 0 && (
-                <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 2 }}>รวม SC 3% ฿{data.totalSC.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-              )}
-            </div>
-            <div className="card" style={{ textAlign: "center", borderLeft: "4px solid #d97706" }}>
-              <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: 4 }}>VAT 7% (ส่งสรรพากร)</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#d97706" }}>
-                ฿{data.totalVat.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-              </div>
-            </div>
-            <div className="card" style={{ textAlign: "center", borderLeft: "4px solid #1d4ed8" }}>
-              <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: 4 }}>รวมรับ (Gross)</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#1d4ed8" }}>
-                ฿{data.totalGross.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-              </div>
-            </div>
+      {data ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
+          <div className="card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: 4 }}>Revenue (Gross)</div>
+            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--olive)" }}>฿{data.totalGross.toLocaleString()}</div>
           </div>
+          <div className="card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: 4 }}>ต้นทุนเคมี (Chem)</div>
+            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#d97706" }}>฿{data.totalChemCost.toLocaleString()}</div>
+          </div>
+          <div className="card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "0.8rem", color: "#666", marginBottom: 4 }}>ค่าใช้จ่ายทั่วไป (Expenses)</div>
+            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#dc2626" }}>฿{data.totalExpense.toLocaleString()}</div>
+          </div>
+          <div className="card" style={{ textAlign: "center", background: "var(--olive)", color: "white" }}>
+            <div style={{ fontSize: "0.8rem", opacity: 0.9, marginBottom: 4 }}>กำไรสุทธิ (Net Profit)</div>
+            <div style={{ fontSize: "1.5rem", fontWeight: 800 }}>฿{data.netProfit.toLocaleString()}</div>
+          </div>
+        </div>
+      ) : (
+        <div className="card" style={{ textAlign: "center", padding: "4rem", color: "#aaa" }}>
+          กำลังคำนวณข้อมูล...
+        </div>
+      )}
 
-          {/* Costs + profit */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
-            <div className="card" style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: 4 }}>ต้นทุนรวม (เคมี + ค่าใช้จ่าย)</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--alert-red)" }}>
-                ฿{(data.totalChemCost + data.totalExpense).toLocaleString()}
+      {data && (
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "1.5rem" }}>
+          <div className="card">
+            <h3 style={{ margin: "0 0 1.25rem", color: "var(--olive)" }}>รายละเอียดทางบัญชี</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
+                <span>ยอดขายรวม (รวม VAT/SC)</span>
+                <strong>฿{data.totalGross.toLocaleString()}</strong>
               </div>
-            </div>
-            <div className="card" style={{ textAlign: "center", border: `2px solid ${data.netProfit >= 0 ? "var(--success-green)" : "var(--alert-red)"}` }}>
-              <div style={{ fontSize: "0.8rem", color: "#888", marginBottom: 4 }}>กำไรสุทธิ (Net − ต้นทุน − ค่าใช้จ่าย)</div>
-              <div style={{ fontSize: "2rem", fontWeight: 700, color: data.netProfit >= 0 ? "var(--success-green)" : "var(--alert-red)" }}>
-                ฿{data.netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem", color: "#666" }}>
+                <span>ภาษีมูลค่าเพิ่ม (VAT 7%)</span>
+                <span>฿{data.totalVat.toLocaleString()}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem", color: "#666" }}>
+                <span>ค่าบริการ (Service Charge 3%)</span>
+                <span>฿{data.totalSC.toLocaleString()}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1rem", fontWeight: 700, borderTop: "1px solid #eee", paddingTop: "0.75rem", marginTop: "0.25rem" }}>
+                <span>รายได้หลังหักภาษี/ค่าบริการ (Net Revenue)</span>
+                <span style={{ color: "var(--olive)" }}>฿{data.totalNet.toLocaleString()}</span>
               </div>
             </div>
           </div>
 
           <div className="card">
-            <h3 style={{ margin: "0 0 0.75rem", color: "var(--olive)", fontSize: "1rem" }}>📊 P&amp;L</h3>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
-              <tbody>
-                <tr style={{ borderBottom: "1px solid #f5f5f5" }}>
-                  <td style={{ padding: "10px 12px" }}>จำนวนออร์เดอร์</td>
-                  <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 600 }}>{data.orderCount} ออร์เดอร์</td>
-                </tr>
-                <tr style={{ borderBottom: "1px solid #f5f5f5" }}>
-                  <td style={{ padding: "10px 12px" }}>Net Total (รวม Service Charge 3%)</td>
-                  <td style={{ padding: "10px 12px", textAlign: "right", color: "var(--olive)", fontWeight: 600 }}>
-                    + ฿{data.totalNet.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: "1px solid #f5f5f5", color: "#888" }}>
-                  <td style={{ padding: "10px 12px", fontSize: "0.85rem" }}>
-                    <span style={{ marginLeft: "1rem" }}>↳ VAT 7% (info)</span>
-                  </td>
-                  <td style={{ padding: "10px 12px", textAlign: "right", fontSize: "0.85rem" }}>
-                    ฿{data.totalVat.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: "1px solid #f5f5f5", color: "#888" }}>
-                  <td style={{ padding: "10px 12px", fontSize: "0.85rem" }}>
-                    <span style={{ marginLeft: "1rem" }}>↳ รวมรับจริง (info)</span>
-                  </td>
-                  <td style={{ padding: "10px 12px", textAlign: "right", fontSize: "0.85rem" }}>
-                    ฿{data.totalGross.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: "1px solid #f5f5f5" }}>
-                  <td style={{ padding: "10px 12px" }}>หัก: ต้นทุนเคมี</td>
-                  <td style={{ padding: "10px 12px", textAlign: "right", color: "var(--alert-red)" }}>- ฿{data.totalChemCost.toLocaleString()}</td>
-                </tr>
-                <tr style={{ borderBottom: "1px solid #f5f5f5" }}>
-                  <td style={{ padding: "10px 12px" }}>หัก: ค่าใช้จ่ายอื่น</td>
-                  <td style={{ padding: "10px 12px", textAlign: "right", color: "var(--alert-red)" }}>- ฿{data.totalExpense.toLocaleString()}</td>
-                </tr>
-                <tr style={{ background: data.netProfit >= 0 ? "#f0fff4" : "#fff0f0" }}>
-                  <td style={{ padding: "12px 12px", fontWeight: 700, fontSize: "1.1rem" }}>กำไรสุทธิ</td>
-                  <td style={{ padding: "12px 12px", textAlign: "right", fontWeight: 700, fontSize: "1.2rem", color: data.netProfit >= 0 ? "var(--success-green)" : "var(--alert-red)" }}>
-                    ฿{data.netProfit.toLocaleString()}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <p style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "#888" }}>
-              * VAT 7% และ Service Charge เป็นเงินที่ต้องส่งสรรพากร/บัตรเครดิต — ไม่ใช่กำไรของร้าน จึงไม่นำมาคำนวณกำไรสุทธิ
-            </p>
+            <h3 style={{ margin: "0 0 1.25rem", color: "var(--olive)" }}>สถิติประจำเดือน</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div>
+                <div style={{ fontSize: "0.8rem", color: "#666" }}>จำนวนออร์เดอร์</div>
+                <div style={{ fontSize: "1.25rem", fontWeight: 700 }}>{data.orderCount} รายการ</div>
+              </div>
+              <div>
+                <div style={{ fontSize: "0.8rem", color: "#666" }}>ค่าเฉลี่ยต่อออร์เดอร์ (Gross)</div>
+                <div style={{ fontSize: "1.25rem", fontWeight: 700 }}>฿{data.orderCount > 0 ? (data.totalGross / data.orderCount).toLocaleString(undefined, { maximumFractionDigits: 0 }) : 0}</div>
+              </div>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

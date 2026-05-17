@@ -20,13 +20,17 @@ export default function WalletPage() {
   const [pinError, setPinError] = useState("");
 
   useEffect(() => {
-    fetch("/api/customers").then(r => r.json()).then(setCustomers);
+    fetch("/api/customers").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setCustomers(data);
+    });
   }, []);
 
   async function selectCustomer(c: Customer) {
     setSelected(c);
     const res = await fetch(`/api/wallet?customerId=${c.id}`);
-    setTxns(await res.json());
+    const data = await res.json();
+    if (Array.isArray(data)) setTxns(data);
+    else setTxns([]);
   }
 
   async function handleWalletAction() {
@@ -51,7 +55,8 @@ export default function WalletPage() {
       setAmount("");
       setNote("");
       const txnRes = await fetch(`/api/wallet?customerId=${selected!.id}`);
-      setTxns(await txnRes.json());
+      const txnData = await txnRes.json();
+      if (Array.isArray(txnData)) setTxns(txnData);
     }
     setLoading(false);
   }
@@ -73,7 +78,7 @@ export default function WalletPage() {
     }
   }
 
-  const filtered = customers.filter(c => c.name.includes(q) || c.phone.includes(q));
+  const filtered = Array.isArray(customers) ? customers.filter(c => c.name.includes(q) || c.phone.includes(q)) : [];
 
   return (
     <div>
@@ -99,125 +104,135 @@ export default function WalletPage() {
                   cursor: "pointer",
                   border: `2px solid ${selected?.id === c.id ? "var(--olive)" : "transparent"}`,
                   background: selected?.id === c.id ? "#f0f5e8" : "transparent",
-                  marginBottom: "0.25rem",
+                  marginBottom: "0.5rem",
                 }}
               >
-                <div style={{ fontWeight: 500 }}>{c.name}</div>
-                <div style={{ fontSize: "0.8rem", color: "#888" }}>{c.phone}</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--olive)" }}>฿{c.walletBalance.toLocaleString()}</div>
+                <div style={{ fontWeight: 600 }}>{c.name}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#666" }}>
+                  <span>{c.phone}</span>
+                  <span style={{ fontWeight: 700, color: "var(--olive)" }}>฿{c.walletBalance.toLocaleString()}</span>
+                </div>
               </div>
             ))}
+            {filtered.length === 0 && <div style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่พบข้อมูล</div>}
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div>
           {selected ? (
             <>
-              <div className="card">
-                <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>{selected.name}</h3>
-                <div style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "1rem" }}>
-                  💰 ฿{selected.walletBalance.toLocaleString()}
+              <div className="card" style={{ marginBottom: "1rem" }}>
+                <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>จัดการยอดเงิน: {selected.name}</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                  <div>
+                    <label className="label">ประเภท</label>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <button 
+                        className={type === "ADD" ? "btn-primary" : "btn-secondary"} 
+                        style={{ flex: 1 }}
+                        onClick={() => setType("ADD")}
+                      >
+                        เติมเงิน
+                      </button>
+                      <button 
+                        className={type === "DEDUCT" ? "btn-danger" : "btn-secondary"} 
+                        style={{ flex: 1, background: type === "DEDUCT" ? "#dc2626" : "", color: type === "DEDUCT" ? "white" : "" }}
+                        onClick={() => setType("DEDUCT")}
+                      >
+                        ตัดเงิน
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="label">จำนวนเงิน (บาท)</label>
+                    <input 
+                      type="number" 
+                      className="input" 
+                      placeholder="0.00" 
+                      value={amount} 
+                      onChange={e => setAmount(e.target.value)} 
+                    />
+                  </div>
                 </div>
-
-                <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                  <button
-                    onClick={() => setType("ADD")}
-                    style={{
-                      flex: 1, padding: "0.5rem", border: "2px solid",
-                      borderColor: type === "ADD" ? "var(--olive)" : "var(--beige-dark)",
-                      background: type === "ADD" ? "var(--olive)" : "white",
-                      color: type === "ADD" ? "white" : "var(--text-dark)",
-                      borderRadius: 8, cursor: "pointer",
-                    }}
-                  >
-                    + เติมเงิน
-                  </button>
-                  <button
-                    onClick={() => setType("DEDUCT")}
-                    style={{
-                      flex: 1, padding: "0.5rem", border: "2px solid",
-                      borderColor: type === "DEDUCT" ? "var(--alert-red)" : "var(--beige-dark)",
-                      background: type === "DEDUCT" ? "var(--alert-red)" : "white",
-                      color: type === "DEDUCT" ? "white" : "var(--text-dark)",
-                      borderRadius: 8, cursor: "pointer",
-                    }}
-                  >
-                    - หักเงิน
-                  </button>
-                </div>
-
-                <div style={{ marginBottom: "0.75rem" }}>
-                  <label className="label">จำนวนเงิน (บาท)</label>
-                  <input
-                    type="number"
-                    className="input"
-                    value={amount}
-                    onChange={e => setAmount(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-                <div style={{ marginBottom: "0.75rem" }}>
+                <div style={{ marginBottom: "1rem" }}>
                   <label className="label">หมายเหตุ</label>
-                  <input
-                    className="input"
-                    value={note}
-                    onChange={e => setNote(e.target.value)}
-                    placeholder="เช่น ซื้อ Course สปา"
-                  />
+                  <input className="input" placeholder="เช่น โปรโมชั่น, คืนเงิน..." value={note} onChange={e => setNote(e.target.value)} />
                 </div>
-                <button className="btn-primary" style={{ width: "100%" }} onClick={handleWalletAction} disabled={loading}>
-                  {loading ? "กำลังบันทึก..." : type === "ADD" ? "✓ เติมเงิน" : "✓ หักเงิน"}
+                <button 
+                  className="btn-primary" 
+                  style={{ width: "100%" }} 
+                  disabled={loading || !amount}
+                  onClick={handleWalletAction}
+                >
+                  {loading ? "กำลังดำเนินการ..." : "ยืนยันทำรายการ"}
                 </button>
               </div>
 
               <div className="card">
-                <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>ประวัติ Wallet</h3>
-                {txns.length === 0 ? (
-                  <p style={{ color: "#aaa" }}>ยังไม่มีรายการ</p>
-                ) : (
-                  txns.map(t => (
-                    <div key={t.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f5f5f5", fontSize: "0.875rem" }}>
-                      <div>
-                        <span style={{ color: t.amount > 0 ? "var(--success-green)" : "var(--alert-red)", fontWeight: 700 }}>
-                          {t.amount > 0 ? "+" : ""}฿{t.amount.toLocaleString()}
-                        </span>
-                        {t.note && <span style={{ color: "#888", marginLeft: 8 }}>{t.note}</span>}
-                      </div>
-                      <span style={{ color: "#aaa" }}>{new Date(t.createdAt).toLocaleDateString("th-TH")}</span>
-                    </div>
-                  ))
-                )}
+                <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>ประวัติการทำรายการ</h3>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
+                      <th style={{ textAlign: "left", padding: "8px" }}>วันที่/เวลา</th>
+                      <th style={{ textAlign: "center", padding: "8px" }}>ประเภท</th>
+                      <th style={{ textAlign: "right", padding: "8px" }}>จำนวน</th>
+                      <th style={{ textAlign: "left", padding: "8px" }}>หมายเหตุ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {txns.map(t => (
+                      <tr key={t.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                        <td style={{ padding: "8px", fontSize: "0.8rem", color: "#666" }}>
+                          {new Date(t.createdAt).toLocaleString("th-TH")}
+                        </td>
+                        <td style={{ padding: "8px", textAlign: "center" }}>
+                          <span style={{ 
+                            fontSize: "0.75rem", padding: "2px 6px", borderRadius: 4,
+                            background: t.type === "ADD" ? "#dcfce7" : "#fee2e2",
+                            color: t.type === "ADD" ? "#16a34a" : "#dc2626"
+                          }}>
+                            {t.type === "ADD" ? "เติมเงิน" : "ตัดเงิน"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "8px", textAlign: "right", fontWeight: 600, color: t.type === "ADD" ? "#16a34a" : "#dc2626" }}>
+                          {t.type === "ADD" ? "+" : "-"}{t.amount.toLocaleString()}
+                        </td>
+                        <td style={{ padding: "8px", color: "#888", fontSize: "0.8rem" }}>{t.note || "-"}</td>
+                      </tr>
+                    ))}
+                    {txns.length === 0 && (
+                      <tr><td colSpan={4} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มีประวัติการทำรายการ</td></tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </>
           ) : (
-            <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", minHeight: 200 }}>
-              กรุณาเลือกสมาชิก
+            <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", minHeight: 300 }}>
+              กรุณาเลือกสมาชิกเพื่อจัดการ Wallet
             </div>
           )}
         </div>
       </div>
 
-      {/* PIN Modal */}
       {showPinModal && (
         <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: 350 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>🔐 ยืนยัน Manager PIN</h3>
-            <p style={{ fontSize: "0.875rem", color: "#666" }}>กรุณากรอก Manager PIN เพื่ออนุมัติการเติมเงิน</p>
-            <input
-              type="password"
-              className="input"
-              style={{ marginBottom: "1rem" }}
-              placeholder="PIN 4-6 หลัก"
-              value={pin}
+          <div className="modal" style={{ maxWidth: 320 }}>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ยืนยันสิทธิ์ Manager</h3>
+            <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>การเติมเงินเข้า Wallet ต้องใช้ Manager PIN ยืนยัน</p>
+            <input 
+              type="password" 
+              className="input" 
+              placeholder="กรอก PIN" 
+              value={pin} 
               onChange={e => setPin(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && verifyPin()}
+              onKeyDown={e => e.key === 'Enter' && verifyPin()}
+              autoFocus
             />
-            {pinError && <div style={{ color: "var(--alert-red)", fontSize: "0.875rem", marginBottom: "0.5rem" }}>{pinError}</div>}
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            {pinError && <p style={{ color: "var(--alert-red)", fontSize: "0.75rem", marginTop: 4 }}>{pinError}</p>}
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
               <button className="btn-primary" style={{ flex: 1 }} onClick={verifyPin}>ยืนยัน</button>
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPinModal(false); setPin(""); setPinError(""); }}>
-                ยกเลิก
-              </button>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPinModal(false); setPin(""); setPinError(""); }}>ยกเลิก</button>
             </div>
           </div>
         </div>

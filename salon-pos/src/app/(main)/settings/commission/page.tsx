@@ -15,7 +15,9 @@ export default function CommissionPage() {
   const [pendingEdit, setPendingEdit] = useState<{ id: string; percentage: number } | null>(null);
 
   useEffect(() => {
-    fetch("/api/commission").then(r => r.json()).then(setPools);
+    fetch("/api/commission").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setPools(data);
+    });
   }, []);
 
   async function verifyPin() {
@@ -45,7 +47,9 @@ export default function CommissionPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, percentage }),
     });
-    fetch("/api/commission").then(r => r.json()).then(setPools);
+    fetch("/api/commission").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setPools(data);
+    });
   }
 
   function handleBlur(id: string, percentage: number) {
@@ -85,7 +89,7 @@ export default function CommissionPage() {
             </tr>
           </thead>
           <tbody>
-            {pools.map(p => (
+            {Array.isArray(pools) && pools.map(p => (
               <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                 <td style={{ padding: "8px 12px" }}>
                   <strong>{p.name}</strong>
@@ -115,7 +119,7 @@ export default function CommissionPage() {
             ))}
           </tbody>
         </table>
-        {pools.length === 0 && <p style={{ color: "#aaa", textAlign: "center", padding: "2rem" }}>ไม่พบข้อมูล</p>}
+        {(Array.isArray(pools) ? pools.length === 0 : true) && <p style={{ color: "#aaa", textAlign: "center", padding: "2rem" }}>ไม่พบข้อมูล</p>}
       </div>
 
       {showPinModal && (

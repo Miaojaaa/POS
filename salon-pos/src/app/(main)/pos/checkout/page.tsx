@@ -53,11 +53,14 @@ function CheckoutContent() {
   const [selectedTicket, setSelectedTicket] = useState<CustomerTicket | null>(null);
 
   useEffect(() => {
-    fetch("/api/orders?status=DONE").then(r => r.json()).then(setOrders);
+    fetch("/api/orders?status=DONE").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setOrders(data);
+      else setOrders([]);
+    });
   }, []);
 
   useEffect(() => {
-    if (orderId && orders.length > 0) {
+    if (orderId && Array.isArray(orders) && orders.length > 0) {
       const o = orders.find(o => o.id === orderId);
       if (o) selectOrder(o);
     }
@@ -77,8 +80,10 @@ function CheckoutContent() {
 
     if (order.customerId) {
       const res = await fetch(`/api/tickets?customerId=${order.customerId}`);
-      const all: CustomerTicket[] = await res.json();
-      setCustomerTickets(all.filter(t => !t.isUsed));
+      const all = await res.json();
+      if (Array.isArray(all)) {
+        setCustomerTickets(all.filter(t => !t.isUsed));
+      }
     }
   }
 
@@ -103,65 +108,13 @@ function CheckoutContent() {
     return false;
   });
 
-  const baseTotal = selectedOrder ? Math.max(0, selectedOrder.subtotal - discountAmount - ticketDiscount) : 0;
-  const hasCreditCard = payments.some(p => p.method === "CREDIT_CARD");
-  // Thai tax-office rule: round at the 3rd decimal place (keep 2 decimals / satang)
-  const round2 = (n: number) => Math.round(n * 100) / 100;
-  const serviceCharge = hasCreditCard ? round2(baseTotal * 0.03) : 0;
-  const vat = round2((baseTotal + serviceCharge) * 0.07);
-  const rawTotal = round2(baseTotal + serviceCharge + vat);
-  // Cash/Wallet only → round final total to whole baht via a separate "rounding adjustment" line.
-  // Any other method (transfer/credit card/ticket) → no rounding.
-  const cashOrWalletOnly = payments.length > 0 && payments.every(p => p.method === "CASH" || p.method === "WALLET");
-  const roundingAdjustment = cashOrWalletOnly ? round2(Math.round(rawTotal) - rawTotal) : 0;
-  const finalTotal = round2(rawTotal + roundingAdjustment);
+  const subtotal = selectedOrder ? selectedOrder.subtotal : 0;
+  const vat = Math.round(subtotal * 0.07);
+  const totalWithVat = subtotal + vat;
+  const finalDiscount = Math.max(discountAmount, (totalWithVat * discountPct) / 100) + ticketDiscount;
+  const grandTotal = Math.max(0, totalWithVat - finalDiscount);
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
-  const change = totalPaid - finalTotal;
-
-  function recalcSinglePayment(manualDiscount: number, tDiscount: number, overrideMethod?: string) {
-    if (!selectedOrder) return;
-    setPayments(prev => {
-      if (prev.length !== 1) return prev;
-      const base = Math.max(0, selectedOrder.subtotal - manualDiscount - tDiscount);
-      const method = overrideMethod ?? prev[0].method;
-      const hasCC = method === "CREDIT_CARD";
-      const sc = hasCC ? Math.round(base * 0.03 * 100) / 100 : 0;
-      const v = Math.round((base + sc) * 0.07 * 100) / 100;
-      const raw = Math.round((base + sc + v) * 100) / 100;
-      const willRound = method === "CASH" || method === "WALLET";
-      const final = willRound ? Math.round(raw) : raw;
-      return [{ ...prev[0], amount: final }];
-    });
-  }
-
-  function handleDiscountChange(val: number, type: "amount" | "pct") {
-    if (!selectedOrder) return;
-    let newDiscount = 0;
-    if (type === "amount") {
-      newDiscount = val;
-      setDiscountAmount(val);
-      setDiscountPct(selectedOrder.subtotal > 0 ? (val / selectedOrder.subtotal) * 100 : 0);
-    } else {
-      newDiscount = Math.round((selectedOrder.subtotal * val) / 100 * 100) / 100;
-      setDiscountPct(val);
-      setDiscountAmount(newDiscount);
-    }
-    recalcSinglePayment(newDiscount, ticketDiscount);
-    if (val > 0 && !approvedById) {
-      setShowPinModal(true);
-    }
-  }
-
-  function applyTicket(ticket: CustomerTicket) {
-    setSelectedTicket(ticket);
-    const tDiscount = getTicketDiscount(ticket, selectedOrder);
-    recalcSinglePayment(discountAmount, tDiscount);
-  }
-
-  function removeTicket() {
-    setSelectedTicket(null);
-    recalcSinglePayment(discountAmount, 0);
-  }
+  const remaining = grandTotal - totalPaid;
 
   async function verifyPin() {
     setPinError("");
@@ -172,7 +125,7 @@ function CheckoutContent() {
     });
     const data = await res.json();
     if (data.ok) {
-      setApprovedById(data.userId ?? null);
+      setApprovedById(data.userId);
       setShowPinModal(false);
       setPin("");
     } else {
@@ -182,299 +135,242 @@ function CheckoutContent() {
 
   async function handleCheckout() {
     if (!selectedOrder) return;
-    if (Math.abs(totalPaid - finalTotal) > 0.01 && change < 0) {
-      alert("ยอดชำระไม่ครบ");
+    if (remaining !== 0) {
+      alert("ยอดชำระไม่ตรงกับยอดรวม");
       return;
     }
-    setProcessing(true);
-    const res = await fetch(`/api/orders/${selectedOrder.id}/checkout`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        payments: payments.filter(p => p.amount > 0),
-        discountAmount,
-        discountPct,
-        approvedById,
-        serviceCharge,
-        vat,
-        roundingAdjustment,
-        ticketId: selectedTicket?.id ?? null,
-        ticketDiscount,
-      }),
-    });
-    if (res.ok) {
-      alert(`✓ ชำระเงินสำเร็จ!\nยอดรวม ฿${finalTotal.toLocaleString()}\nเงินทอน ฿${Math.max(0, change).toLocaleString()}`);
-      router.push("/pos/queue");
-    } else {
-      alert("เกิดข้อผิดพลาด");
+    if (finalDiscount > 0 && !approvedById) {
+      alert("ต้องมี Manager PIN อนุมัติส่วนลด");
+      setShowPinModal(true);
+      return;
     }
-    setProcessing(false);
-  }
 
-  function ticketDefLabel(def: CustomerTicket["ticketDef"]) {
-    if (def.type === "FIXED") return `ลด ฿${(def.fixedValue || 0).toLocaleString()}`;
-    const pct = def.discountPct ?? 100;
-    return pct === 100 ? `${def.service?.name || ""} ฟรี` : `${def.service?.name || ""} ลด ${pct}%`;
+    setProcessing(true);
+    try {
+      const res = await fetch(`/api/orders/${selectedOrder.id}/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payments,
+          discountAmount: finalDiscount,
+          approvedById,
+          ticketId: selectedTicket?.id,
+        }),
+      });
+      if (res.ok) {
+        alert("เช็คเอาท์สำเร็จ");
+        router.push("/pos/queue");
+      } else {
+        const data = await res.json();
+        alert(data.error || "เกิดข้อผิดพลาด");
+      }
+    } catch {
+      alert("การเชื่อมต่อล้มเหลว");
+    } finally {
+      setProcessing(false);
+    }
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto" }}>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", marginBottom: "1.5rem" }}>💳 ชำระเงิน</h1>
+    <div>
+      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", marginBottom: "1.5rem" }}>💳 เช็คเอาท์ / ชำระเงิน</h1>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "1rem" }}>
-        {/* Order list */}
-        <div className="card">
-          <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>เลือกออร์เดอร์ที่รอชำระ</h3>
-          {orders.length === 0 ? (
-            <p style={{ color: "#aaa" }}>ไม่มีออร์เดอร์รอชำระ</p>
-          ) : (
-            orders.map(o => (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "1.5rem" }}>
+        {/* Left: Pending Orders */}
+        <div>
+          <h3 style={{ fontSize: "1rem", color: "var(--olive)", marginBottom: "1rem" }}>ออร์เดอร์รอชำระเงิน ({orders.length})</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {orders.map(o => (
               <div
                 key={o.id}
+                className="card"
                 onClick={() => selectOrder(o)}
                 style={{
-                  padding: "0.75rem",
-                  borderRadius: 8,
-                  border: `2px solid ${selectedOrder?.id === o.id ? "var(--olive)" : "var(--beige-dark)"}`,
-                  background: selectedOrder?.id === o.id ? "#f0f5e8" : "white",
                   cursor: "pointer",
-                  marginBottom: "0.5rem",
+                  border: `2px solid ${selectedOrder?.id === o.id ? "var(--olive)" : "transparent"}`,
+                  background: selectedOrder?.id === o.id ? "#f0f5e8" : "white",
+                  padding: "1rem",
                 }}
               >
-                <div style={{ fontWeight: 600 }}>{o.customerName}</div>
-                <div style={{ fontSize: "0.85rem", color: "#666" }}>{o.items.map(i => i.service.name).join(", ")}</div>
-                <div style={{ fontWeight: 700, color: "var(--olive)" }}>฿{o.subtotal.toLocaleString()}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                  <span style={{ fontWeight: 700 }}>{o.customerName}</span>
+                  <span style={{ color: "var(--olive)", fontWeight: 700 }}>฿{o.subtotal.toLocaleString()}</span>
+                </div>
+                <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                  ช่าง: {o.technician.name} · {o.items.length} รายการ
+                </div>
               </div>
-            ))
-          )}
+            ))}
+            {orders.length === 0 && (
+              <div style={{ textAlign: "center", padding: "3rem", color: "#aaa" }}>ไม่มีออร์เดอร์รอชำระ</div>
+            )}
+          </div>
         </div>
 
-        {/* Checkout panel */}
+        {/* Right: Payment Form */}
         {selectedOrder ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div className="card">
-              <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>รายการบริการ</h3>
-              {selectedOrder.items.map((item, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginBottom: 4 }}>
-                  <span>{item.service.name}</span>
-                  <span>฿{item.price.toLocaleString()}</span>
-                </div>
-              ))}
-              <div style={{ borderTop: "1px solid var(--beige-dark)", paddingTop: 8, marginTop: 8, display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
-                <span>รวม</span>
-                <span>฿{selectedOrder.subtotal.toLocaleString()}</span>
-              </div>
-
-              {/* Manual Discount */}
-              <div style={{ marginTop: "1rem" }}>
-                <label className="label">ส่วนลด (Manual) {approvedById ? "✓ (อนุมัติแล้ว)" : ""}</label>
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <input
-                    type="number"
-                    className="input"
-                    style={{ flex: 1 }}
-                    placeholder="จำนวนเงิน"
-                    value={discountAmount || ""}
-                    onChange={e => handleDiscountChange(Number(e.target.value), "amount")}
-                  />
-                  <input
-                    type="number"
-                    className="input"
-                    style={{ width: 80 }}
-                    placeholder="%"
-                    max={100}
-                    value={discountPct ? discountPct.toFixed(1) : ""}
-                    onChange={e => handleDiscountChange(Number(e.target.value), "pct")}
-                  />
-                </div>
-              </div>
-
-              {/* Coupon Section */}
-              <div style={{ marginTop: "1rem", borderTop: "1px solid var(--beige-dark)", paddingTop: "1rem" }}>
-                <label className="label">🎫 คูปอง</label>
-                {!selectedOrder.customerId ? (
-                  <p style={{ fontSize: "0.8rem", color: "#aaa", margin: 0 }}>ออร์เดอร์นี้ไม่มีข้อมูลสมาชิก</p>
-                ) : applicableTickets.length === 0 ? (
-                  <p style={{ fontSize: "0.8rem", color: "#aaa", margin: 0 }}>ไม่มีคูปองที่ใช้ได้</p>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                    {applicableTickets.map(t => {
-                      const isSelected = selectedTicket?.id === t.id;
-                      return (
-                        <div
-                          key={t.id}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            padding: "0.5rem 0.75rem",
-                            borderRadius: 8,
-                            border: `2px solid ${isSelected ? "var(--olive)" : "var(--beige-dark)"}`,
-                            background: isSelected ? "#f0f5e8" : "white",
-                          }}
-                        >
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: "0.875rem" }}>{t.ticketDef.name}</div>
-                            <div style={{ fontSize: "0.775rem", color: "#666" }}>{ticketDefLabel(t.ticketDef)}</div>
-                          </div>
-                          {isSelected ? (
-                            <button
-                              onClick={removeTicket}
-                              style={{ background: "#fee2e2", border: "none", borderRadius: 6, padding: "0.25rem 0.75rem", cursor: "pointer", color: "#dc2626", fontSize: "0.8rem", fontWeight: 600 }}
-                            >
-                              ยกเลิก
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => applyTicket(t)}
-                              style={{ background: "var(--olive)", border: "none", borderRadius: 6, padding: "0.25rem 0.75rem", cursor: "pointer", color: "white", fontSize: "0.8rem", fontWeight: 600 }}
-                            >
-                              ใช้
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {selectedTicket && (
-                  <div style={{ marginTop: "0.5rem", display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "#16a34a", fontWeight: 600 }}>
-                    <span>ส่วนลดจากคูปอง</span>
-                    <span>-฿{ticketDiscount.toLocaleString()}</span>
-                  </div>
-                )}
-              </div>
-
-              {hasCreditCard && (
-                <div style={{ marginTop: "0.5rem", display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
-                  <span>Service Charge (3%)</span>
-                  <span>฿{serviceCharge.toFixed(2)}</span>
-                </div>
-              )}
-              <div style={{ marginTop: "0.25rem", display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
-                <span>VAT (7%)</span>
-                <span>฿{vat.toFixed(2)}</span>
-              </div>
-              {roundingAdjustment !== 0 && (
-                <div style={{ marginTop: "0.25rem", display: "flex", justifyContent: "space-between", fontSize: "0.875rem", color: "#888" }}>
-                  <span>ค่าปัดเศษ</span>
-                  <span>{roundingAdjustment > 0 ? "+" : ""}฿{roundingAdjustment.toFixed(2)}</span>
-                </div>
-              )}
-              <div style={{ marginTop: "0.75rem", display: "flex", justifyContent: "space-between", fontSize: "1.1rem", fontWeight: 700, color: "var(--olive)" }}>
-                <span>ยอดสุทธิ</span>
-                <span>฿{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
+          <div className="card" style={{ padding: "1.5rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", borderBottom: "1px solid #eee", paddingBottom: "1rem" }}>
+              <h2 style={{ margin: 0, fontSize: "1.25rem" }}>{selectedOrder.customerName}</h2>
+              <span style={{ fontSize: "0.875rem", color: "#666" }}>Order ID: {selectedOrder.id.slice(-6).toUpperCase()}</span>
             </div>
 
-            {/* Payment methods */}
-            <div className="card">
-              <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>วิธีชำระเงิน</h3>
-
-              {selectedOrder.customer && (
-                <div style={{ background: "var(--beige)", padding: "0.5rem", borderRadius: 8, marginBottom: "0.75rem", fontSize: "0.875rem" }}>
-                  💰 Wallet: ฿{selectedOrder.customer.walletBalance.toLocaleString()}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+              {/* Summary */}
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                  <span>ค่าบริการ/สินค้า</span>
+                  <span>฿{subtotal.toLocaleString()}</span>
                 </div>
-              )}
-
-              {payments.map((pay, i) => (
-                <div key={i} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
-                  <select
-                    className="input"
-                    style={{ flex: 1 }}
-                    value={pay.method}
-                    onChange={e => {
-                      const newMethod = e.target.value;
-                      setPayments(prev => {
-                        const updated = prev.map((p, j) => j === i ? { ...p, method: newMethod } : p);
-                        if (updated.length === 1) {
-                          const base = Math.max(0, selectedOrder.subtotal - discountAmount - ticketDiscount);
-                          const hasCC = newMethod === "CREDIT_CARD";
-                          const sc = hasCC ? Math.round(base * 0.03) : 0;
-                          const v = Math.round((base + sc) * 0.07);
-                          updated[0].amount = base + sc + v;
-                        }
-                        return updated;
-                      });
-                    }}
-                  >
-                    <option value="CASH">เงินสด</option>
-                    <option value="TRANSFER">โอนเงิน (QR)</option>
-                    <option value="CREDIT_CARD">บัตรเครดิต</option>
-                    <option value="WALLET">Wallet</option>
-                  </select>
-                  <input
-                    type="number"
-                    className="input"
-                    style={{ width: 120 }}
-                    value={pay.amount || ""}
-                    onChange={e => setPayments(prev => prev.map((p, j) => j === i ? { ...p, amount: Number(e.target.value) } : p))}
-                  />
-                  {payments.length > 1 && (
-                    <button onClick={() => setPayments(prev => prev.filter((_, j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", color: "red" }}>×</button>
-                  )}
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                  <span>VAT 7%</span>
+                  <span>฿{vat.toLocaleString()}</span>
                 </div>
-              ))}
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginTop: "1rem", paddingTop: "0.5rem", borderTop: "1px solid #eee" }}>
+                  <span>ยอดรวมทั้งสิ้น</span>
+                  <span>฿{totalWithVat.toLocaleString()}</span>
+                </div>
 
-              <button className="btn-secondary" style={{ fontSize: "0.8rem" }} onClick={() => setPayments(prev => [...prev, { method: "TRANSFER", amount: 0 }])}>
-                + เพิ่มช่องทาง
-              </button>
+                {/* Tickets */}
+                {applicableTickets.length > 0 && (
+                  <div style={{ marginTop: "1.5rem", padding: "1rem", background: "#f0f5e8", borderRadius: 8 }}>
+                    <div style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.5rem" }}>เลือกคูปอง/Ticket</div>
+                    <select
+                      className="input"
+                      value={selectedTicket?.id || ""}
+                      onChange={e => {
+                        const t = applicableTickets.find(x => x.id === e.target.value);
+                        setSelectedTicket(t || null);
+                      }}
+                    >
+                      <option value="">-- ไม่ใช้คูปอง --</option>
+                      {applicableTickets.map(t => (
+                        <option key={t.id} value={t.id}>{t.ticketDef.name}</option>
+                      ))}
+                    </select>
+                    {ticketDiscount > 0 && (
+                      <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "var(--olive)", fontWeight: 600 }}>
+                        ลดเพิ่ม ฿{ticketDiscount.toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              <div style={{ marginTop: "0.75rem", display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: "0.875rem" }}>รวมยอดชำระ</span>
-                <span style={{ fontWeight: 700 }}>฿{totalPaid.toLocaleString()}</span>
+                {/* Direct Discount */}
+                <div style={{ marginTop: "1.5rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginBottom: "0.5rem" }}>
+                    <span>ส่วนลดเพิ่มเติม</span>
+                    {approvedById ? (
+                      <span style={{ color: "var(--success-green)", fontSize: "0.75rem" }}>✓ อนุมัติแล้ว</span>
+                    ) : (
+                      <button style={{ background: "none", border: "none", color: "var(--olive)", fontSize: "0.75rem", cursor: "pointer", textDecoration: "underline" }} onClick={() => setShowPinModal(true)}>
+                        Manager PIN
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                    <div style={{ position: "relative" }}>
+                      <input type="number" className="input" placeholder="0" value={discountAmount || ""} onChange={e => { setDiscountAmount(Number(e.target.value)); setDiscountPct(0); }} />
+                      <span style={{ position: "absolute", right: 10, top: 10, color: "#999", fontSize: "0.8rem" }}>฿</span>
+                    </div>
+                    <div style={{ position: "relative" }}>
+                      <input type="number" className="input" placeholder="0" value={discountPct || ""} onChange={e => { setDiscountPct(Number(e.target.value)); setDiscountAmount(0); }} />
+                      <span style={{ position: "absolute", right: 10, top: 10, color: "#999", fontSize: "0.8rem" }}>%</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              {change > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", color: "var(--success-green)", fontWeight: 700 }}>
-                  <span>เงินทอน</span>
-                  <span>฿{change.toLocaleString()}</span>
-                </div>
-              )}
-              {change < 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", color: "var(--alert-red)", fontWeight: 700 }}>
-                  <span>ยังขาดอีก</span>
-                  <span>฿{(-change).toLocaleString()}</span>
-                </div>
-              )}
-            </div>
 
-            <button
-              className="btn-primary"
-              style={{ padding: "0.875rem", fontSize: "1rem" }}
-              onClick={handleCheckout}
-              disabled={processing}
-            >
-              {processing ? "กำลังบันทึก..." : "✓ ยืนยันการชำระเงิน"}
-            </button>
+              {/* Payments */}
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: "1rem" }}>ช่องทางการชำระเงิน</div>
+                {payments.map((p, idx) => (
+                  <div key={idx} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                    <select
+                      className="input"
+                      style={{ flex: 1 }}
+                      value={p.method}
+                      onChange={e => {
+                        const next = [...payments];
+                        next[idx].method = e.target.value;
+                        setPayments(next);
+                      }}
+                    >
+                      <option value="TRANSFER">โอนเงิน</option>
+                      <option value="CASH">เงินสด</option>
+                      <option value="CREDIT">บัตรเครดิต</option>
+                      <option value="WALLET">Wallet</option>
+                    </select>
+                    <input
+                      type="number"
+                      className="input"
+                      style={{ flex: 1 }}
+                      value={p.amount || ""}
+                      onChange={e => {
+                        const next = [...payments];
+                        next[idx].amount = Number(e.target.value);
+                        setPayments(next);
+                      }}
+                    />
+                    {payments.length > 1 && (
+                      <button onClick={() => setPayments(prev => prev.filter((_, i) => i !== idx))} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer" }}>×</button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={() => setPayments([...payments, { method: "CASH", amount: 0 }])}
+                  style={{ background: "none", border: "none", color: "var(--olive)", fontSize: "0.8rem", cursor: "pointer", padding: "0.5rem 0" }}
+                >
+                  + เพิ่มช่องทางชำระเงิน
+                </button>
+
+                <div style={{ marginTop: "2rem", padding: "1.25rem", background: "var(--olive)", color: "white", borderRadius: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", opacity: 0.9, marginBottom: "0.25rem" }}>ยอดสุทธิ</div>
+                  <div style={{ fontSize: "2rem", fontWeight: 800 }}>฿{grandTotal.toLocaleString()}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginTop: "1rem", borderTop: "1px solid rgba(255,255,255,0.2)", paddingTop: "0.5rem" }}>
+                    <span>ชำระแล้ว: ฿{totalPaid.toLocaleString()}</span>
+                    <span style={{ color: remaining === 0 ? "#86efac" : "#fca5a5", fontWeight: 700 }}>
+                      {remaining > 0 ? `ขาดอีก: ฿${remaining.toLocaleString()}` : remaining < 0 ? `ทอน: ฿${Math.abs(remaining).toLocaleString()}` : "✓ ยอดครบถ้วน"}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  className="btn-primary"
+                  style={{ width: "100%", marginTop: "1rem", height: "3.5rem", fontSize: "1.1rem" }}
+                  disabled={processing || remaining !== 0}
+                  onClick={handleCheckout}
+                >
+                  {processing ? "กำลังดำเนินการ..." : "ยืนยันการชำระเงิน"}
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa" }}>
-            กรุณาเลือกออร์เดอร์
+          <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", minHeight: 400 }}>
+            กรุณาเลือกออร์เดอร์ทางด้านซ้ายเพื่อทำรายการ
           </div>
         )}
       </div>
 
-      {/* PIN Modal */}
       {showPinModal && (
         <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: 350 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>🔐 ยืนยัน Manager PIN</h3>
-            <p style={{ fontSize: "0.875rem", color: "#666" }}>กรุณากรอก Manager PIN เพื่ออนุมัติส่วนลด</p>
+          <div className="modal" style={{ maxWidth: 320 }}>
+            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ยืนยันสิทธิ์ Manager</h3>
+            <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>การใช้ส่วนลดต้องให้ Manager ป้อน PIN ยืนยัน</p>
             <input
               type="password"
               className="input"
-              style={{ marginBottom: "1rem" }}
-              placeholder="PIN 4-6 หลัก"
+              placeholder="กรอก PIN"
               value={pin}
               onChange={e => setPin(e.target.value)}
               onKeyDown={e => e.key === "Enter" && verifyPin()}
+              autoFocus
             />
-            {pinError && <div style={{ color: "var(--alert-red)", fontSize: "0.875rem", marginBottom: "0.5rem" }}>{pinError}</div>}
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            {pinError && <p style={{ color: "var(--alert-red)", fontSize: "0.75rem", marginTop: 4 }}>{pinError}</p>}
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
               <button className="btn-primary" style={{ flex: 1 }} onClick={verifyPin}>ยืนยัน</button>
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPinModal(false); setDiscountAmount(0); setDiscountPct(0); }}>
-                ยกเลิก
-              </button>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPinModal(false); setPin(""); setPinError(""); }}>ยกเลิก</button>
             </div>
           </div>
         </div>
@@ -485,7 +381,7 @@ function CheckoutContent() {
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div>กำลังโหลด...</div>}>
+    <Suspense fallback={<div>Loading...</div>}>
       <CheckoutContent />
     </Suspense>
   );

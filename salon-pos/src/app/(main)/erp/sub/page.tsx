@@ -8,10 +8,13 @@ export default function SubStockPage() {
   const [stock, setStock] = useState<StockItem[]>([]);
 
   useEffect(() => {
-    fetch("/api/stock").then(r => r.json()).then(setStock);
+    fetch("/api/stock").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setStock(data);
+      else setStock([]);
+    });
   }, []);
 
-  const low = stock.filter(s => s.isLow);
+  const low = Array.isArray(stock) ? stock.filter(s => s.isLow) : [];
 
   return (
     <div>
@@ -37,7 +40,7 @@ export default function SubStockPage() {
             </tr>
           </thead>
           <tbody>
-            {stock.map(p => (
+            {Array.isArray(stock) && stock.map(p => (
               <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5", background: p.isLow ? "#fff8f8" : "white" }}>
                 <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
                 <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700 }}>{p.subQty}</td>
@@ -59,6 +62,9 @@ export default function SubStockPage() {
                 </td>
               </tr>
             ))}
+            {(!Array.isArray(stock) || stock.length === 0) && (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มีข้อมูลในคลัง</td></tr>
+            )}
           </tbody>
         </table>
       </div>

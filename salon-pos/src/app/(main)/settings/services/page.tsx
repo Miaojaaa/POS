@@ -19,15 +19,19 @@ export default function ServicesPage() {
 
   useEffect(() => {
     refresh();
-    fetch("/api/categories").then(r => r.json()).then(setCategories);
+    fetch("/api/categories").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setCategories(data);
+    });
   }, []);
 
   async function refresh() {
     const res = await fetch("/api/services");
-    setServices(await res.json());
+    const data = await res.json();
+    if (Array.isArray(data)) setServices(data);
   }
 
   function handleEdit() {
+    if (!Array.isArray(services)) return;
     const s = services.find(sv => sv.id === selectedServiceId);
     if (!s) return;
     

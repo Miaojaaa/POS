@@ -35,15 +35,23 @@ export default function TicketsPage() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    fetch("/api/tickets").then(r => r.json()).then(setDefs);
-    fetch("/api/customers").then(r => r.json()).then(setCustomers);
-    fetch("/api/services").then(r => r.json()).then(setServices);
+    fetch("/api/tickets").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setDefs(data);
+    });
+    fetch("/api/customers").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setCustomers(data);
+    });
+    fetch("/api/services").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) setServices(data);
+    });
   }, []);
 
   async function selectCustomer(c: Customer) {
     setSelected(c);
     const res = await fetch(`/api/tickets?customerId=${c.id}`);
-    setCustomerTickets(await res.json());
+    const data = await res.json();
+    if (Array.isArray(data)) setCustomerTickets(data);
+    else setCustomerTickets([]);
   }
 
   async function issueTicket() {
@@ -54,7 +62,8 @@ export default function TicketsPage() {
       body: JSON.stringify({ customerId: selected.id, ticketDefId: issueDefId, quantity: qty }),
     });
     const res = await fetch(`/api/tickets?customerId=${selected.id}`);
-    setCustomerTickets(await res.json());
+    const data = await res.json();
+    if (Array.isArray(data)) setCustomerTickets(data);
     alert(`✓ ออก Ticket ${qty} ใบ สำเร็จ`);
   }
 
@@ -108,9 +117,9 @@ export default function TicketsPage() {
     return pct === 100 ? `${d.service?.name || ""} ฟรี` : `${d.service?.name || ""} ลด ${pct}%`;
   }
 
-  const filtered = customers.filter(c => c.name.includes(q) || c.phone.includes(q));
-  const active = customerTickets.filter(t => !t.isUsed);
-  const used = customerTickets.filter(t => t.isUsed);
+  const filtered = Array.isArray(customers) ? customers.filter(c => c.name.includes(q) || c.phone.includes(q)) : [];
+  const active = Array.isArray(customerTickets) ? customerTickets.filter(t => !t.isUsed) : [];
+  const used = Array.isArray(customerTickets) ? customerTickets.filter(t => t.isUsed) : [];
 
   return (
     <div>
@@ -119,7 +128,7 @@ export default function TicketsPage() {
       {/* Manage ticket definitions */}
       <div className="card" style={{ marginBottom: "1rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ margin: 0, fontSize: "1rem", color: "var(--olive)" }}>ประเภทคูปองทั้งหมด ({defs.length})</h3>
+          <h3 style={{ margin: 0, fontSize: "1rem", color: "var(--olive)" }}>ประเภทคูปองทั้งหมด ({Array.isArray(defs) ? defs.length : 0})</h3>
           <button
             className={showCreate ? "btn-danger" : "btn-primary"}
             style={{ fontSize: "0.8rem", padding: "0.375rem 0.875rem" }}
@@ -169,7 +178,7 @@ export default function TicketsPage() {
                   <label className="label">บริการที่ใช้ได้</label>
                   <select className="input" value={newServiceId} onChange={e => setNewServiceId(e.target.value)}>
                     <option value="">-- เลือกบริการ --</option>
-                    {services.map(s => (
+                    {Array.isArray(services) && services.map(s => (
                       <option key={s.id} value={s.id}>{s.name} (฿{s.price.toLocaleString()})</option>
                     ))}
                   </select>
@@ -205,7 +214,7 @@ export default function TicketsPage() {
         )}
 
         {/* Existing defs list */}
-        {defs.length > 0 && (
+        {Array.isArray(defs) && defs.length > 0 && (
           <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {defs.map(d => (
               <div
@@ -282,7 +291,7 @@ export default function TicketsPage() {
                   <label className="label">ประเภทคูปอง</label>
                   <select className="input" value={issueDefId} onChange={e => setIssueDefId(e.target.value)}>
                     <option value="">-- เลือก --</option>
-                    {defs.map(d => (
+                    {Array.isArray(defs) && defs.map(d => (
                       <option key={d.id} value={d.id}>{d.name} — {defLabel(d)}</option>
                     ))}
                   </select>

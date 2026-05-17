@@ -32,7 +32,8 @@ export default function MembersPage() {
   const fetchCustomers = () => {
     setLoading(true);
     fetch("/api/customers").then(r => r.json()).then(data => {
-      setCustomers(data);
+      if (Array.isArray(data)) setCustomers(data);
+      else setCustomers([]);
       setLoading(false);
     }).catch(() => setLoading(false));
   };
@@ -96,141 +97,144 @@ export default function MembersPage() {
     }
   };
 
-  const filtered = customers.filter(c => 
+  const filtered = Array.isArray(customers) ? customers.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) || 
     c.phone.includes(search)
-  );
+  ) : [];
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>👥 จัดการสมาชิก</h1>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <input 
-            className="input" 
-            placeholder="ค้นหาชื่อ หรือ เบอร์โทร" 
-            style={{ width: 240 }} 
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          <button className="btn-primary" onClick={openAddModal}>+ เพิ่มสมาชิก</button>
-        </div>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>👥 สมาชิก / ลูกค้า</h1>
+        <button className="btn-primary" onClick={openAddModal}>+ เพิ่มสมาชิก</button>
       </div>
 
       <div className="card">
+        <div style={{ marginBottom: "1.25rem" }}>
+          <input 
+            className="input" 
+            placeholder="🔍 ค้นหาด้วยชื่อ หรือ เบอร์โทรศัพท์..." 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
           <thead>
             <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
-              <th style={{ textAlign: "left", padding: "8px 12px" }}>ชื่อลูกค้า</th>
-              <th style={{ textAlign: "left", padding: "8px 12px" }}>เบอร์โทร</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>ระดับสมาชิก</th>
-              <th style={{ textAlign: "right", padding: "8px 12px" }}>ยอดเงินคงเหลือ (฿)</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>จัดการ</th>
+              <th style={{ textAlign: "left", padding: "10px 12px" }}>ชื่อ</th>
+              <th style={{ textAlign: "left", padding: "10px 12px" }}>เบอร์โทร</th>
+              <th style={{ textAlign: "center", padding: "10px 12px" }}>ระดับสมาชิก</th>
+              <th style={{ textAlign: "right", padding: "10px 12px" }}>ยอดคงเหลือใน Wallet</th>
+              <th style={{ textAlign: "center", padding: "10px 12px", width: 80 }}>จัดการ</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} style={{ padding: "2rem", textAlign: "center", color: "#888" }}>กำลังโหลด...</td></tr>
+              <tr><td colSpan={5} style={{ textAlign: "center", padding: "3rem", color: "#888" }}>กำลังโหลดข้อมูล...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={5} style={{ padding: "2rem", textAlign: "center", color: "#888" }}>ไม่พบข้อมูลสมาชิก</td></tr>
-            ) : (
-              filtered.map(c => (
-                <tr key={c.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
-                  <td style={{ padding: "8px 12px", fontWeight: 500 }}>{c.name}</td>
-                  <td style={{ padding: "8px 12px" }}>{c.phone}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <span className={`badge badge-${c.memberLevel.toLowerCase()}`}>{c.memberLevel}</span>
-                  </td>
-                  <td style={{ padding: "8px 12px", textAlign: "right" }}>{c.walletBalance.toLocaleString()}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <button 
-                      className="btn-secondary" 
-                      style={{ padding: "2px 8px", fontSize: "0.75rem" }}
-                      onClick={() => openEditModal(c)}
-                    >
-                      แก้ไข/รายละเอียด
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
+              <tr><td colSpan={5} style={{ textAlign: "center", padding: "3rem", color: "#aaa" }}>ไม่พบข้อมูลสมาชิก</td></tr>
+            ) : filtered.map(c => (
+              <tr key={c.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                <td style={{ padding: "10px 12px", fontWeight: 500 }}>{c.name}</td>
+                <td style={{ padding: "10px 12px", color: "#666" }}>{c.phone}</td>
+                <td style={{ padding: "10px 12px", textAlign: "center" }}>
+                  <span style={{ 
+                    fontSize: "0.75rem", padding: "2px 8px", borderRadius: 10,
+                    background: c.memberLevel === "GOLD" ? "#fef3c7" : c.memberLevel === "SILVER" ? "#f3f4f6" : "#f1f5f9",
+                    color: c.memberLevel === "GOLD" ? "#92400e" : c.memberLevel === "SILVER" ? "#4b5563" : "#64748b",
+                    fontWeight: 600
+                  }}>
+                    {c.memberLevel}
+                  </span>
+                </td>
+                <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 600, color: "var(--olive)" }}>
+                  ฿{c.walletBalance.toLocaleString()}
+                </td>
+                <td style={{ padding: "10px 12px", textAlign: "center" }}>
+                  <button className="btn-secondary" style={{ padding: "4px 8px", fontSize: "0.75rem" }} onClick={() => openEditModal(c)}>แก้ไข</button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>{editingId ? "📝 แก้ไขข้อมูลสมาชิก" : "➕ เพิ่มสมาชิกใหม่"}</h2>
-            
-            {error && (
-              <div style={{ color: "var(--alert-red)", background: "#FFF0F0", padding: "0.75rem", borderRadius: "8px", marginBottom: "1rem", fontSize: "0.875rem" }}>
-                ⚠️ {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-                <div>
-                  <label className="label">ชื่อ-นามสกุล</label>
-                  <input 
-                    className="input" 
-                    required 
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="label">เบอร์โทรศัพท์</label>
-                  <input 
-                    className="input" 
-                    required 
-                    value={formData.phone}
-                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-                <div>
-                  <label className="label">วันเกิด (ถ้ามี)</label>
-                  <input 
-                    className="input" 
-                    type="date"
-                    value={formData.birthdate}
-                    onChange={e => setFormData({ ...formData, birthdate: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="label">ระดับสมาชิก</label>
-                  <select 
-                    className="input"
-                    value={formData.memberLevel}
-                    onChange={e => setFormData({ ...formData, memberLevel: e.target.value })}
-                  >
-                    <option value="BASIC">BASIC</option>
-                    <option value="SILVER">SILVER</option>
-                    <option value="GOLD">GOLD</option>
-                    <option value="PLATINUM">PLATINUM</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "1.5rem" }}>
-                <label className="label">ประวัติการแพ้ (ถ้ามี)</label>
-                <textarea 
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 400 }}>
+            <h3 style={{ margin: "0 0 1.25rem", color: "var(--olive)" }}>{editingId ? "แก้ไขข้อมูลสมาชิก" : "เพิ่มสมาชิกใหม่"}</h3>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div>
+                <label className="label">ชื่อลูกค้า</label>
+                <input 
                   className="input" 
-                  style={{ height: "80px", resize: "none" }}
-                  value={formData.allergyHistory}
-                  onChange={e => setFormData({ ...formData, allergyHistory: e.target.value })}
+                  value={formData.name} 
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="ชื่อ-นามสกุล"
+                  required
                 />
               </div>
+              <div>
+                <label className="label">เบอร์โทรศัพท์</label>
+                <input 
+                  className="input" 
+                  value={formData.phone} 
+                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="08x-xxx-xxxx"
+                  required
+                />
+              </div>
+              <div>
+                <label className="label">วันเกิด (วว/ดด/ปปปป)</label>
+                <input 
+                  className="input" 
+                  value={formData.birthdate} 
+                  onChange={e => setFormData({ ...formData, birthdate: e.target.value })}
+                  placeholder="เช่น 01/01/2530"
+                />
+              </div>
+              <div>
+                <label className="label">ประวัติการแพ้</label>
+                <textarea 
+                  className="input" 
+                  style={{ minHeight: 60, padding: "8px" }}
+                  value={formData.allergyHistory} 
+                  onChange={e => setFormData({ ...formData, allergyHistory: e.target.value })}
+                  placeholder="เช่น แพ้สีแบรนด์ X, หนังศีรษะบาง..."
+                />
+              </div>
+              <div>
+                <label className="label">ระดับสมาชิก</label>
+                <select 
+                  className="input" 
+                  value={formData.memberLevel} 
+                  onChange={e => setFormData({ ...formData, memberLevel: e.target.value })}
+                >
+                  <option value="BASIC">BASIC</option>
+                  <option value="SILVER">SILVER</option>
+                  <option value="GOLD">GOLD</option>
+                </select>
+              </div>
 
-              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)}>ยกเลิก</button>
-                <button type="submit" className="btn-primary" disabled={isSaving || !isChanged}>
-                  {isSaving ? "กำลังบันทึก..." : editingId ? "บันทึกการแก้ไข" : "บันทึกสมาชิก"}
+              {error && <p style={{ color: "var(--alert-red)", fontSize: "0.8rem", margin: 0 }}>{error}</p>}
+
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
+                <button 
+                  type="submit" 
+                  className="btn-primary" 
+                  style={{ flex: 1 }} 
+                  disabled={isSaving || !isChanged}
+                >
+                  {isSaving ? "กำลังบันทึก..." : "บันทึก"}
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  style={{ flex: 1 }} 
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  ยกเลิก
                 </button>
               </div>
             </form>

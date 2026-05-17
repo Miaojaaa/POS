@@ -33,6 +33,7 @@ export default function StaffPage() {
 
   const isChanged = () => {
     if (!editingId) return !!(form.name && form.email);
+    if (!Array.isArray(users)) return false;
     const original = users.find(u => u.id === editingId);
     if (!original) return false;
 
