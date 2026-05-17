@@ -21,7 +21,7 @@ export default function LoginPage() {
     });
     const data = await res.json();
     if (res.ok) {
-      router.push("/dashboard");
+      router.push("/pos/new");
     } else {
       setError(data.error || "เข้าสู่ระบบไม่สำเร็จ");
     }
