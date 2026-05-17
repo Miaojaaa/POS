@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useBranch } from "@/context/BranchContext";
 
 /* ─────────────────────────── types ─────────────────────────── */
 type Branch = { id: string; name: string };
@@ -314,8 +315,7 @@ ${buildPage("COPY")}
 
 /* ─────────────────────────── main component ─────────────────── */
 export default function QueuePage() {
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
+  const { branches, selectedBranchId, setSelectedBranchId } = useBranch();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -352,13 +352,6 @@ export default function QueuePage() {
   const [taxId, setTaxId] = useState("");
   const [fullCustomerName, setFullCustomerName] = useState("");
   const [fullCustomerAddress, setFullCustomerAddress] = useState("");
-
-  /* ── initial load ── */
-  useEffect(() => {
-    fetch("/api/branches").then(r => r.json()).then(data => {
-      if (Array.isArray(data)) setBranches(data);
-    });
-  }, []);
 
   /* ── queue load ── */
   const load = useCallback(async () => {

@@ -1,21 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBranch } from "@/context/BranchContext";
 
 type Branch = { id: string; name: string };
 type StockItem = { id: string; name: string; unitVolumeG: number; costPerUnit: number; reorderPoint: number; mainQty: number; subQty: number; subVolumeG: number; isLow: boolean };
 
 export default function SubStockPage() {
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState("main");
+  const { branches, selectedBranchId, setSelectedBranchId } = useBranch();
   const [stock, setStock] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/branches").then(r => r.json()).then(data => {
-      if (Array.isArray(data)) setBranches(data);
-    });
-  }, []);
 
   useEffect(() => {
     setLoading(true);

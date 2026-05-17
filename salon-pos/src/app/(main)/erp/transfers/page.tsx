@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBranch } from "@/context/BranchContext";
 
 type Branch = { id: string; name: string };
 type Transfer = {
@@ -19,8 +20,7 @@ type Transfer = {
 type Product = { id: string; name: string; mainQty: number };
 
 export default function TransfersPage() {
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState("all");
+  const { branches, selectedBranchId, setSelectedBranchId } = useBranch();
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -31,21 +31,13 @@ export default function TransfersPage() {
   async function load() {
     try {
       const url = selectedBranchId === "all" ? "/api/transfers" : `/api/transfers?branchId=${selectedBranchId}`;
-      const [tRes, pRes, bRes] = await Promise.all([
+      const [tRes, pRes] = await Promise.all([
         fetch(url), 
         fetch("/api/stock"),
-        fetch("/api/branches")
       ]);
       
-      if (!tRes.ok || !pRes.ok || !bRes.ok) {
-        const tErr = !tRes.ok ? await tRes.text() : "OK";
-        const pErr = !pRes.ok ? await pRes.text() : "OK";
-        const bErr = !bRes.ok ? await bRes.text() : "OK";
-        console.error("Fetch failed", { 
-          tStatus: tRes.status, tErr,
-          pStatus: pRes.status, pErr,
-          bStatus: bRes.status, bErr 
-        });
+      if (!tRes.ok || !pRes.ok) {
+        console.error("Fetch failed");
         return;
       }
 
@@ -56,9 +48,6 @@ export default function TransfersPage() {
       if (Array.isArray(stock)) {
         setProducts(stock.map((s: { id: string; name: string; mainQty: number }) => ({ id: s.id, name: s.name, mainQty: s.mainQty })));
       }
-
-      const bData = await bRes.json();
-      if (Array.isArray(bData)) setBranches(bData);
     } catch (err) {
       console.error("Failed to load transfers page data:", err);
     }

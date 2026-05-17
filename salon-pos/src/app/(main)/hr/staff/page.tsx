@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBranch } from "@/context/BranchContext";
 
 type Branch = { id: string; name: string };
 type User = { id: string; name: string; email: string; role: string; phone?: string; baseSalary?: number; positionAllowance?: number; isActive: boolean; branchId: string };
@@ -21,8 +22,7 @@ function rolePriority(role: string): number {
 }
 
 export default function StaffPage() {
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
+  const { branches, selectedBranchId, setSelectedBranchId } = useBranch();
   
   const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -64,9 +64,6 @@ export default function StaffPage() {
   };
 
   useEffect(() => {
-    fetch("/api/branches").then(r => r.json()).then(data => {
-      if (Array.isArray(data)) setBranches(data);
-    });
     fetch("/api/users").then(r => r.json()).then(data => {
       if (Array.isArray(data)) setUsers(data);
     });

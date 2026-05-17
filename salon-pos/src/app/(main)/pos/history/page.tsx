@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useBranch } from "@/context/BranchContext";
 
 type Branch = { id: string; name: string };
 type OrderRow = {
@@ -40,8 +41,7 @@ function formatReceiptNo(seq: number, completedAt: string | Date) {
 }
 
 export default function HistoryPage() {
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState("all");
+  const { branches, selectedBranchId, setSelectedBranchId } = useBranch();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -49,12 +49,6 @@ export default function HistoryPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [selected, setSelected] = useState<OrderRow | null>(null);
-
-  useEffect(() => {
-    fetch("/api/branches").then(r => r.json()).then(data => {
-      if (Array.isArray(data)) setBranches(data);
-    });
-  }, []);
 
   useEffect(() => {
     setLoading(true);

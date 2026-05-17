@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useBranch } from "@/context/BranchContext";
 
 type Branch = { id: string; name: string };
 type Service = { id: string; name: string; price: number; duration: number; category: { name: string } };
@@ -28,23 +29,11 @@ type RetailLine = { retailProductId: string; name: string; price: number; quanti
 
 export default function NewOrderPage() {
   const router = useRouter();
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [selectedBranchId, setSelectedBranchId] = useState("main");
+  const { branches, selectedBranchId, setSelectedBranchId } = useBranch();
 
   const [services, setServices] = useState<Service[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-
-  // Load persisted branch
-  useEffect(() => {
-    const saved = localStorage.getItem("last_selected_branch");
-    if (saved) setSelectedBranchId(saved);
-  }, []);
-
-  const handleBranchChange = (id: string) => {
-    setSelectedBranchId(id);
-    localStorage.setItem("last_selected_branch", id);
-  };
 
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -108,7 +97,6 @@ export default function NewOrderPage() {
       }
     };
 
-    fetchData("/api/branches", setBranches);
     fetchData("/api/services", setServices);
     fetchData("/api/users", setUsers);
     fetchData("/api/products", setProducts);
