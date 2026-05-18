@@ -34,6 +34,9 @@ export type ReceiptData = {
   payments: ReceiptPayment[];
   paidAt: Date;
   receiptNumber: number;
+  // For FULL: use the canonical taxInvoiceNumber from DB (locked at first issuance).
+  // For SHORT: leave undefined and the builder formats from receiptNumber + paidAt.
+  taxInvoiceNumber?: string | null;
 };
 
 function pad4(n: number): string { return String(n).padStart(4, "0"); }
@@ -49,7 +52,9 @@ export function formatReceiptNo(seq: number, mode: "SHORT" | "FULL", date: Date)
 export function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvoiceInfo): string {
   const date = r.paidAt.toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" });
   const time = r.paidAt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
-  const receiptNo = formatReceiptNo(r.receiptNumber, mode, r.paidAt);
+  const receiptNo = mode === "FULL" && r.taxInvoiceNumber
+    ? r.taxInvoiceNumber
+    : formatReceiptNo(r.receiptNumber, mode, r.paidAt);
   const hasCC = r.payments.some(p => p.method === "CREDIT_CARD");
   const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const totalQty = r.items.reduce((s, it) => s + it.qty, 0);

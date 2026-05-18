@@ -640,7 +640,7 @@ export default function QueuePage() {
   }
 
   /* ── receipt print ── */
-  function printReceipt() {
+  async function printReceipt() {
     if (receiptMode === "FULL") {
       if (!fullCustomerName.trim()) { showAlert("กรุณากรอกชื่อผู้ซื้อก่อนพิมพ์ใบกำกับภาษีเต็ม"); return; }
       if (!fullCustomerAddress.trim()) { showAlert("กรุณากรอกที่อยู่ผู้ซื้อก่อนพิมพ์ใบกำกับภาษีเต็ม"); return; }
@@ -654,7 +654,24 @@ export default function QueuePage() {
       customerAddress: fullCustomerAddress.trim(),
       customerTaxId: taxId.trim(),
     };
-    win.document.write(buildReceiptHtml(receipt, receiptMode, info));
+    // Persist first so the print carries the canonical tax-invoice number from DB
+    const res = await fetch(`/api/orders/${receipt.order.id}/mark-printed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: receiptMode,
+        ...(receiptMode === "FULL" ? {
+          customerName: info.customerName,
+          customerAddress: info.customerAddress,
+          customerTaxId: info.customerTaxId,
+        } : {}),
+      }),
+    }).catch(() => null);
+    const saved = res && res.ok ? await res.json().catch(() => null) : null;
+    const printable = saved
+      ? { ...receipt, receiptNumber: saved.receiptNumber ?? receipt.receiptNumber, taxInvoiceNumber: saved.taxInvoiceNumber ?? null }
+      : receipt;
+    win.document.write(buildReceiptHtml(printable, receiptMode, info));
     win.document.close();
     setTimeout(() => win.print(), 400);
   }

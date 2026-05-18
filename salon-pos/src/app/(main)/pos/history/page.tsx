@@ -9,6 +9,11 @@ type OrderRow = {
   id: string;
   receiptNumber?: number | null;
   receiptType?: string | null;
+  taxInvoiceNumber?: string | null;
+  taxInvoiceIssuedAt?: string | null;
+  taxInvoiceCustomerName?: string | null;
+  taxInvoiceAddress?: string | null;
+  taxInvoiceTaxId?: string | null;
   customerName: string;
   customerPhone?: string;
   status: string;
@@ -123,9 +128,10 @@ export default function HistoryPage() {
     setPinError("");
     setPinVerified(false);
     setReprintError("");
-    setFullCustomerName(selected?.customerName ?? "");
-    setFullCustomerAddress("");
-    setFullCustomerTaxId("");
+    // If FULL was already issued, pre-fill from the locked snapshot — reprints must match the original
+    setFullCustomerName(selected?.taxInvoiceCustomerName ?? selected?.customerName ?? "");
+    setFullCustomerAddress(selected?.taxInvoiceAddress ?? "");
+    setFullCustomerTaxId(selected?.taxInvoiceTaxId ?? "");
   }
 
   function cancelReprint() {
@@ -153,12 +159,54 @@ export default function HistoryPage() {
 
   async function doReprint() {
     if (!selected || !reprintMode) return;
-    if (reprintMode === "FULL") {
-      if (!fullCustomerName.trim()) { setReprintError("กรุณากรอกชื่อผู้ซื้อ"); return; }
-      if (!fullCustomerAddress.trim()) { setReprintError("กรุณากรอกที่อยู่ผู้ซื้อ"); return; }
-      if (!fullCustomerTaxId.trim()) { setReprintError("กรุณากรอกเลขผู้เสียภาษี"); return; }
+    // If FULL was already issued, the snapshot in DB is authoritative — reprint must match it byte-for-byte
+    const lockedSnapshot = reprintMode === "FULL" && selected.taxInvoiceNumber;
+    const invoiceCustomerName = lockedSnapshot
+      ? (selected.taxInvoiceCustomerName ?? selected.customerName)
+      : fullCustomerName.trim();
+    const invoiceCustomerAddress = lockedSnapshot
+      ? (selected.taxInvoiceAddress ?? "")
+      : fullCustomerAddress.trim();
+    const invoiceCustomerTaxId = lockedSnapshot
+      ? (selected.taxInvoiceTaxId ?? "")
+      : fullCustomerTaxId.trim();
+    if (reprintMode === "FULL" && !lockedSnapshot) {
+      if (!invoiceCustomerName) { setReprintError("กรุณากรอกชื่อผู้ซื้อ"); return; }
+      if (!invoiceCustomerAddress) { setReprintError("กรุณากรอกที่อยู่ผู้ซื้อ"); return; }
+      if (!invoiceCustomerTaxId) { setReprintError("กรุณากรอกเลขผู้เสียภาษี"); return; }
     }
-    const refDate = selected.completedAt ? new Date(selected.completedAt) : new Date(selected.createdAt);
+    // Open the print window synchronously so the browser doesn't block it after the await
+    const winSize = reprintMode === "FULL" ? "width=900,height=900" : "width=420,height=640";
+    const win = window.open("", "_blank", winSize);
+    if (!win) { setReprintError("Pop-up ถูกบล็อก — โปรดอนุญาต pop-up แล้วลองอีกครั้ง"); return; }
+
+    // Persist first so the printed copy carries the canonical invoice/receipt number
+    const res = await fetch(`/api/orders/${selected.id}/mark-printed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: reprintMode,
+        ...(reprintMode === "FULL" && !lockedSnapshot ? {
+          customerName: invoiceCustomerName,
+          customerAddress: invoiceCustomerAddress,
+          customerTaxId: invoiceCustomerTaxId,
+        } : {}),
+      }),
+    }).catch((err) => { console.error("mark-printed fetch failed", err); return null; });
+    if (!res || !res.ok) {
+      const detail = res ? await res.text().catch(() => "(no body)") : "(no response)";
+      console.error("mark-printed failed:", res?.status, detail);
+      win.close();
+      setReprintError(`บันทึกใบเสร็จลงฐานข้อมูลไม่สำเร็จ (${res?.status ?? "network"}) — ${detail}`);
+      return;
+    }
+    const saved = await res.json().catch(() => null);
+
+    const refDate = saved?.completedAt
+      ? new Date(saved.completedAt)
+      : selected.completedAt
+        ? new Date(selected.completedAt)
+        : new Date(selected.createdAt);
     const baseTotal = selected.subtotal + selected.retailSubtotal - selected.discountAmount;
     const lineItems = [
       ...selected.items.map(i => ({ name: i.service.name, qty: 1, unitPrice: i.price, total: i.price })),
@@ -186,27 +234,20 @@ export default function HistoryPage() {
       change: Math.max(0, totalPaid - selected.total),
       payments: selected.payments,
       paidAt: refDate,
-      receiptNumber: selected.receiptNumber || 0,
+      receiptNumber: saved?.receiptNumber ?? selected.receiptNumber ?? 0,
+      taxInvoiceNumber: saved?.taxInvoiceNumber ?? selected.taxInvoiceNumber ?? null,
     };
-    const winSize = reprintMode === "FULL" ? "width=900,height=900" : "width=420,height=640";
-    const win = window.open("", "_blank", winSize);
-    if (!win) { setReprintError("Pop-up ถูกบล็อก — โปรดอนุญาต pop-up แล้วลองอีกครั้ง"); return; }
     win.document.write(buildReceiptHtml(printable, reprintMode, {
-      customerName: fullCustomerName.trim() || selected.customerName,
-      customerAddress: fullCustomerAddress.trim(),
-      customerTaxId: fullCustomerTaxId.trim(),
+      customerName: invoiceCustomerName || selected.customerName,
+      customerAddress: invoiceCustomerAddress,
+      customerTaxId: invoiceCustomerTaxId,
     }));
     win.document.close();
     setTimeout(() => win.print(), 400);
-    await fetch(`/api/orders/${selected.id}/mark-printed`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: reprintMode }),
-    }).catch(() => {});
-    // Update local state so UI reflects new receiptType immediately
-    const newType = selected.receiptType === "FULL" ? "FULL" : reprintMode;
-    setOrders(prev => prev.map(o => o.id === selected.id ? { ...o, receiptType: newType } : o));
-    setSelected(prev => prev && prev.id === selected.id ? { ...prev, receiptType: newType } : prev);
+
+    // Merge server snapshot into local state so reprints + display use the canonical record
+    setOrders(prev => prev.map(o => o.id === selected.id ? { ...o, ...(saved ?? {}) } : o));
+    setSelected(prev => prev && prev.id === selected.id ? { ...prev, ...(saved ?? {}) } : prev);
     cancelReprint();
   }
 
@@ -318,9 +359,11 @@ export default function HistoryPage() {
                       <span style={{ fontSize: "0.75rem", color: "#888" }}>{new Date(refDate).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}</span>
                     </td>
                     <td style={{ padding: "8px 12px", fontFamily: "monospace", fontSize: "0.8rem" }}>
-                      {o.receiptNumber && o.completedAt && o.receiptType
-                        ? formatReceiptNo(o.receiptNumber, o.receiptType, o.completedAt)
-                        : <span style={{ color: "#bbb", fontStyle: "italic" }}>ยังไม่พิมพ์</span>}
+                      {o.taxInvoiceNumber
+                        ? o.taxInvoiceNumber
+                        : o.receiptNumber && o.completedAt && o.receiptType
+                          ? formatReceiptNo(o.receiptNumber, o.receiptType, o.completedAt)
+                          : <span style={{ color: "#bbb", fontStyle: "italic" }}>ยังไม่พิมพ์</span>}
                     </td>
                     <td style={{ padding: "8px 12px" }}>
                       <div style={{ fontWeight: 500 }}>{o.customerName}</div>
@@ -356,12 +399,21 @@ export default function HistoryPage() {
               <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", fontSize: "1.4rem", cursor: "pointer", color: "#aaa" }}>×</button>
             </div>
 
-            {selected.receiptNumber && selected.completedAt && selected.receiptType && (
+            {selected.taxInvoiceNumber ? (
               <div style={{ background: "#f5f5f5", padding: "0.5rem 0.75rem", borderRadius: 8, marginBottom: "0.75rem", fontFamily: "monospace", fontSize: "0.85rem" }}>
-                <strong>{selected.receiptType === "FULL" ? "เลขใบกำกับภาษีเต็ม" : "เลขใบเสร็จย่อ"}:</strong>{" "}
+                <strong>เลขใบกำกับภาษีเต็ม:</strong> {selected.taxInvoiceNumber}
+                {selected.taxInvoiceIssuedAt && (
+                  <div style={{ fontSize: "0.75rem", color: "#888", marginTop: 2 }}>
+                    ออกเมื่อ: {new Date(selected.taxInvoiceIssuedAt).toLocaleString("th-TH")}
+                  </div>
+                )}
+              </div>
+            ) : selected.receiptNumber && selected.completedAt && selected.receiptType ? (
+              <div style={{ background: "#f5f5f5", padding: "0.5rem 0.75rem", borderRadius: 8, marginBottom: "0.75rem", fontFamily: "monospace", fontSize: "0.85rem" }}>
+                <strong>เลขใบเสร็จย่อ:</strong>{" "}
                 {formatReceiptNo(selected.receiptNumber, selected.receiptType, selected.completedAt)}
               </div>
-            )}
+            ) : null}
 
             <div style={{ marginBottom: "0.75rem" }}>
               <div><strong>ลูกค้า:</strong> {selected.customerName} {selected.customerPhone && `(${selected.customerPhone})`}</div>
@@ -490,17 +542,25 @@ export default function HistoryPage() {
               </>
             ) : reprintMode === "FULL" ? (
               <>
-                <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "0.75rem" }}>
-                  กรอกข้อมูลผู้ซื้อสำหรับใบกำกับภาษีเต็มรูปแบบ
-                </p>
+                {selected.taxInvoiceNumber ? (
+                  <div style={{ background: "#fff8e6", border: "1px solid #f5c842", padding: "0.5rem 0.75rem", borderRadius: 8, marginBottom: "0.75rem", fontSize: "0.85rem", color: "#8a6d00" }}>
+                    📄 ใบกำกับภาษีนี้ออกไปแล้ว (เลข: <strong>{selected.taxInvoiceNumber}</strong>) — การพิมพ์ครั้งนี้เป็น <strong>สำเนา (COPY)</strong> ข้อมูลผู้ซื้อล็อกตามใบต้นฉบับ
+                  </div>
+                ) : (
+                  <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "0.75rem" }}>
+                    กรอกข้อมูลผู้ซื้อสำหรับใบกำกับภาษีเต็มรูปแบบ
+                  </p>
+                )}
                 <label className="label">ชื่อผู้ซื้อ</label>
-                <input className="input" value={fullCustomerName} onChange={e => setFullCustomerName(e.target.value)} style={{ marginBottom: "0.5rem" }} />
+                <input className="input" value={fullCustomerName} onChange={e => setFullCustomerName(e.target.value)} disabled={!!selected.taxInvoiceNumber} style={{ marginBottom: "0.5rem" }} />
                 <label className="label">ที่อยู่ผู้ซื้อ</label>
-                <textarea className="input" rows={3} value={fullCustomerAddress} onChange={e => setFullCustomerAddress(e.target.value)} style={{ marginBottom: "0.5rem", resize: "vertical" }} />
+                <textarea className="input" rows={3} value={fullCustomerAddress} onChange={e => setFullCustomerAddress(e.target.value)} disabled={!!selected.taxInvoiceNumber} style={{ marginBottom: "0.5rem", resize: "vertical" }} />
                 <label className="label">เลขผู้เสียภาษี</label>
-                <input className="input" value={fullCustomerTaxId} onChange={e => setFullCustomerTaxId(e.target.value)} style={{ marginBottom: "0.5rem" }} />
+                <input className="input" value={fullCustomerTaxId} onChange={e => setFullCustomerTaxId(e.target.value)} disabled={!!selected.taxInvoiceNumber} style={{ marginBottom: "0.5rem" }} />
                 {reprintError && <div style={{ color: "var(--alert-red, #c0392b)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>{reprintError}</div>}
-                <button className="btn-primary" style={{ width: "100%" }} onClick={doReprint}>🖨 พิมพ์ใบกำกับภาษีเต็ม</button>
+                <button className="btn-primary" style={{ width: "100%" }} onClick={doReprint}>
+                  {selected.taxInvoiceNumber ? "🖨 พิมพ์สำเนาใบกำกับภาษี" : "🖨 พิมพ์ใบกำกับภาษีเต็ม"}
+                </button>
               </>
             ) : (
               <>

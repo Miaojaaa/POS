@@ -133,6 +133,13 @@ model Order {
   notes          String?
   receiptNumber  Int?
   receiptType    String?  // "SHORT" or "FULL" — null until customer printed a receipt
+  // FULL tax invoice snapshot — locked on first FULL issuance so reprints stay byte-identical.
+  // Once these are set, customer info on the invoice cannot change (Thai tax law).
+  taxInvoiceNumber       String?   // e.g. "LNDSFULL202605180001"
+  taxInvoiceIssuedAt     DateTime? // wall-clock time the FULL was first issued
+  taxInvoiceCustomerName String?
+  taxInvoiceAddress      String?
+  taxInvoiceTaxId        String?
   subtotal           Int      @default(0)
   retailSubtotal     Int      @default(0)
   discountAmount     Float    @default(0)

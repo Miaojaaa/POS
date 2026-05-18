@@ -3,6 +3,7 @@ import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import bcrypt from "bcryptjs";
 import { fileURLToPath } from "url";
 import path from "path";
+import { faker } from "@faker-js/faker/locale/th";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,102 +12,147 @@ const adapter = new PrismaBetterSqlite3({ url: `file:${path.join(__dirname, ".."
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("Seeding multi-branch data...");
+  console.log("Starting mock data generation...");
 
-  // Branches
+  // 1. Branches
   const mainBranch = await prisma.branch.upsert({
     where: { id: "main" },
     update: {},
-    create: { id: "main", name: "สาขาที่ 1 (Main)", address: "กรุงเทพฯ" },
+    create: { id: "main", name: "หนองหอย", address: "เชียงใหม่" },
   });
   const secondBranch = await prisma.branch.upsert({
     where: { id: "second" },
     update: {},
-    create: { id: "second", name: "สาขาที่ 2 (Second)", address: "เชียงใหม่" },
+    create: { id: "second", name: "จริงใจ", address: "เชียงใหม่" },
   });
+  const branches = [mainBranch, secondBranch];
 
-  // System config (PINs)
-  await prisma.systemConfig.upsert({
-    where: { key: "manager_pin" },
-    update: { value: "1234" },
-    create: { key: "manager_pin", value: "1234" },
-  });
-  await prisma.systemConfig.upsert({
-    where: { key: "owner_pin" },
-    update: { value: "9999" },
-    create: { key: "owner_pin", value: "9999" },
-  });
-
-  // Users
+  // 2. Clear existing (optional, but let's just add new ones or rely on the fact that this is a fresh run)
+  
+  // 3. Staff (20 users total)
   const pw = await bcrypt.hash("changeme123", 10);
+  const users = [];
+  const roles = [
+    ...Array(10).fill("TECHNICIAN"), 
+    ...Array(5).fill("ASSISTANT"), 
+    ...Array(3).fill("MANAGER"), // Manager/Tech
+    ...Array(2).fill("CONTENT_CREATOR")
+  ];
+  
+  console.log("Generating Staff...");
+  for (let i = 0; i < roles.length; i++) {
+    const role = roles[i];
+    const branch = i % 2 === 0 ? mainBranch : secondBranch;
+    const user = await prisma.user.create({
+      data: {
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        password: pw,
+        role: role,
+        branchId: branch.id,
+        phone: faker.phone.number(),
+      }
+    });
+    users.push(user);
+  }
 
-  // Main Branch Staff
-  await prisma.user.upsert({
-    where: { email: "owner@salon.com" },
-    update: { branchId: mainBranch.id },
-    create: { name: "เจ้าของร้าน", email: "owner@salon.com", password: pw, role: "OWNER", branchId: mainBranch.id },
-  });
-  await prisma.user.upsert({
-    where: { email: "manager1@salon.com" },
-    update: { branchId: mainBranch.id },
-    create: { name: "ผู้จัดการ สมใจ (M)", email: "manager1@salon.com", password: pw, role: "MANAGER", branchId: mainBranch.id },
-  });
-  await prisma.user.upsert({
-    where: { email: "tech1@salon.com" },
-    update: { branchId: mainBranch.id },
-    create: { name: "ช่าง สมหญิง (M)", email: "tech1@salon.com", password: pw, role: "TECHNICIAN", branchId: mainBranch.id },
-  });
+  // 4. Products & Retail
+  console.log("Generating Products...");
+  // 50 Chemicals (Product)
+  for(let i = 0; i < 50; i++) {
+    const p = await prisma.product.create({
+      data: {
+        name: `เคมี ${faker.commerce.productName()}`,
+        unitVolumeG: 1000,
+        costPerUnit: faker.number.int({ min: 100, max: 1000 }),
+        sellable: false,
+        mainStock: { create: { quantity: faker.number.int({ min: 10, max: 50 }) } },
+        subStocks: {
+          create: branches.map(b => ({
+            branchId: b.id,
+            quantity: faker.number.int({ min: 5, max: 20 }),
+            currentVolumeG: 1000
+          }))
+        }
+      }
+    });
+  }
 
-  // Second Branch Staff
-  await prisma.user.upsert({
-    where: { email: "manager2@salon.com" },
-    update: { branchId: secondBranch.id },
-    create: { name: "ผู้จัดการ สมศักดิ์ (S)", email: "manager2@salon.com", password: pw, role: "MANAGER", branchId: secondBranch.id },
-  });
-  await prisma.user.upsert({
-    where: { email: "tech2@salon.com" },
-    update: { branchId: secondBranch.id },
-    create: { name: "ช่าง มณีรัตน์ (S)", email: "tech2@salon.com", password: pw, role: "TECHNICIAN", branchId: secondBranch.id },
-  });
+  // 50 Retail (RetailProduct, usableAsChemical = false)
+  for(let i = 0; i < 50; i++) {
+    await prisma.retailProduct.create({
+      data: {
+        name: `สินค้า ${faker.commerce.productName()}`,
+        price: faker.number.int({ min: 200, max: 2000 }),
+        stock: faker.number.int({ min: 10, max: 100 }),
+        usableAsChemical: false
+      }
+    });
+  }
 
-  // Service categories
+  // 50 Dual-use (RetailProduct, usableAsChemical = true)
+  for(let i = 0; i < 50; i++) {
+    await prisma.retailProduct.create({
+      data: {
+        name: `ทรีทเม้นท์ ${faker.commerce.productName()}`,
+        price: faker.number.int({ min: 200, max: 2000 }),
+        stock: faker.number.int({ min: 10, max: 100 }),
+        usableAsChemical: true,
+        unitVolumeG: 500,
+        costPerG: faker.number.float({ min: 0.5, max: 2, fractionDigits: 2 })
+      }
+    });
+  }
+
+  // Create some services to use in orders
   const hairCat = await prisma.serviceCategory.upsert({
     where: { id: "cat-hair" },
     update: {},
     create: { id: "cat-hair", name: "บริการผม" },
   });
-
-  // Services
-  await prisma.service.upsert({
-    where: { id: "svc-cut" },
+  const svc = await prisma.service.upsert({
+    where: { id: "svc-premium" },
     update: {},
-    create: { id: "svc-cut", name: "ตัดผม", price: 250, categoryId: hairCat.id },
+    create: { id: "svc-premium", name: "ทำสี Premium", price: 8000, categoryId: hairCat.id },
   });
 
-  // Products & Stocks
-  const prod = await prisma.product.upsert({
-    where: { id: "prod-shampoo" },
-    update: {},
-    create: { id: "prod-shampoo", name: "แชมพูร้านเสริมสวย", unitVolumeG: 1000, costPerUnit: 400 },
-  });
+  // 5. Transactions (500 over 5 months)
+  console.log("Generating Transactions...");
+  const techs = users.filter(u => u.role === "TECHNICIAN" || u.role === "MANAGER");
+  
+  const now = new Date();
+  for (let monthOffset = 0; monthOffset < 5; monthOffset++) {
+    console.log(`Generating month -${monthOffset}...`);
+    const date = new Date(now.getFullYear(), now.getMonth() - monthOffset, 15);
+    
+    for (let i = 0; i < 100; i++) {
+      const tech = techs[faker.number.int({ min: 0, max: techs.length - 1 })];
+      const orderDate = new Date(date);
+      orderDate.setDate(faker.number.int({ min: 1, max: 28 }));
+      orderDate.setHours(faker.number.int({ min: 10, max: 19 }));
+      
+      const price = faker.number.int({ min: 5000, max: 11000 }); // Average ~8000
 
-  await prisma.mainStock.upsert({
-    where: { productId: prod.id },
-    update: {},
-    create: { productId: prod.id, quantity: 50 },
-  });
-
-  // SubStock for each branch
-  await prisma.subStock.upsert({
-    where: { productId_branchId: { productId: prod.id, branchId: mainBranch.id } },
-    update: {},
-    create: { productId: prod.id, branchId: mainBranch.id, quantity: 5, currentVolumeG: 1000 },
-  });
-  await prisma.subStock.upsert({
-    where: { productId_branchId: { productId: prod.id, branchId: secondBranch.id } },
-    update: {},
-    create: { productId: prod.id, branchId: secondBranch.id, quantity: 3, currentVolumeG: 1000 },
-  });
+      const order = await prisma.order.create({
+        data: {
+          branchId: tech.branchId,
+          customerName: faker.person.fullName(),
+          technicianId: tech.id,
+          status: "PAID",
+          subtotal: price,
+          total: price,
+          createdAt: orderDate,
+          completedAt: orderDate,
+          payments: {
+            create: { method: "TRANSFER", amount: price, createdAt: orderDate }
+          },
+          items: {
+            create: { serviceId: svc.id, price: price }
+          }
+        }
+      });
+    }
+  }
 
   console.log("Seed completed successfully!");
 }
