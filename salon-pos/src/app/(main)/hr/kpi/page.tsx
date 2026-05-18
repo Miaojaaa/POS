@@ -2,6 +2,18 @@
 
 import { useEffect, useState, useCallback } from "react";
 
+const roleMap: Record<string, string> = {
+  MANAGER: "ผู้จัดการ",
+  TECHNICIAN: "ช่างทำผม",
+  ASSISTANT: "ผู้ช่วยช่าง",
+  CONTENT_CREATOR: "คอนเทนต์ครีเอเตอร์",
+};
+
+const getRoleName = (rolesString: string) => {
+  if (!rolesString) return "-";
+  return rolesString.split(',').map(r => roleMap[r.trim()] || r.trim()).join(', ');
+};
+
 type TechKPI = {
   id: string;
   name: string;
@@ -115,6 +127,7 @@ export default function KPIPage() {
           <thead>
             <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
               <th style={{ textAlign: "left", padding: "8px 12px" }}>ช่าง</th>
+              <th style={{ textAlign: "left", padding: "8px 12px" }}>ตำแหน่ง</th>
               <th style={{ textAlign: "center", padding: "8px 12px" }}>จำนวนออร์เดอร์</th>
               <th style={{ textAlign: "center", padding: "8px 12px" }}>% เทียบทีม</th>
               <th style={{ textAlign: "right", padding: "8px 12px" }}>รายได้ที่สร้าง</th>
@@ -127,6 +140,7 @@ export default function KPIPage() {
               return (
                 <tr key={k.id} style={{ borderBottom: "1px solid #f5f5f5", background: isLow ? "#fff8f8" : "white" }}>
                   <td style={{ padding: "8px 12px", fontWeight: 500 }}>{k.name}</td>
+                  <td style={{ padding: "8px 12px", color: "#666", fontSize: "0.8rem" }}>{getRoleName(k.role)}</td>
                   <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700 }}>{k.orderCount}</td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
                     <span style={{ color: k.avgPct >= 20 ? "var(--success-green)" : "#888" }}>

@@ -40,7 +40,6 @@ const menuItems = [
     icon: "📊",
     children: [
       { href: "/reports/revenue", label: "รายได้ & ต้นทุน" },
-      { href: "/reports/profit", label: "กำไรจริง" },
       { href: "/reports/expenses", label: "ค่าใช้จ่าย" },
     ],
   },
