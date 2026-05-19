@@ -2,31 +2,43 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  DEFAULT_SIDEBAR_CONFIG,
+  MODULE_ICONS,
+  MODULE_LABELS,
+  mergeSidebarConfig,
+  type SidebarModuleConfig,
+  type SidebarModuleKey,
+} from "@/lib/system-config";
 
-const menuItems = [
-  {
-    label: "POS",
-    icon: "📋",
+type MenuChild = { href: string; label: string };
+type MenuItem = {
+  key: SidebarModuleKey;
+  href?: string;
+  children?: MenuChild[];
+};
+
+const MENU_DEFINITIONS: Record<SidebarModuleKey, MenuItem> = {
+  POS: {
+    key: "POS",
     children: [
       { href: "/pos/new", label: "รับออร์เดอร์ใหม่" },
       { href: "/pos/queue", label: "คิวลูกค้า" },
       { href: "/pos/history", label: "ประวัติ Transaction" },
     ],
   },
-  { href: "/dashboard", label: "ภาพรวมรายวัน", icon: "🏠" },
-  {
-    label: "CRM",
-    icon: "👥",
+  DASHBOARD: { key: "DASHBOARD", href: "/dashboard" },
+  CRM: {
+    key: "CRM",
     children: [
       { href: "/crm/members", label: "สมาชิก" },
       { href: "/crm/tickets", label: "คูปอง / Ticket" },
       { href: "/crm/wallet", label: "Wallet" },
     ],
   },
-  {
-    label: "สต็อก (ERP)",
-    icon: "📦",
+  ERP: {
+    key: "ERP",
     children: [
       { href: "/erp/main", label: "คลังหลัก" },
       { href: "/erp/sub", label: "คลังหน้าร้าน" },
@@ -35,34 +47,33 @@ const menuItems = [
       { href: "/erp/report", label: "รายงานสต็อก" },
     ],
   },
-  {
-    label: "รายงาน",
-    icon: "📊",
+  REPORTS: {
+    key: "REPORTS",
     children: [
       { href: "/reports/revenue", label: "รายได้ & ต้นทุน" },
       { href: "/reports/expenses", label: "ค่าใช้จ่าย" },
     ],
   },
-  {
-    label: "HR & Payroll",
-    icon: "👤",
+  HR: {
+    key: "HR",
     children: [
       { href: "/hr/staff", label: "พนักงาน" },
       { href: "/hr/kpi", label: "KPI" },
       { href: "/hr/payroll", label: "เงินเดือน & ค่าคอม" },
     ],
   },
-  {
-    label: "ตั้งค่า",
-    icon: "⚙️",
+  SETTINGS: {
+    key: "SETTINGS",
     children: [
       { href: "/settings/branding", label: "แบรนด์ร้าน" },
+      { href: "/settings/finance", label: "การเงิน" },
+      { href: "/settings/features", label: "ฟีเจอร์ & Sidebar" },
       { href: "/settings/services", label: "บริการ" },
       { href: "/settings/products", label: "สินค้า/เคมี" },
       { href: "/settings/commission", label: "ค่าคอม Pool" },
     ],
   },
-];
+};
 
 const COLLAPSE_KEY = "sidebar.collapsed";
 
@@ -72,6 +83,7 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [shopName, setShopName] = useState("ร้านเสริมสวย");
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+  const [sidebarConfig, setSidebarConfig] = useState<SidebarModuleConfig[]>(DEFAULT_SIDEBAR_CONFIG);
 
   useEffect(() => {
     try {
@@ -90,15 +102,42 @@ export default function Sidebar() {
       .catch(() => {});
   }, []);
 
+  const loadSystemConfig = useCallback(() => {
+    fetch("/api/system-config")
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { sidebar: SidebarModuleConfig[] } | null) => {
+        if (d?.sidebar) setSidebarConfig(mergeSidebarConfig(d.sidebar));
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     loadBranding();
-    const handler = () => loadBranding();
-    window.addEventListener("branding-updated", handler);
-    return () => window.removeEventListener("branding-updated", handler);
-  }, [loadBranding]);
+    loadSystemConfig();
+    const onBranding = () => loadBranding();
+    const onSystem = () => loadSystemConfig();
+    window.addEventListener("branding-updated", onBranding);
+    window.addEventListener("system-config-updated", onSystem);
+    return () => {
+      window.removeEventListener("branding-updated", onBranding);
+      window.removeEventListener("system-config-updated", onSystem);
+    };
+  }, [loadBranding, loadSystemConfig]);
+
+  // Build the rendered menu list from saved config — order matches the user's preference, disabled
+  // modules are filtered out, and only modules that have a definition are surfaced.
+  const menuItems = useMemo<MenuItem[]>(
+    () => sidebarConfig.filter(c => c.enabled).map(c => MENU_DEFINITIONS[c.key]).filter(Boolean),
+    [sidebarConfig],
+  );
 
   function toggle(label: string) {
-    if (collapsed) return;
+    if (collapsed) {
+      setCollapsed(false);
+      try { localStorage.setItem(COLLAPSE_KEY, "0"); } catch {}
+      setOpenMenus(prev => prev.includes(label) ? prev : [...prev, label]);
+      return;
+    }
     setOpenMenus(prev =>
       prev.includes(label) ? prev.filter(m => m !== label) : [...prev, label]
     );
@@ -182,28 +221,30 @@ export default function Sidebar() {
 
       <nav style={{ flex: 1, marginTop: "0.75rem", overflowY: "auto", overflowX: "hidden" }}>
         {menuItems.map(item => {
+          const label = MODULE_LABELS[item.key];
+          const icon = MODULE_ICONS[item.key];
           if (!item.children) {
             const active = pathname === item.href;
             return (
               <Link
-                key={item.href}
+                key={item.key}
                 href={item.href!}
                 className={`sidebar-item ${active ? "active" : ""}`}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? label : undefined}
                 style={collapsed ? { justifyContent: "center", padding: "0.625rem 0", gap: 0 } : undefined}
               >
-                <span>{item.icon}</span>
-                {!collapsed && <span>{item.label}</span>}
+                <span>{icon}</span>
+                {!collapsed && <span>{label}</span>}
               </Link>
             );
           }
-          const isOpen = !collapsed && openMenus.includes(item.label);
+          const isOpen = !collapsed && openMenus.includes(item.key);
           const isChildActive = item.children.some(c => pathname.startsWith(c.href));
           return (
-            <div key={item.label}>
+            <div key={item.key}>
               <button
-                onClick={() => toggle(item.label)}
-                title={collapsed ? item.label : undefined}
+                onClick={() => toggle(item.key)}
+                title={collapsed ? label : undefined}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -214,14 +255,14 @@ export default function Sidebar() {
                   background: isChildActive ? "rgba(255,255,255,0.15)" : "none",
                   border: "none",
                   color: "rgba(255,255,255,0.9)",
-                  cursor: collapsed ? "default" : "pointer",
+                  cursor: "pointer",
                   borderRadius: 8,
                   fontSize: "0.9rem",
                   textAlign: "left",
                 }}
               >
-                <span>{item.icon}</span>
-                {!collapsed && <span style={{ flex: 1 }}>{item.label}</span>}
+                <span>{icon}</span>
+                {!collapsed && <span style={{ flex: 1 }}>{label}</span>}
                 {!collapsed && <span style={{ fontSize: "0.75rem" }}>{isOpen ? "▾" : "▸"}</span>}
               </button>
               {isOpen && (
