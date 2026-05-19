@@ -91,7 +91,7 @@ const COMPANY = {
   shortName: "บ.ลานนาดีเซีย กรุ๊ป",
 };
 
-type Branding = { shopName?: string | null; logoDataUrl?: string | null };
+type Branding = { shopName?: string | null; logoDataUrl?: string | null; address?: string | null; taxId?: string | null };
 
 /* ─────────────────────────── helper: build receipt html ─────── */
 function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvoiceInfo, branding?: Branding): string {
@@ -101,6 +101,8 @@ function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvo
   const hasCC = r.payments.some(p => p.method === "CREDIT_CARD");
   const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const shopName = branding?.shopName?.trim() || COMPANY.name;
+  const shopAddress = branding?.address?.trim() || COMPANY.address;
+  const shopTaxId = branding?.taxId?.trim() || COMPANY.taxId;
   const logoUrl = branding?.logoDataUrl || null;
 
   // unify services + retail items
@@ -144,8 +146,8 @@ table.items th { font-size: 11px; color: #555; border-bottom: 1px solid #888; }
 </style></head><body>
 ${logoUrl ? `<div class="logo"><img src="${logoUrl}" alt="logo"/></div>` : ""}
 <h2>${shopName}</h2>
-<div class="shop">${COMPANY.address}</div>
-<div class="shop">เลขผู้เสียภาษี: ${COMPANY.taxId}</div>
+<div class="shop">${shopAddress}</div>
+<div class="shop">เลขผู้เสียภาษี: ${shopTaxId}</div>
 <div class="line"></div>
 <h3>ใบกำกับภาษีอย่างย่อ / ใบเสร็จรับเงิน</h3>
 <div class="no">${receiptNo}</div>
@@ -198,8 +200,8 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
         <div class="shop-info">
           ${logoUrl ? `<div class="logo"><img src="${logoUrl}" alt="logo"/></div>` : ""}
           <h1>${shopName}</h1>
-          <p>${COMPANY.address}</p>
-          <p><strong>เลขประจำตัวผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
+          <p>${shopAddress}</p>
+          <p><strong>เลขประจำตัวผู้เสียภาษี:</strong> ${shopTaxId}</p>
         </div>
         <div class="doc-info">
           <h2>ใบกำกับภาษี / Tax Invoice</h2>
@@ -214,8 +216,8 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
         <div class="party">
           <h3>ผู้ขาย / Seller</h3>
           <p class="b">${shopName}</p>
-          <p>${COMPANY.address}</p>
-          <p><strong>เลขผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
+          <p>${shopAddress}</p>
+          <p><strong>เลขผู้เสียภาษี:</strong> ${shopTaxId}</p>
         </div>
         <div class="party">
           <h3>ผู้ซื้อ / Customer</h3>
@@ -328,6 +330,7 @@ export default function QueuePage() {
   const { branches, selectedBranchId, setSelectedBranchId } = useBranch();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [branding, setBranding] = useState<Branding | null>(null);
 
   /* alert modal */
   const [alertMsg, setAlertMsg] = useState<string | null>(null);
@@ -385,6 +388,18 @@ export default function QueuePage() {
     const t = setInterval(load, 10000);
     return () => clearInterval(t);
   }, [load]);
+
+  useEffect(() => {
+    const fetchBranding = () => {
+      fetch("/api/branding")
+        .then(r => r.ok ? r.json() : null)
+        .then((b: Branding | null) => { if (b) setBranding(b); })
+        .catch(() => {});
+    };
+    fetchBranding();
+    window.addEventListener("branding-updated", fetchBranding);
+    return () => window.removeEventListener("branding-updated", fetchBranding);
+  }, []);
 
   async function updateStatus(id: string, status: string) {
     await fetch(`/api/orders/${id}`, {
@@ -1101,8 +1116,8 @@ export default function QueuePage() {
 
             {/* Receipt preview */}
             <div style={{ border: "1px dashed #aaa", borderRadius: 8, padding: "1rem", fontFamily: "monospace", fontSize: "0.8rem", background: "#fafafa", marginBottom: "1rem" }}>
-              <div style={{ textAlign: "center", fontWeight: 700, marginBottom: 2 }}>{COMPANY.name}</div>
-              <div style={{ textAlign: "center", fontSize: "0.7rem", color: "#666", marginBottom: 2 }}>เลขผู้เสียภาษี: {COMPANY.taxId}</div>
+              <div style={{ textAlign: "center", fontWeight: 700, marginBottom: 2 }}>{branding?.shopName || COMPANY.name}</div>
+              <div style={{ textAlign: "center", fontSize: "0.7rem", color: "#666", marginBottom: 2 }}>เลขผู้เสียภาษี: {branding?.taxId || COMPANY.taxId}</div>
               <div style={{ textAlign: "center", fontSize: "0.75rem", color: "#666", marginBottom: 4 }}>
                 {receiptMode === "FULL" ? "ใบกำกับภาษีเต็มรูปแบบ (A4) — Original + Copy" : "ใบกำกับภาษีอย่างย่อ / ใบเสร็จรับเงิน"}
               </div>

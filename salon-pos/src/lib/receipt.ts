@@ -16,9 +16,14 @@ export const METHOD_LABEL: Record<string, string> = {
 export type ReceiptLineItem = { name: string; qty: number; unitPrice: number; total: number };
 export type ReceiptPayment = { method: string; amount: number };
 export type FullInvoiceInfo = { customerName: string; customerAddress: string; customerTaxId: string };
-// Override the shop name + logo printed at the top of the receipt. Both optional —
-// if not provided, the legally-registered name from COMPANY is used (taxId/address never change).
-export type ReceiptBranding = { shopName?: string | null; logoDataUrl?: string | null };
+// Override the shop identity printed at the top of the receipt. All fields optional —
+// any omitted field falls back to the legally-registered defaults in COMPANY.
+export type ReceiptBranding = {
+  shopName?: string | null;
+  logoDataUrl?: string | null;
+  address?: string | null;
+  taxId?: string | null;
+};
 
 export type ReceiptData = {
   orderId: string;
@@ -62,6 +67,8 @@ export function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: F
   const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const totalQty = r.items.reduce((s, it) => s + it.qty, 0);
   const shopName = branding?.shopName?.trim() || COMPANY.name;
+  const shopAddress = branding?.address?.trim() || COMPANY.address;
+  const shopTaxId = branding?.taxId?.trim() || COMPANY.taxId;
   const logoUrl = branding?.logoDataUrl || null;
 
   if (mode === "SHORT") {
@@ -93,8 +100,8 @@ table.items th { font-size: 11px; color: #555; border-bottom: 1px solid #888; }
 </style></head><body>
 ${logoUrl ? `<div class="logo"><img src="${logoUrl}" alt="logo"/></div>` : ""}
 <h2>${shopName}</h2>
-<div class="shop">${COMPANY.address}</div>
-<div class="shop">เลขผู้เสียภาษี: ${COMPANY.taxId}</div>
+<div class="shop">${shopAddress}</div>
+<div class="shop">เลขผู้เสียภาษี: ${shopTaxId}</div>
 <div class="line"></div>
 <h3>ใบกำกับภาษีอย่างย่อ / ใบเสร็จรับเงิน</h3>
 <div class="no">${receiptNo}</div>
@@ -147,8 +154,8 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
         <div class="shop-info">
           ${logoUrl ? `<div class="logo"><img src="${logoUrl}" alt="logo"/></div>` : ""}
           <h1>${shopName}</h1>
-          <p>${COMPANY.address}</p>
-          <p><strong>เลขประจำตัวผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
+          <p>${shopAddress}</p>
+          <p><strong>เลขประจำตัวผู้เสียภาษี:</strong> ${shopTaxId}</p>
         </div>
         <div class="doc-info">
           <h2>ใบกำกับภาษี / Tax Invoice</h2>
@@ -163,8 +170,8 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
         <div class="party">
           <h3>ผู้ขาย / Seller</h3>
           <p class="b">${shopName}</p>
-          <p>${COMPANY.address}</p>
-          <p><strong>เลขผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
+          <p>${shopAddress}</p>
+          <p><strong>เลขผู้เสียภาษี:</strong> ${shopTaxId}</p>
         </div>
         <div class="party">
           <h3>ผู้ซื้อ / Customer</h3>
