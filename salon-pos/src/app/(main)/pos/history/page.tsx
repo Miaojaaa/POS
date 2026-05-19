@@ -180,19 +180,26 @@ export default function HistoryPage() {
     const win = window.open("", "_blank", winSize);
     if (!win) { setReprintError("Pop-up ถูกบล็อก — โปรดอนุญาต pop-up แล้วลองอีกครั้ง"); return; }
 
-    // Persist first so the printed copy carries the canonical invoice/receipt number
-    const res = await fetch(`/api/orders/${selected.id}/mark-printed`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: reprintMode,
-        ...(reprintMode === "FULL" && !lockedSnapshot ? {
-          customerName: invoiceCustomerName,
-          customerAddress: invoiceCustomerAddress,
-          customerTaxId: invoiceCustomerTaxId,
-        } : {}),
-      }),
-    }).catch((err) => { console.error("mark-printed fetch failed", err); return null; });
+    // Persist first so the printed copy carries the canonical invoice/receipt number.
+    // Branding is read in parallel — it's purely cosmetic, so we don't fail the print if it errors.
+    const [res, brandingRes] = await Promise.all([
+      fetch(`/api/orders/${selected.id}/mark-printed`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: reprintMode,
+          ...(reprintMode === "FULL" && !lockedSnapshot ? {
+            customerName: invoiceCustomerName,
+            customerAddress: invoiceCustomerAddress,
+            customerTaxId: invoiceCustomerTaxId,
+          } : {}),
+        }),
+      }).catch((err) => { console.error("mark-printed fetch failed", err); return null; }),
+      fetch("/api/branding").catch(() => null),
+    ]);
+    const branding = brandingRes && brandingRes.ok
+      ? await brandingRes.json().catch(() => null) as { shopName?: string; logoDataUrl?: string | null } | null
+      : null;
     if (!res || !res.ok) {
       const detail = res ? await res.text().catch(() => "(no body)") : "(no response)";
       console.error("mark-printed failed:", res?.status, detail);
@@ -241,7 +248,7 @@ export default function HistoryPage() {
       customerName: invoiceCustomerName || selected.customerName,
       customerAddress: invoiceCustomerAddress,
       customerTaxId: invoiceCustomerTaxId,
-    }));
+    }, branding ?? undefined));
     win.document.close();
     setTimeout(() => win.print(), 400);
 

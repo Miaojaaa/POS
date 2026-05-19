@@ -16,6 +16,9 @@ export const METHOD_LABEL: Record<string, string> = {
 export type ReceiptLineItem = { name: string; qty: number; unitPrice: number; total: number };
 export type ReceiptPayment = { method: string; amount: number };
 export type FullInvoiceInfo = { customerName: string; customerAddress: string; customerTaxId: string };
+// Override the shop name + logo printed at the top of the receipt. Both optional —
+// if not provided, the legally-registered name from COMPANY is used (taxId/address never change).
+export type ReceiptBranding = { shopName?: string | null; logoDataUrl?: string | null };
 
 export type ReceiptData = {
   orderId: string;
@@ -49,7 +52,7 @@ export function formatReceiptNo(seq: number, mode: "SHORT" | "FULL", date: Date)
   return `LNDSFULL${yyyy}${mm}${dd}${pad4(seq)}`;
 }
 
-export function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvoiceInfo): string {
+export function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvoiceInfo, branding?: ReceiptBranding): string {
   const date = r.paidAt.toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" });
   const time = r.paidAt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
   const receiptNo = mode === "FULL" && r.taxInvoiceNumber
@@ -58,6 +61,8 @@ export function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: F
   const hasCC = r.payments.some(p => p.method === "CREDIT_CARD");
   const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const totalQty = r.items.reduce((s, it) => s + it.qty, 0);
+  const shopName = branding?.shopName?.trim() || COMPANY.name;
+  const logoUrl = branding?.logoDataUrl || null;
 
   if (mode === "SHORT") {
     const itemRows = r.items.map(it =>
@@ -79,12 +84,15 @@ table.items th { font-size: 11px; color: #555; border-bottom: 1px solid #888; }
 .sm { font-size: 11px; color: #555; }
 .no { text-align: center; font-family: monospace; font-size: 12px; letter-spacing: 0.5px; background: #f5f5f5; padding: 4px; border-radius: 4px; margin: 6px 0; }
 .shop { text-align: center; font-size: 11px; color: #666; line-height: 1.4; }
+.logo { text-align: center; margin: 0 0 6px; }
+.logo img { max-width: 120px; max-height: 60px; object-fit: contain; }
 .summary td { padding: 2px 0; }
 .summary tr.net td { border-top: 1px solid #aaa; font-weight: 700; padding-top: 4px; }
 .summary tr.grand td { border-top: 2px solid #000; border-bottom: 2px solid #000; font-weight: 700; font-size: 13px; padding: 4px 0; }
 .vat-label { text-align: center; font-size: 11px; letter-spacing: 1px; border: 1px solid #999; padding: 3px; margin-top: 6px; font-weight: 700; }
 </style></head><body>
-<h2>${COMPANY.name}</h2>
+${logoUrl ? `<div class="logo"><img src="${logoUrl}" alt="logo"/></div>` : ""}
+<h2>${shopName}</h2>
 <div class="shop">${COMPANY.address}</div>
 <div class="shop">เลขผู้เสียภาษี: ${COMPANY.taxId}</div>
 <div class="line"></div>
@@ -137,7 +145,8 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
     <div class="page">
       <div class="header">
         <div class="shop-info">
-          <h1>${COMPANY.name}</h1>
+          ${logoUrl ? `<div class="logo"><img src="${logoUrl}" alt="logo"/></div>` : ""}
+          <h1>${shopName}</h1>
           <p>${COMPANY.address}</p>
           <p><strong>เลขประจำตัวผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
         </div>
@@ -153,7 +162,7 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
       <div class="parties">
         <div class="party">
           <h3>ผู้ขาย / Seller</h3>
-          <p class="b">${COMPANY.name}</p>
+          <p class="b">${shopName}</p>
           <p>${COMPANY.address}</p>
           <p><strong>เลขผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
         </div>
@@ -210,7 +219,7 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
       </div>
 
       <div class="footer">
-        เอกสารนี้พิมพ์จากระบบคอมพิวเตอร์ของ ${COMPANY.name} — ${receiptNo} (${variantLabel})
+        เอกสารนี้พิมพ์จากระบบคอมพิวเตอร์ของ ${shopName} — ${receiptNo} (${variantLabel})
       </div>
     </div>`;
   };
@@ -225,6 +234,8 @@ body { font-family: "Sarabun", "TH Sarabun New", sans-serif; margin: 0; font-siz
 .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; }
 .shop-info h1 { margin: 0 0 4px; font-size: 20px; color: #333; }
 .shop-info p { margin: 2px 0; font-size: 12px; color: #555; }
+.shop-info .logo { margin-bottom: 6px; }
+.shop-info .logo img { max-width: 140px; max-height: 70px; object-fit: contain; }
 .doc-info { text-align: right; }
 .doc-info h2 { margin: 0; font-size: 18px; color: #333; }
 .badge { background: #333; color: white; padding: 4px 12px; border-radius: 4px; font-size: 11px; margin-top: 4px; display: inline-block; font-weight: 700; }

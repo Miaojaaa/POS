@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const menuItems = [
   {
@@ -56,6 +56,7 @@ const menuItems = [
     label: "ตั้งค่า",
     icon: "⚙️",
     children: [
+      { href: "/settings/branding", label: "แบรนด์ร้าน" },
       { href: "/settings/services", label: "บริการ" },
       { href: "/settings/products", label: "สินค้า/เคมี" },
       { href: "/settings/commission", label: "ค่าคอม Pool" },
@@ -63,72 +64,165 @@ const menuItems = [
   },
 ];
 
+const COLLAPSE_KEY = "sidebar.collapsed";
+
 export default function Sidebar() {
   const pathname = usePathname();
   const [openMenus, setOpenMenus] = useState<string[]>(["POS"]);
+  const [collapsed, setCollapsed] = useState(false);
+  const [shopName, setShopName] = useState("ร้านเสริมสวย");
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "1");
+    } catch {}
+  }, []);
+
+  const loadBranding = useCallback(() => {
+    fetch("/api/branding")
+      .then(r => r.ok ? r.json() : null)
+      .then((b: { shopName: string; logoDataUrl: string | null } | null) => {
+        if (!b) return;
+        if (b.shopName) setShopName(b.shopName);
+        setLogoDataUrl(b.logoDataUrl);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadBranding();
+    const handler = () => loadBranding();
+    window.addEventListener("branding-updated", handler);
+    return () => window.removeEventListener("branding-updated", handler);
+  }, [loadBranding]);
 
   function toggle(label: string) {
+    if (collapsed) return;
     setOpenMenus(prev =>
       prev.includes(label) ? prev.filter(m => m !== label) : [...prev, label]
     );
   }
 
+  function toggleCollapse() {
+    setCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0"); } catch {}
+      return next;
+    });
+  }
+
+  const width = collapsed ? 64 : 220;
+
   return (
     <aside style={{
-      width: 220,
+      width,
       minHeight: "100vh",
       background: "var(--olive)",
       display: "flex",
       flexDirection: "column",
-      padding: "1rem 0.75rem",
+      padding: collapsed ? "0.75rem 0.4rem" : "1rem 0.75rem",
       flexShrink: 0,
+      transition: "width 0.2s ease, padding 0.2s ease",
+      position: "relative",
     }}>
-      <div style={{ textAlign: "center", padding: "0.5rem 0 1.25rem", borderBottom: "1px solid rgba(255,255,255,0.2)" }}>
-        <div style={{ fontSize: 28, marginBottom: 4 }}>✂️</div>
-        <div style={{ color: "white", fontWeight: 700, fontSize: "1rem" }}>ร้านเสริมสวย</div>
-        <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.75rem", marginTop: 2 }}>
-          ระบบบริหารจัดการร้าน
+      <button
+        type="button"
+        onClick={toggleCollapse}
+        title={collapsed ? "ขยาย Sidebar" : "ย่อ Sidebar"}
+        style={{
+          position: "absolute",
+          top: 12,
+          right: -12,
+          width: 24,
+          height: 24,
+          borderRadius: "50%",
+          border: "1px solid rgba(0,0,0,0.1)",
+          background: "white",
+          color: "var(--olive)",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 12,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+          zIndex: 2,
+        }}
+      >
+        {collapsed ? "›" : "‹"}
+      </button>
+
+      <div style={{
+        textAlign: "center",
+        padding: collapsed ? "0.25rem 0 0.75rem" : "0.5rem 0 1.25rem",
+        borderBottom: "1px solid rgba(255,255,255,0.2)",
+      }}>
+        <div style={{
+          width: collapsed ? 36 : 56,
+          height: collapsed ? 36 : 56,
+          margin: "0 auto",
+          marginBottom: collapsed ? 0 : 6,
+          borderRadius: 12,
+          background: "white",
+          display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+        }}>
+          {logoDataUrl
+            ? <img src={logoDataUrl} alt="logo" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+            : <span style={{ fontSize: collapsed ? 20 : 28 }}>✂️</span>}
         </div>
+        {!collapsed && (
+          <>
+            <div style={{ color: "white", fontWeight: 700, fontSize: "0.95rem", lineHeight: 1.2 }}>{shopName}</div>
+            <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.75rem", marginTop: 2 }}>
+              ระบบบริหารจัดการร้าน
+            </div>
+          </>
+        )}
       </div>
 
-      <nav style={{ flex: 1, marginTop: "0.75rem", overflowY: "auto" }}>
+      <nav style={{ flex: 1, marginTop: "0.75rem", overflowY: "auto", overflowX: "hidden" }}>
         {menuItems.map(item => {
           if (!item.children) {
+            const active = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href!}
-                className={`sidebar-item ${pathname === item.href ? "active" : ""}`}
+                className={`sidebar-item ${active ? "active" : ""}`}
+                title={collapsed ? item.label : undefined}
+                style={collapsed ? { justifyContent: "center", padding: "0.625rem 0", gap: 0 } : undefined}
               >
                 <span>{item.icon}</span>
-                <span>{item.label}</span>
+                {!collapsed && <span>{item.label}</span>}
               </Link>
             );
           }
-          const isOpen = openMenus.includes(item.label);
+          const isOpen = !collapsed && openMenus.includes(item.label);
           const isChildActive = item.children.some(c => pathname.startsWith(c.href));
           return (
             <div key={item.label}>
               <button
                 onClick={() => toggle(item.label)}
+                title={collapsed ? item.label : undefined}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.75rem",
+                  gap: collapsed ? 0 : "0.75rem",
                   width: "100%",
-                  padding: "0.625rem 1rem",
+                  padding: collapsed ? "0.625rem 0" : "0.625rem 1rem",
+                  justifyContent: collapsed ? "center" : "flex-start",
                   background: isChildActive ? "rgba(255,255,255,0.15)" : "none",
                   border: "none",
                   color: "rgba(255,255,255,0.9)",
-                  cursor: "pointer",
+                  cursor: collapsed ? "default" : "pointer",
                   borderRadius: 8,
                   fontSize: "0.9rem",
                   textAlign: "left",
                 }}
               >
                 <span>{item.icon}</span>
-                <span style={{ flex: 1 }}>{item.label}</span>
-                <span style={{ fontSize: "0.75rem" }}>{isOpen ? "▾" : "▸"}</span>
+                {!collapsed && <span style={{ flex: 1 }}>{item.label}</span>}
+                {!collapsed && <span style={{ fontSize: "0.75rem" }}>{isOpen ? "▾" : "▸"}</span>}
               </button>
               {isOpen && (
                 <div style={{ paddingLeft: "1.5rem" }}>

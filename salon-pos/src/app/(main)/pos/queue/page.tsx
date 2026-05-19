@@ -91,13 +91,17 @@ const COMPANY = {
   shortName: "บ.ลานนาดีเซีย กรุ๊ป",
 };
 
+type Branding = { shopName?: string | null; logoDataUrl?: string | null };
+
 /* ─────────────────────────── helper: build receipt html ─────── */
-function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvoiceInfo): string {
+function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvoiceInfo, branding?: Branding): string {
   const date = r.paidAt.toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" });
   const time = r.paidAt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
   const receiptNo = formatReceiptNo(r.receiptNumber, mode, r.paidAt);
   const hasCC = r.payments.some(p => p.method === "CREDIT_CARD");
   const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const shopName = branding?.shopName?.trim() || COMPANY.name;
+  const logoUrl = branding?.logoDataUrl || null;
 
   // unify services + retail items
   const lineItems = [
@@ -131,12 +135,15 @@ table.items th { font-size: 11px; color: #555; border-bottom: 1px solid #888; }
 .sm { font-size: 11px; color: #555; }
 .no { text-align: center; font-family: monospace; font-size: 12px; letter-spacing: 0.5px; background: #f5f5f5; padding: 4px; border-radius: 4px; margin: 6px 0; }
 .shop { text-align: center; font-size: 11px; color: #666; line-height: 1.4; }
+.logo { text-align: center; margin: 0 0 6px; }
+.logo img { max-width: 120px; max-height: 60px; object-fit: contain; }
 .summary td { padding: 2px 0; }
 .summary tr.net td { border-top: 1px solid #aaa; font-weight: 700; padding-top: 4px; }
 .summary tr.grand td { border-top: 2px solid #000; border-bottom: 2px solid #000; font-weight: 700; font-size: 13px; padding: 4px 0; }
 .vat-label { text-align: center; font-size: 11px; letter-spacing: 1px; border: 1px solid #999; padding: 3px; margin-top: 6px; font-weight: 700; }
 </style></head><body>
-<h2>${COMPANY.name}</h2>
+${logoUrl ? `<div class="logo"><img src="${logoUrl}" alt="logo"/></div>` : ""}
+<h2>${shopName}</h2>
 <div class="shop">${COMPANY.address}</div>
 <div class="shop">เลขผู้เสียภาษี: ${COMPANY.taxId}</div>
 <div class="line"></div>
@@ -189,7 +196,8 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
     <div class="page">
       <div class="header">
         <div class="shop-info">
-          <h1>${COMPANY.name}</h1>
+          ${logoUrl ? `<div class="logo"><img src="${logoUrl}" alt="logo"/></div>` : ""}
+          <h1>${shopName}</h1>
           <p>${COMPANY.address}</p>
           <p><strong>เลขประจำตัวผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
         </div>
@@ -205,7 +213,7 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
       <div class="parties">
         <div class="party">
           <h3>ผู้ขาย / Seller</h3>
-          <p class="b">${COMPANY.name}</p>
+          <p class="b">${shopName}</p>
           <p>${COMPANY.address}</p>
           <p><strong>เลขผู้เสียภาษี:</strong> ${COMPANY.taxId}</p>
         </div>
@@ -262,7 +270,7 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
       </div>
 
       <div class="footer">
-        เอกสารนี้พิมพ์จากระบบคอมพิวเตอร์ของ ${COMPANY.name} — ${receiptNo} (${variantLabel})
+        เอกสารนี้พิมพ์จากระบบคอมพิวเตอร์ของ ${shopName} — ${receiptNo} (${variantLabel})
       </div>
     </div>`;
   };
@@ -277,6 +285,8 @@ body { font-family: "Sarabun", "TH Sarabun New", sans-serif; margin: 0; font-siz
 .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; }
 .shop-info h1 { margin: 0 0 4px; font-size: 20px; color: #333; }
 .shop-info p { margin: 2px 0; font-size: 12px; color: #555; }
+.shop-info .logo { margin-bottom: 6px; }
+.shop-info .logo img { max-width: 140px; max-height: 70px; object-fit: contain; }
 .doc-info { text-align: right; }
 .doc-info h2 { margin: 0; font-size: 18px; color: #333; }
 .badge { background: #333; color: white; padding: 4px 12px; border-radius: 4px; font-size: 11px; margin-top: 4px; display: inline-block; font-weight: 700; }
@@ -654,24 +664,31 @@ export default function QueuePage() {
       customerAddress: fullCustomerAddress.trim(),
       customerTaxId: taxId.trim(),
     };
-    // Persist first so the print carries the canonical tax-invoice number from DB
-    const res = await fetch(`/api/orders/${receipt.order.id}/mark-printed`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: receiptMode,
-        ...(receiptMode === "FULL" ? {
-          customerName: info.customerName,
-          customerAddress: info.customerAddress,
-          customerTaxId: info.customerTaxId,
-        } : {}),
-      }),
-    }).catch(() => null);
+    // Persist first so the print carries the canonical tax-invoice number from DB.
+    // Branding fetched in parallel — cosmetic only, never blocks the print.
+    const [res, brandingRes] = await Promise.all([
+      fetch(`/api/orders/${receipt.order.id}/mark-printed`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: receiptMode,
+          ...(receiptMode === "FULL" ? {
+            customerName: info.customerName,
+            customerAddress: info.customerAddress,
+            customerTaxId: info.customerTaxId,
+          } : {}),
+        }),
+      }).catch(() => null),
+      fetch("/api/branding").catch(() => null),
+    ]);
     const saved = res && res.ok ? await res.json().catch(() => null) : null;
+    const branding = brandingRes && brandingRes.ok
+      ? await brandingRes.json().catch(() => null) as Branding | null
+      : null;
     const printable = saved
       ? { ...receipt, receiptNumber: saved.receiptNumber ?? receipt.receiptNumber, taxInvoiceNumber: saved.taxInvoiceNumber ?? null }
       : receipt;
-    win.document.write(buildReceiptHtml(printable, receiptMode, info));
+    win.document.write(buildReceiptHtml(printable, receiptMode, info, branding ?? undefined));
     win.document.close();
     setTimeout(() => win.print(), 400);
   }

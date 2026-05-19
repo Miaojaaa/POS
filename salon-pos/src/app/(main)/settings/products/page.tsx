@@ -426,7 +426,7 @@ export default function ProductsPage() {
                   </td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>{p.mainStock?.quantity ?? 0} ขวด</td>
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    {p.subStock?.quantity ?? 0} ขวด + {((p.subStock?.currentVolumeG ?? 0) / 1000).toFixed(0)} ก.
+                    {p.subStocks?.[0]?.quantity ?? 0} ขวด + {((p.subStocks?.[0]?.currentVolumeG ?? 0) / 1000).toFixed(0)} ก.
                   </td>
                 </tr>
               ))}
