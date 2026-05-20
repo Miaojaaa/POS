@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { DEFAULT_RECEIPT_FORMATS, buildReceiptNumber, normalizeReceiptFormat } from "@/lib/system-config";
 
-function pad4(n: number) { return String(n).padStart(4, "0"); }
+async function readFullReceiptFormat() {
+  const row = await prisma.systemConfig.findUnique({ where: { key: "receipt.format.full" } });
+  if (!row) return DEFAULT_RECEIPT_FORMATS.full;
+  try {
+    return normalizeReceiptFormat(JSON.parse(row.value), DEFAULT_RECEIPT_FORMATS.full);
+  } catch {
+    return DEFAULT_RECEIPT_FORMATS.full;
+  }
+}
 
 const SELECT_FIELDS = {
   receiptType: true,
@@ -90,16 +99,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const issuedAt = new Date();
   const dayStart = new Date(issuedAt.getFullYear(), issuedAt.getMonth(), issuedAt.getDate());
   const dayEnd = new Date(issuedAt.getFullYear(), issuedAt.getMonth(), issuedAt.getDate() + 1);
-  const yyyy = String(issuedAt.getFullYear());
-  const mm = String(issuedAt.getMonth() + 1).padStart(2, "0");
-  const dd = String(issuedAt.getDate()).padStart(2, "0");
+  const fullFormat = await readFullReceiptFormat();
 
   const updated = await prisma.$transaction(async (tx) => {
     // Daily sequence of FULL tax invoices, starts at 0001 each day
     const seq = await tx.order.count({
       where: { taxInvoiceIssuedAt: { gte: dayStart, lt: dayEnd } },
     });
-    const taxInvoiceNumber = `LNDSFULL${yyyy}${mm}${dd}${pad4(seq + 1)}`;
+    const taxInvoiceNumber = buildReceiptNumber(seq + 1, issuedAt, fullFormat);
     return tx.order.update({
       where: { id },
       data: {

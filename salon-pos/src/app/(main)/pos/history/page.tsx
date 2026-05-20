@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useBranch } from "@/context/BranchContext";
-import { buildReceiptHtml, type ReceiptData as PrintableReceipt } from "@/lib/receipt";
+import { buildReceiptHtml, type ReceiptBranding, type ReceiptData as PrintableReceipt } from "@/lib/receipt";
+import { DEFAULT_RECEIPT_FORMATS, buildReceiptNumber, type ReceiptFormats } from "@/lib/system-config";
 
 type Branch = { id: string; name: string };
 type OrderRow = {
@@ -55,15 +56,11 @@ const STATUS_BG: Record<string, string> = { PAID: "#D4EDDA", CANCELLED: "#F8D7DA
 const STATUS_COLOR: Record<string, string> = { PAID: "#155724", CANCELLED: "#721c24" };
 const METHOD_LABEL: Record<string, string> = { CASH: "เงินสด", TRANSFER: "โอน", CREDIT_CARD: "บัตร", WALLET: "Wallet" };
 
-function pad4(n: number) { return String(n).padStart(4, "0"); }
-function formatReceiptNo(seq: number, type: string | null | undefined, completedAt: string | Date) {
+function formatReceiptNo(seq: number, type: string | null | undefined, completedAt: string | Date, formats: ReceiptFormats) {
   if (!type) return null;
   const d = new Date(completedAt);
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = String(d.getFullYear());
-  if (type === "FULL") return `LNDSFULL${yyyy}${mm}${dd}${pad4(seq)}`;
-  return `LNDS${pad4(seq)}${dd}${mm}${yyyy}`;
+  const cfg = type === "FULL" ? formats.full : formats.short;
+  return buildReceiptNumber(seq, d, cfg);
 }
 
 export default function HistoryPage() {
@@ -72,6 +69,21 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PAID" | "CANCELLED">("ALL");
+  const [formats, setFormats] = useState<ReceiptFormats>(DEFAULT_RECEIPT_FORMATS);
+
+  useEffect(() => {
+    const refresh = () => {
+      fetch("/api/system-config")
+        .then(r => r.ok ? r.json() : null)
+        .then((d: { receiptFormat?: ReceiptFormats } | null) => {
+          if (d?.receiptFormat) setFormats(d.receiptFormat);
+        })
+        .catch(() => {});
+    };
+    refresh();
+    window.addEventListener("system-config-updated", refresh);
+    return () => window.removeEventListener("system-config-updated", refresh);
+  }, []);
   const [groupFilter, setGroupFilter] = useState<"ALL" | ServiceGroup>("ALL");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -181,8 +193,9 @@ export default function HistoryPage() {
     if (!win) { setReprintError("Pop-up ถูกบล็อก — โปรดอนุญาต pop-up แล้วลองอีกครั้ง"); return; }
 
     // Persist first so the printed copy carries the canonical invoice/receipt number.
-    // Branding is read in parallel — it's purely cosmetic, so we don't fail the print if it errors.
-    const [res, brandingRes] = await Promise.all([
+    // Branding + system-config (for receipt format) read in parallel — purely cosmetic,
+    // so we don't fail the print if either fetch errors.
+    const [res, brandingRes, sysCfgRes] = await Promise.all([
       fetch(`/api/orders/${selected.id}/mark-printed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -196,9 +209,16 @@ export default function HistoryPage() {
         }),
       }).catch((err) => { console.error("mark-printed fetch failed", err); return null; }),
       fetch("/api/branding").catch(() => null),
+      fetch("/api/system-config").catch(() => null),
     ]);
-    const branding = brandingRes && brandingRes.ok
-      ? await brandingRes.json().catch(() => null) as { shopName?: string; logoDataUrl?: string | null } | null
+    const brandingData = brandingRes && brandingRes.ok
+      ? await brandingRes.json().catch(() => null) as { shopName?: string; logoDataUrl?: string | null; address?: string; taxId?: string } | null
+      : null;
+    const sysCfg = sysCfgRes && sysCfgRes.ok
+      ? await sysCfgRes.json().catch(() => null) as { receiptFormat?: ReceiptFormats } | null
+      : null;
+    const branding: ReceiptBranding | null = brandingData || sysCfg?.receiptFormat
+      ? { ...(brandingData ?? {}), receiptFormat: sysCfg?.receiptFormat }
       : null;
     if (!res || !res.ok) {
       const detail = res ? await res.text().catch(() => "(no body)") : "(no response)";
@@ -369,7 +389,7 @@ export default function HistoryPage() {
                       {o.taxInvoiceNumber
                         ? o.taxInvoiceNumber
                         : o.receiptNumber && o.completedAt && o.receiptType
-                          ? formatReceiptNo(o.receiptNumber, o.receiptType, o.completedAt)
+                          ? formatReceiptNo(o.receiptNumber, o.receiptType, o.completedAt, formats)
                           : <span style={{ color: "#bbb", fontStyle: "italic" }}>ยังไม่พิมพ์</span>}
                     </td>
                     <td style={{ padding: "8px 12px" }}>
@@ -418,7 +438,7 @@ export default function HistoryPage() {
             ) : selected.receiptNumber && selected.completedAt && selected.receiptType ? (
               <div style={{ background: "#f5f5f5", padding: "0.5rem 0.75rem", borderRadius: 8, marginBottom: "0.75rem", fontFamily: "monospace", fontSize: "0.85rem" }}>
                 <strong>เลขใบเสร็จย่อ:</strong>{" "}
-                {formatReceiptNo(selected.receiptNumber, selected.receiptType, selected.completedAt)}
+                {formatReceiptNo(selected.receiptNumber, selected.receiptType, selected.completedAt, formats)}
               </div>
             ) : null}
 

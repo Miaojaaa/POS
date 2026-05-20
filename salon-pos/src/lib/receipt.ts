@@ -1,3 +1,5 @@
+import { DEFAULT_RECEIPT_FORMATS, buildReceiptNumber, type ReceiptFormatConfig } from "@/lib/system-config";
+
 export const COMPANY = {
   name: "บริษัท ลานนาดีเซีย กรุ๊ป จำกัด",
   taxId: "0505567002730",
@@ -18,11 +20,15 @@ export type ReceiptPayment = { method: string; amount: number };
 export type FullInvoiceInfo = { customerName: string; customerAddress: string; customerTaxId: string };
 // Override the shop identity printed at the top of the receipt. All fields optional —
 // any omitted field falls back to the legally-registered defaults in COMPANY.
+// `receiptFormat` lets callers pass the user's saved number-format config so the
+// printed number matches what settings define (used only when no canonical
+// taxInvoiceNumber is stored on the order).
 export type ReceiptBranding = {
   shopName?: string | null;
   logoDataUrl?: string | null;
   address?: string | null;
   taxId?: string | null;
+  receiptFormat?: { short?: ReceiptFormatConfig; full?: ReceiptFormatConfig };
 };
 
 export type ReceiptData = {
@@ -47,22 +53,21 @@ export type ReceiptData = {
   taxInvoiceNumber?: string | null;
 };
 
-function pad4(n: number): string { return String(n).padStart(4, "0"); }
-
-export function formatReceiptNo(seq: number, mode: "SHORT" | "FULL", date: Date): string {
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = String(date.getFullYear());
-  if (mode === "SHORT") return `LNDS${pad4(seq)}${dd}${mm}${yyyy}`;
-  return `LNDSFULL${yyyy}${mm}${dd}${pad4(seq)}`;
+// Format a receipt number using either a caller-supplied config or the system default.
+// The `cfg` param is intentionally optional so older call sites (display helpers in
+// pages that don't have the config loaded yet) still get a sensible legacy format.
+export function formatReceiptNo(seq: number, mode: "SHORT" | "FULL", date: Date, cfg?: ReceiptFormatConfig): string {
+  const config = cfg ?? (mode === "SHORT" ? DEFAULT_RECEIPT_FORMATS.short : DEFAULT_RECEIPT_FORMATS.full);
+  return buildReceiptNumber(seq, date, config);
 }
 
 export function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvoiceInfo, branding?: ReceiptBranding): string {
   const date = r.paidAt.toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" });
   const time = r.paidAt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  const formatCfg = mode === "SHORT" ? branding?.receiptFormat?.short : branding?.receiptFormat?.full;
   const receiptNo = mode === "FULL" && r.taxInvoiceNumber
     ? r.taxInvoiceNumber
-    : formatReceiptNo(r.receiptNumber, mode, r.paidAt);
+    : formatReceiptNo(r.receiptNumber, mode, r.paidAt, formatCfg);
   const hasCC = r.payments.some(p => p.method === "CREDIT_CARD");
   const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const totalQty = r.items.reduce((s, it) => s + it.qty, 0);

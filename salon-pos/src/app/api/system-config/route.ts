@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   DEFAULT_FINANCE,
+  DEFAULT_RECEIPT_FORMATS,
   DEFAULT_SIDEBAR_CONFIG,
   mergeSidebarConfig,
+  normalizeReceiptFormat,
   type CommissionMode,
+  type ReceiptFormatConfig,
+  type ReceiptFormats,
   type SidebarModuleConfig,
   type VatMode,
 } from "@/lib/system-config";
@@ -13,8 +17,14 @@ const FINANCE_COMMISSION_KEY = "finance.commissionMode";
 const FINANCE_POSITION_KEY = "finance.positionAllowance";
 const FINANCE_VAT_KEY = "finance.vatMode";
 const SIDEBAR_CONFIG_KEY = "sidebar.config";
+const RECEIPT_FORMAT_SHORT_KEY = "receipt.format.short";
+const RECEIPT_FORMAT_FULL_KEY = "receipt.format.full";
 
-const ALL_KEYS = [FINANCE_COMMISSION_KEY, FINANCE_POSITION_KEY, FINANCE_VAT_KEY, SIDEBAR_CONFIG_KEY];
+const ALL_KEYS = [
+  FINANCE_COMMISSION_KEY, FINANCE_POSITION_KEY, FINANCE_VAT_KEY,
+  SIDEBAR_CONFIG_KEY,
+  RECEIPT_FORMAT_SHORT_KEY, RECEIPT_FORMAT_FULL_KEY,
+];
 
 const VALID_COMMISSION_MODES: CommissionMode[] = ["POOL", "PER_HEAD", "NONE"];
 const VALID_VAT_MODES: VatMode[] = ["EXCLUSIVE", "INCLUSIVE"];
@@ -26,6 +36,15 @@ function parseSidebarConfig(raw: string | undefined): SidebarModuleConfig[] {
     return mergeSidebarConfig(Array.isArray(parsed) ? parsed : null);
   } catch {
     return DEFAULT_SIDEBAR_CONFIG;
+  }
+}
+
+function parseReceiptFormat(raw: string | undefined, fallback: ReceiptFormatConfig): ReceiptFormatConfig {
+  if (!raw) return fallback;
+  try {
+    return normalizeReceiptFormat(JSON.parse(raw), fallback);
+  } catch {
+    return fallback;
   }
 }
 
@@ -49,6 +68,10 @@ function readConfig(map: Record<string, string>) {
       vatMode,
     },
     sidebar: parseSidebarConfig(map[SIDEBAR_CONFIG_KEY]),
+    receiptFormat: {
+      short: parseReceiptFormat(map[RECEIPT_FORMAT_SHORT_KEY], DEFAULT_RECEIPT_FORMATS.short),
+      full: parseReceiptFormat(map[RECEIPT_FORMAT_FULL_KEY], DEFAULT_RECEIPT_FORMATS.full),
+    },
   };
 }
 
@@ -64,6 +87,7 @@ type PutBody = {
     vatMode?: VatMode;
   };
   sidebar?: SidebarModuleConfig[];
+  receiptFormat?: Partial<ReceiptFormats>;
 };
 
 export async function PUT(req: NextRequest) {
@@ -116,6 +140,25 @@ export async function PUT(req: NextRequest) {
       update: { value: JSON.stringify(merged) },
       create: { key: SIDEBAR_CONFIG_KEY, value: JSON.stringify(merged) },
     }));
+  }
+
+  if (body.receiptFormat) {
+    const pairs: Array<[string, ReceiptFormatConfig | undefined, ReceiptFormatConfig]> = [
+      [RECEIPT_FORMAT_SHORT_KEY, body.receiptFormat.short, DEFAULT_RECEIPT_FORMATS.short],
+      [RECEIPT_FORMAT_FULL_KEY, body.receiptFormat.full, DEFAULT_RECEIPT_FORMATS.full],
+    ];
+    for (const [key, raw, fallback] of pairs) {
+      if (raw === undefined) continue;
+      const normalized = normalizeReceiptFormat(raw, fallback);
+      if (!normalized.prefix) {
+        return NextResponse.json({ error: "Prefix ของเลขใบเสร็จห้ามว่าง" }, { status: 400 });
+      }
+      updates.push(prisma.systemConfig.upsert({
+        where: { key },
+        update: { value: JSON.stringify(normalized) },
+        create: { key, value: JSON.stringify(normalized) },
+      }));
+    }
   }
 
   await Promise.all(updates);

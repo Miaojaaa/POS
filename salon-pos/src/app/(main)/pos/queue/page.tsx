@@ -3,6 +3,12 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useBranch } from "@/context/BranchContext";
+import {
+  DEFAULT_RECEIPT_FORMATS,
+  buildReceiptNumber,
+  type ReceiptFormatConfig,
+  type ReceiptFormats,
+} from "@/lib/system-config";
 
 /* ─────────────────────────── types ─────────────────────────── */
 type Branch = { id: string; name: string };
@@ -71,16 +77,9 @@ const STATUS_BG: Record<string, string> = { WAITING: "#FFF3CD", IN_PROGRESS: "#C
 const METHOD_LABEL: Record<string, string> = { CASH: "เงินสด", TRANSFER: "โอนเงิน (QR)", WALLET: "Wallet", TICKET: "Ticket/คูปอง" };
 
 /* ─────────────────────────── helper: receipt number formatter ─────── */
-function pad4(n: number): string {
-  return String(n).padStart(4, "0");
-}
-
-function formatReceiptNo(seq: number, mode: "SHORT" | "FULL", date: Date): string {
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = String(date.getFullYear());
-  if (mode === "SHORT") return `LNDS${pad4(seq)}${dd}${mm}${yyyy}`;
-  return `LNDSFULL${yyyy}${mm}${dd}${pad4(seq)}`;
+function formatReceiptNo(seq: number, mode: "SHORT" | "FULL", date: Date, cfg?: ReceiptFormatConfig): string {
+  const config = cfg ?? (mode === "SHORT" ? DEFAULT_RECEIPT_FORMATS.short : DEFAULT_RECEIPT_FORMATS.full);
+  return buildReceiptNumber(seq, date, config);
 }
 
 /* ─────────────────────────── company info ─────── */
@@ -91,13 +90,20 @@ const COMPANY = {
   shortName: "บ.ลานนาดีเซีย กรุ๊ป",
 };
 
-type Branding = { shopName?: string | null; logoDataUrl?: string | null; address?: string | null; taxId?: string | null };
+type Branding = {
+  shopName?: string | null;
+  logoDataUrl?: string | null;
+  address?: string | null;
+  taxId?: string | null;
+  receiptFormat?: { short?: ReceiptFormatConfig; full?: ReceiptFormatConfig };
+};
 
 /* ─────────────────────────── helper: build receipt html ─────── */
 function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvoiceInfo, branding?: Branding): string {
   const date = r.paidAt.toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" });
   const time = r.paidAt.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
-  const receiptNo = formatReceiptNo(r.receiptNumber, mode, r.paidAt);
+  const formatCfg = mode === "SHORT" ? branding?.receiptFormat?.short : branding?.receiptFormat?.full;
+  const receiptNo = formatReceiptNo(r.receiptNumber, mode, r.paidAt, formatCfg);
   const hasCC = r.payments.some(p => p.method === "CREDIT_CARD");
   const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const shopName = branding?.shopName?.trim() || COMPANY.name;
@@ -389,16 +395,30 @@ export default function QueuePage() {
     return () => clearInterval(t);
   }, [load]);
 
+  // Merges /api/branding + /api/system-config into a single Branding bundle so the
+  // receipt-number preview and the printed output both use the user's saved format.
   useEffect(() => {
-    const fetchBranding = () => {
-      fetch("/api/branding")
-        .then(r => r.ok ? r.json() : null)
-        .then((b: Branding | null) => { if (b) setBranding(b); })
-        .catch(() => {});
+    const refresh = () => {
+      Promise.all([
+        fetch("/api/branding").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/system-config").then(r => r.ok ? r.json() : null).catch(() => null),
+      ]).then(([b, sc]: [Branding | null, { receiptFormat?: ReceiptFormats } | null]) => {
+        setBranding({
+          shopName: b?.shopName ?? null,
+          logoDataUrl: b?.logoDataUrl ?? null,
+          address: b?.address ?? null,
+          taxId: b?.taxId ?? null,
+          receiptFormat: sc?.receiptFormat,
+        });
+      });
     };
-    fetchBranding();
-    window.addEventListener("branding-updated", fetchBranding);
-    return () => window.removeEventListener("branding-updated", fetchBranding);
+    refresh();
+    window.addEventListener("branding-updated", refresh);
+    window.addEventListener("system-config-updated", refresh);
+    return () => {
+      window.removeEventListener("branding-updated", refresh);
+      window.removeEventListener("system-config-updated", refresh);
+    };
   }, []);
 
   async function updateStatus(id: string, status: string) {
@@ -680,8 +700,8 @@ export default function QueuePage() {
       customerTaxId: taxId.trim(),
     };
     // Persist first so the print carries the canonical tax-invoice number from DB.
-    // Branding fetched in parallel — cosmetic only, never blocks the print.
-    const [res, brandingRes] = await Promise.all([
+    // Branding + receipt-format settings fetched in parallel — cosmetic only, never blocks the print.
+    const [res, brandingRes, sysConfigRes] = await Promise.all([
       fetch(`/api/orders/${receipt.order.id}/mark-printed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -695,15 +715,22 @@ export default function QueuePage() {
         }),
       }).catch(() => null),
       fetch("/api/branding").catch(() => null),
+      fetch("/api/system-config").catch(() => null),
     ]);
     const saved = res && res.ok ? await res.json().catch(() => null) : null;
-    const branding = brandingRes && brandingRes.ok
+    const brandingData = brandingRes && brandingRes.ok
       ? await brandingRes.json().catch(() => null) as Branding | null
       : null;
+    const sysConfig = sysConfigRes && sysConfigRes.ok
+      ? await sysConfigRes.json().catch(() => null) as { receiptFormat?: ReceiptFormats } | null
+      : null;
+    const mergedBranding: Branding | undefined = brandingData
+      ? { ...brandingData, receiptFormat: sysConfig?.receiptFormat ?? brandingData.receiptFormat }
+      : (sysConfig?.receiptFormat ? { receiptFormat: sysConfig.receiptFormat } : undefined);
     const printable = saved
       ? { ...receipt, receiptNumber: saved.receiptNumber ?? receipt.receiptNumber, taxInvoiceNumber: saved.taxInvoiceNumber ?? null }
       : receipt;
-    win.document.write(buildReceiptHtml(printable, receiptMode, info, branding ?? undefined));
+    win.document.write(buildReceiptHtml(printable, receiptMode, info, mergedBranding));
     win.document.close();
     setTimeout(() => win.print(), 400);
   }
@@ -1122,7 +1149,7 @@ export default function QueuePage() {
                 {receiptMode === "FULL" ? "ใบกำกับภาษีเต็มรูปแบบ (A4) — Original + Copy" : "ใบกำกับภาษีอย่างย่อ / ใบเสร็จรับเงิน"}
               </div>
               <div style={{ textAlign: "center", fontSize: "0.75rem", letterSpacing: 0.5, padding: "3px 6px", background: "white", border: "1px solid #ddd", borderRadius: 4, margin: "4px 0 8px", fontWeight: 600 }}>
-                {formatReceiptNo(receipt.receiptNumber, receiptMode, receipt.paidAt)}
+                {formatReceiptNo(receipt.receiptNumber, receiptMode, receipt.paidAt, receiptMode === "SHORT" ? branding?.receiptFormat?.short : branding?.receiptFormat?.full)}
               </div>
               {receiptMode === "FULL" && taxId && (
                 <div style={{ marginBottom: 4 }}><strong>เลขผู้เสียภาษีลูกค้า:</strong> {taxId}</div>

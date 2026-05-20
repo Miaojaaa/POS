@@ -1,7 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEFAULT_FINANCE, type CommissionMode, type FinanceConfig, type VatMode } from "@/lib/system-config";
+import {
+  DEFAULT_FINANCE,
+  DEFAULT_RECEIPT_FORMATS,
+  buildReceiptNumber,
+  type CommissionMode,
+  type DateOrder,
+  type FinanceConfig,
+  type LetterPosition,
+  type ReceiptFormatConfig,
+  type ReceiptFormats,
+  type VatMode,
+  type YearFormat,
+} from "@/lib/system-config";
 
 const COMMISSION_OPTIONS: { value: CommissionMode; title: string; hint: string }[] = [
   { value: "POOL", title: "ค่าคอมรวม (Pool)", hint: "รวบรวมค่าคอมเป็นกองกลาง แล้วหารตามเปอร์เซ็นต์ของแต่ละบทบาท" },
@@ -14,8 +26,28 @@ const VAT_OPTIONS: { value: VatMode; title: string; hint: string }[] = [
   { value: "INCLUSIVE", title: "VAT รวมในราคา (Inclusive)", hint: "ราคาสินค้ารวม VAT แล้ว — ระบบจะแยก 7% ออกจากยอดเพื่อแสดงบนใบเสร็จ" },
 ];
 
+const LETTER_POSITION_OPTIONS: { value: LetterPosition; label: string }[] = [
+  { value: "FRONT", label: "อยู่หน้า" },
+  { value: "BACK", label: "อยู่หลัง" },
+];
+
+const DATE_ORDER_OPTIONS: { value: DateOrder; label: string }[] = [
+  { value: "YMD", label: "ปี - เดือน - วัน" },
+  { value: "YDM", label: "ปี - วัน - เดือน" },
+  { value: "MDY", label: "เดือน - วัน - ปี" },
+  { value: "DMY", label: "วัน - เดือน - ปี" },
+];
+
+const YEAR_FORMAT_OPTIONS: { value: YearFormat; label: string }[] = [
+  { value: "CE_4", label: "ค.ศ. 4 หลัก (เช่น 2026)" },
+  { value: "BE_4", label: "พ.ศ. 4 หลัก (เช่น 2569)" },
+  { value: "CE_2", label: "ค.ศ. 2 หลัก (เช่น 26)" },
+  { value: "BE_2", label: "พ.ศ. 2 หลัก (เช่น 69)" },
+];
+
 export default function FinanceSettingsPage() {
   const [config, setConfig] = useState<FinanceConfig>(DEFAULT_FINANCE);
+  const [formats, setFormats] = useState<ReceiptFormats>(DEFAULT_RECEIPT_FORMATS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -23,28 +55,32 @@ export default function FinanceSettingsPage() {
   useEffect(() => {
     fetch("/api/system-config")
       .then(r => r.json())
-      .then((d: { finance: FinanceConfig }) => {
+      .then((d: { finance: FinanceConfig; receiptFormat: ReceiptFormats }) => {
         if (d.finance) setConfig(d.finance);
+        if (d.receiptFormat) setFormats(d.receiptFormat);
       })
       .catch(() => setMsg({ kind: "err", text: "โหลดข้อมูลไม่สำเร็จ" }))
       .finally(() => setLoading(false));
   }, []);
 
   async function save() {
+    if (!formats.short.prefix.trim()) { setMsg({ kind: "err", text: "Prefix ใบเสร็จย่อห้ามว่าง" }); return; }
+    if (!formats.full.prefix.trim()) { setMsg({ kind: "err", text: "Prefix ใบกำกับภาษีเต็มห้ามว่าง" }); return; }
     setSaving(true);
     setMsg(null);
     try {
       const res = await fetch("/api/system-config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ finance: config }),
+        body: JSON.stringify({ finance: config, receiptFormat: formats }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: "บันทึกไม่สำเร็จ" }));
         setMsg({ kind: "err", text: data.error ?? "บันทึกไม่สำเร็จ" });
       } else {
-        const data: { finance: FinanceConfig } = await res.json();
+        const data: { finance: FinanceConfig; receiptFormat: ReceiptFormats } = await res.json();
         if (data.finance) setConfig(data.finance);
+        if (data.receiptFormat) setFormats(data.receiptFormat);
         setMsg({ kind: "ok", text: "บันทึกสำเร็จ" });
         window.dispatchEvent(new Event("system-config-updated"));
       }
@@ -113,6 +149,27 @@ export default function FinanceSettingsPage() {
           </div>
         </section>
 
+        {/* Receipt-number format */}
+        <section>
+          <h2 style={{ fontSize: "1rem", fontWeight: 600, margin: "0 0 0.5rem" }}>รูปแบบเลขใบเสร็จ &amp; ใบกำกับภาษี</h2>
+          <p style={{ fontSize: "0.8rem", color: "#888", margin: "0 0 0.75rem" }}>
+            มีผลกับเลขที่ออกใหม่หลังจากบันทึก — เลขที่ออกไปแล้ว (ใบกำกับภาษีเต็ม) จะถูกล็อกไว้ตามรูปแบบเดิม
+          </p>
+          <ReceiptFormatEditor
+            title="ใบเสร็จย่อ (SHORT)"
+            value={formats.short}
+            onChange={v => setFormats(f => ({ ...f, short: v }))}
+            onReset={() => setFormats(f => ({ ...f, short: DEFAULT_RECEIPT_FORMATS.short }))}
+          />
+          <div style={{ height: "0.75rem" }} />
+          <ReceiptFormatEditor
+            title="ใบกำกับภาษีเต็ม (FULL)"
+            value={formats.full}
+            onChange={v => setFormats(f => ({ ...f, full: v }))}
+            onReset={() => setFormats(f => ({ ...f, full: DEFAULT_RECEIPT_FORMATS.full }))}
+          />
+        </section>
+
         {msg && (
           <div style={{
             padding: "0.5rem 0.75rem", borderRadius: 8, fontSize: "0.85rem",
@@ -126,6 +183,91 @@ export default function FinanceSettingsPage() {
             {saving ? "กำลังบันทึก…" : "บันทึก"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ReceiptFormatEditor({ title, value, onChange, onReset }: {
+  title: string;
+  value: ReceiptFormatConfig;
+  onChange: (v: ReceiptFormatConfig) => void;
+  onReset: () => void;
+}) {
+  // Use today + seq=1 as the preview so the user immediately sees how the format renders
+  const preview = buildReceiptNumber(1, new Date(), value);
+  return (
+    <div style={{
+      border: "1px solid var(--beige-dark)", borderRadius: 12, padding: "0.875rem 1rem",
+      background: "#fafafa",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+        <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>{title}</div>
+        <button type="button" className="btn-secondary" onClick={onReset} style={{ fontSize: "0.7rem", padding: "2px 10px" }}>
+          คืนค่าเริ่มต้น
+        </button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
+        <div>
+          <label className="label">หมวดอักษร (Prefix)</label>
+          <input
+            className="input"
+            value={value.prefix}
+            onChange={e => onChange({ ...value, prefix: e.target.value.toUpperCase().slice(0, 16) })}
+            placeholder="เช่น LNDS"
+            style={{ fontFamily: "monospace", letterSpacing: 1 }}
+          />
+        </div>
+        <div>
+          <label className="label">ตำแหน่งอักษร</label>
+          <select
+            className="input"
+            value={value.letterPosition}
+            onChange={e => onChange({ ...value, letterPosition: e.target.value as LetterPosition })}
+          >
+            {LETTER_POSITION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="label">ลำดับวันที่</label>
+          <select
+            className="input"
+            value={value.dateOrder}
+            onChange={e => onChange({ ...value, dateOrder: e.target.value as DateOrder })}
+          >
+            {DATE_ORDER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="label">รูปแบบปี</label>
+          <select
+            className="input"
+            value={value.yearFormat}
+            onChange={e => onChange({ ...value, yearFormat: e.target.value as YearFormat })}
+          >
+            {YEAR_FORMAT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="label">จำนวนหลักเลขรัน</label>
+          <input
+            type="number" min={2} max={8}
+            className="input"
+            value={value.seqDigits}
+            onChange={e => onChange({ ...value, seqDigits: Math.min(8, Math.max(2, Number(e.target.value) || 4)) })}
+          />
+        </div>
+      </div>
+
+      <div style={{
+        marginTop: "0.75rem", padding: "0.5rem 0.75rem", borderRadius: 8,
+        background: "white", border: "1px dashed var(--beige-dark)",
+        fontFamily: "monospace", fontSize: "0.95rem", letterSpacing: 1,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <span style={{ color: "#888", fontSize: "0.75rem", fontFamily: "inherit", letterSpacing: 0 }}>ตัวอย่าง:</span>
+        <span style={{ fontWeight: 700, color: "var(--olive)" }}>{preview}</span>
       </div>
     </div>
   );
