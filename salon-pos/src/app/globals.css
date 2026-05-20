@@ -39,11 +39,18 @@ body {
   padding: 0.5rem 1.25rem;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: var(--olive-light);
+}
+
+.btn-primary:disabled {
+  background: #bdbdbd;
+  color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 1;
 }
 
 .btn-secondary {
@@ -54,11 +61,16 @@ body {
   padding: 0.5rem 1.25rem;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s;
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
   background: #d5cdb8;
+}
+
+.btn-secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .btn-danger {
@@ -69,6 +81,12 @@ body {
   padding: 0.5rem 1.25rem;
   font-size: 0.9rem;
   cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.btn-danger:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .card {

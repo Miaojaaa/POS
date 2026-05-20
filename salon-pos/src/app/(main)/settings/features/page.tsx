@@ -12,6 +12,7 @@ import {
 
 export default function FeaturesSettingsPage() {
   const [items, setItems] = useState<SidebarModuleConfig[]>(DEFAULT_SIDEBAR_CONFIG);
+  const [initial, setInitial] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -20,11 +21,15 @@ export default function FeaturesSettingsPage() {
     fetch("/api/system-config")
       .then(r => r.json())
       .then((d: { sidebar: SidebarModuleConfig[] }) => {
-        if (d.sidebar) setItems(mergeSidebarConfig(d.sidebar));
+        const merged = d.sidebar ? mergeSidebarConfig(d.sidebar) : DEFAULT_SIDEBAR_CONFIG;
+        setItems(merged);
+        setInitial(JSON.stringify(merged));
       })
       .catch(() => setMsg({ kind: "err", text: "โหลดข้อมูลไม่สำเร็จ" }))
       .finally(() => setLoading(false));
   }, []);
+
+  const dirty = initial !== "" && JSON.stringify(items) !== initial;
 
   function move(idx: number, dir: -1 | 1) {
     const next = idx + dir;
@@ -60,7 +65,9 @@ export default function FeaturesSettingsPage() {
         setMsg({ kind: "err", text: data.error ?? "บันทึกไม่สำเร็จ" });
       } else {
         const data: { sidebar: SidebarModuleConfig[] } = await res.json();
-        if (data.sidebar) setItems(mergeSidebarConfig(data.sidebar));
+        const merged = data.sidebar ? mergeSidebarConfig(data.sidebar) : items;
+        setItems(merged);
+        setInitial(JSON.stringify(merged));
         setMsg({ kind: "ok", text: "บันทึกสำเร็จ — Sidebar อัพเดตทันที" });
         window.dispatchEvent(new Event("system-config-updated"));
       }
@@ -137,7 +144,7 @@ export default function FeaturesSettingsPage() {
         )}
 
         <div>
-          <button className="btn-primary" onClick={save} disabled={saving}>
+          <button className="btn-primary" onClick={save} disabled={saving || !dirty}>
             {saving ? "กำลังบันทึก…" : "บันทึก"}
           </button>
         </div>

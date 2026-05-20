@@ -153,7 +153,12 @@ export default function ExpensesReportPage() {
             </div>
 
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={handleAddExpense} disabled={saving}>
+              <button
+                className="btn-primary"
+                style={{ flex: 1 }}
+                onClick={handleAddExpense}
+                disabled={saving || !newDate || !newCategory || !newDescription || !newAmount}
+              >
                 {saving ? "กำลังบันทึก..." : "บันทึก"}
               </button>
               <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={saving}>

@@ -53,6 +53,7 @@ export default function EditOrderPage() {
   const [saving, setSaving] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [alertMsg, setAlertMsg] = useState<string | null>(null);
+  const [initialSnapshot, setInitialSnapshot] = useState<string>(""); // JSON of loaded state for dirty-check
 
   const [showPinModal, setShowPinModal] = useState(false);
   const [pin, setPin] = useState("");
@@ -112,14 +113,27 @@ export default function EditOrderPage() {
           totalCost: c.totalCost,
         })));
 
-        setSelectedRetail(o.retailItems.map(r => ({
+        const loadedRetail = o.retailItems.map(r => ({
           retailProductId: r.retailProductId,
           name: r.retailProduct.name,
           price: r.price,
           quantity: r.quantity,
           // current stock + this order's qty (since stock was decremented at order creation)
           maxStock: r.retailProduct.stock + r.quantity,
-        })));
+        }));
+        setSelectedRetail(loadedRetail);
+
+        setInitialSnapshot(JSON.stringify({
+          customerName: o.customerName,
+          customerPhone: o.customerPhone ?? "",
+          customerId: o.customerId ?? null,
+          notes: o.notes ?? "",
+          technicianIds: [o.technicianId],
+          assistantIds: o.assistants.map(a => a.user.id),
+          items: o.items.map(it => ({ serviceId: it.serviceId, price: it.price })),
+          chems: o.chemicals.map(c => ({ productId: c.productId, amountG: c.amountG, totalCost: c.totalCost })),
+          retail: loadedRetail.map(r => ({ retailProductId: r.retailProductId, price: r.price, quantity: r.quantity })),
+        }));
 
         setLoadingData(false);
       } catch (err) {
@@ -520,9 +534,25 @@ export default function EditOrderPage() {
               <button className="btn-secondary" style={{ flex: 1 }} onClick={() => router.push("/pos/queue")}>
                 ยกเลิก
               </button>
-              <button className="btn-primary" style={{ flex: 2 }} onClick={handleSubmit} disabled={saving}>
-                {saving ? "กำลังบันทึก..." : "✓ บันทึกการแก้ไข"}
-              </button>
+              {(() => {
+                const currentSnapshot = JSON.stringify({
+                  customerName,
+                  customerPhone,
+                  customerId,
+                  notes,
+                  technicianIds,
+                  assistantIds,
+                  items: selectedItems.map(it => ({ serviceId: it.serviceId, price: it.price })),
+                  chems: selectedChems.map(c => ({ productId: c.productId, amountG: c.amountG, totalCost: c.totalCost })),
+                  retail: selectedRetail.map(r => ({ retailProductId: r.retailProductId, price: r.price, quantity: r.quantity })),
+                });
+                const dirty = initialSnapshot !== "" && currentSnapshot !== initialSnapshot;
+                return (
+                  <button className="btn-primary" style={{ flex: 2 }} onClick={handleSubmit} disabled={saving || !dirty}>
+                    {saving ? "กำลังบันทึก..." : "✓ บันทึกการแก้ไข"}
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </div>

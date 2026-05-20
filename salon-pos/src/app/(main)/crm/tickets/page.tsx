@@ -202,14 +202,22 @@ export default function TicketsPage() {
               </div>
             )}
 
-            <button
-              className="btn-primary"
-              style={{ marginTop: "1rem" }}
-              onClick={createDef}
-              disabled={creating}
-            >
-              {creating ? "กำลังบันทึก..." : "✓ สร้างคูปอง"}
-            </button>
+            {(() => {
+              const fieldOk = newType === "FIXED"
+                ? !!newFixedValue
+                : !!newServiceId && newDiscountPct !== "" && Number(newDiscountPct) > 0;
+              const canCreate = !!newName && fieldOk;
+              return (
+                <button
+                  className="btn-primary"
+                  style={{ marginTop: "1rem" }}
+                  onClick={createDef}
+                  disabled={creating || !canCreate}
+                >
+                  {creating ? "กำลังบันทึก..." : "✓ สร้างคูปอง"}
+                </button>
+              );
+            })()}
           </div>
         )}
 
@@ -300,7 +308,7 @@ export default function TicketsPage() {
                   <label className="label">จำนวน</label>
                   <input type="number" className="input" min={1} value={qty} onChange={e => setQty(Number(e.target.value))} />
                 </div>
-                <button className="btn-primary" style={{ width: "100%" }} onClick={issueTicket}>
+                <button className="btn-primary" style={{ width: "100%" }} onClick={issueTicket} disabled={!issueDefId || qty < 1}>
                   🎫 ออก Ticket
                 </button>
               </div>

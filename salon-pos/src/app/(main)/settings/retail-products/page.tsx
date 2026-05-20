@@ -150,7 +150,7 @@ export default function RetailProductsPage() {
               <input type="number" className="input" placeholder="0" value={stock}
                 onChange={e => setStock(e.target.value === "" ? "" : Number(e.target.value))} />
             </div>
-            <button className="btn-primary" onClick={create}>บันทึก</button>
+            <button className="btn-primary" onClick={create} disabled={!name || price === ""}>บันทึก</button>
           </div>
         </div>
       )}

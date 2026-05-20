@@ -66,7 +66,9 @@ export default function MembersPage() {
     setIsModalOpen(true);
   };
 
-  const isChanged = editingId ? JSON.stringify(formData) !== JSON.stringify(initialData) : true;
+  const isChanged = editingId
+    ? JSON.stringify(formData) !== JSON.stringify(initialData)
+    : !!(formData.name && formData.phone);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

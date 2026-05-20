@@ -413,7 +413,7 @@ export default function StaffPage() {
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
               <button
                 className="btn-primary"
-                style={{ flex: 1, opacity: isChanged() ? 1 : 0.5, cursor: isChanged() ? "pointer" : "not-allowed" }}
+                style={{ flex: 1 }}
                 onClick={handleSave}
                 disabled={!isChanged()}
               >

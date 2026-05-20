@@ -44,6 +44,7 @@ export default function ProductsPage() {
   const [retailForm, setRetailForm] = useState({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
   const [editingChemId, setEditingChemId] = useState<string | null>(null);
   const [editingRetailId, setEditingRetailId] = useState<string | null>(null);
+  const [initialEdit, setInitialEdit] = useState<string>(""); // JSON snapshot of form when opening edit modal
 
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedProductType, setSelectedProductType] = useState<FormType | null>(null);
@@ -102,6 +103,7 @@ export default function ProductsPage() {
     setEditingRetailId(null);
     setChemForm({ name: "", unitVolumeG: "", costPerUnit: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
     setRetailForm({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
+    setInitialEdit("");
     setShowForm(true);
   }
 
@@ -130,10 +132,7 @@ export default function ProductsPage() {
   }
 
   function editChemical(p: Chemical) {
-    setEditingChemId(p.id);
-    setEditingRetailId(null);
-    setFormType("CHEMICAL");
-    setChemForm({
+    const next = {
       name: p.name,
       unitVolumeG: String(p.unitVolumeG),
       costPerUnit: String(p.costPerUnit),
@@ -141,22 +140,29 @@ export default function ProductsPage() {
       initialSub: "0",
       sellable: p.sellable,
       salePrice: p.salePrice != null ? String(p.salePrice) : "",
-    });
+    };
+    setEditingChemId(p.id);
+    setEditingRetailId(null);
+    setFormType("CHEMICAL");
+    setChemForm(next);
+    setInitialEdit(JSON.stringify({ kind: "CHEMICAL", form: next }));
     setShowForm(true);
   }
 
   function editRetail(p: RetailProduct) {
-    setEditingRetailId(p.id);
-    setEditingChemId(null);
-    setFormType("RETAIL");
-    setRetailForm({
+    const next = {
       name: p.name,
       price: String(p.price),
       stock: String(p.stock),
       usableAsChemical: p.usableAsChemical,
       unitVolumeG: p.unitVolumeG != null ? String(p.unitVolumeG) : "",
       costPerG: p.costPerG != null ? String(p.costPerG) : "",
-    });
+    };
+    setEditingRetailId(p.id);
+    setEditingChemId(null);
+    setFormType("RETAIL");
+    setRetailForm(next);
+    setInitialEdit(JSON.stringify({ kind: "RETAIL", form: next }));
     setShowForm(true);
   }
 
@@ -613,9 +619,23 @@ export default function ProductsPage() {
             )}
 
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={saveProduct}>
-                บันทึก {!unlocked && "(ต้องใช้ PIN)"}
-              </button>
+              {(() => {
+                const isEditing = !!(editingChemId || editingRetailId);
+                const filledForCreate = formType === "CHEMICAL"
+                  ? !!chemForm.name && !!chemForm.unitVolumeG && !!chemForm.costPerUnit
+                  : !!retailForm.name && !!retailForm.price;
+                const currentSnapshot = JSON.stringify({
+                  kind: formType,
+                  form: formType === "CHEMICAL" ? chemForm : retailForm,
+                });
+                const changedForEdit = isEditing && currentSnapshot !== initialEdit;
+                const canSave = isEditing ? changedForEdit : filledForCreate;
+                return (
+                  <button className="btn-primary" style={{ flex: 1 }} onClick={saveProduct} disabled={!canSave}>
+                    บันทึก {!unlocked && "(ต้องใช้ PIN)"}
+                  </button>
+                );
+              })()}
               <button className="btn-secondary" style={{ flex: 1 }} onClick={closeForm}>ยกเลิก</button>
             </div>
           </div>

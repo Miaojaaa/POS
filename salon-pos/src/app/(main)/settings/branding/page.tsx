@@ -61,6 +61,7 @@ export default function BrandingSettingsPage() {
   const [taxId, setTaxId] = useState("");
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>(DEFAULT_THEME);
+  const [initial, setInitial] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -75,11 +76,15 @@ export default function BrandingSettingsPage() {
         setAddress(b.address);
         setTaxId(b.taxId);
         setLogoDataUrl(b.logoDataUrl);
-        if (b.theme) setTheme(b.theme);
+        const t = b.theme ?? DEFAULT_THEME;
+        setTheme(t);
+        setInitial(JSON.stringify({ shopName: b.shopName, address: b.address, taxId: b.taxId, logoDataUrl: b.logoDataUrl, theme: t }));
       })
       .catch(() => setMsg({ kind: "err", text: "โหลดข้อมูลไม่สำเร็จ" }))
       .finally(() => setLoading(false));
   }, []);
+
+  const dirty = initial !== "" && JSON.stringify({ shopName, address, taxId, logoDataUrl, theme }) !== initial;
 
   function pickFile() {
     fileRef.current?.click();
@@ -156,7 +161,9 @@ export default function BrandingSettingsPage() {
         setAddress(data.address);
         setTaxId(data.taxId);
         setLogoDataUrl(data.logoDataUrl);
-        if (data.theme) setTheme(data.theme);
+        const newTheme = data.theme ?? theme;
+        setTheme(newTheme);
+        setInitial(JSON.stringify({ shopName: data.shopName, address: data.address, taxId: data.taxId, logoDataUrl: data.logoDataUrl, theme: newTheme }));
         setMsg({ kind: "ok", text: "บันทึกสำเร็จ — ใบเสร็จ, Sidebar และธีมจะอัพเดตทันที" });
         window.dispatchEvent(new Event("branding-updated"));
       }
@@ -311,7 +318,7 @@ export default function BrandingSettingsPage() {
         )}
 
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button className="btn-primary" onClick={save} disabled={saving || processing}>
+          <button className="btn-primary" onClick={save} disabled={saving || processing || !dirty}>
             {saving ? "กำลังบันทึก…" : "บันทึก"}
           </button>
         </div>

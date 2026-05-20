@@ -48,6 +48,7 @@ const YEAR_FORMAT_OPTIONS: { value: YearFormat; label: string }[] = [
 export default function FinanceSettingsPage() {
   const [config, setConfig] = useState<FinanceConfig>(DEFAULT_FINANCE);
   const [formats, setFormats] = useState<ReceiptFormats>(DEFAULT_RECEIPT_FORMATS);
+  const [initial, setInitial] = useState<string>(""); // JSON snapshot of last-saved state for dirty-check
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -58,10 +59,13 @@ export default function FinanceSettingsPage() {
       .then((d: { finance: FinanceConfig; receiptFormat: ReceiptFormats }) => {
         if (d.finance) setConfig(d.finance);
         if (d.receiptFormat) setFormats(d.receiptFormat);
+        setInitial(JSON.stringify({ finance: d.finance ?? DEFAULT_FINANCE, formats: d.receiptFormat ?? DEFAULT_RECEIPT_FORMATS }));
       })
       .catch(() => setMsg({ kind: "err", text: "โหลดข้อมูลไม่สำเร็จ" }))
       .finally(() => setLoading(false));
   }, []);
+
+  const dirty = initial !== "" && JSON.stringify({ finance: config, formats }) !== initial;
 
   async function save() {
     if (!formats.short.prefix.trim()) { setMsg({ kind: "err", text: "Prefix ใบเสร็จย่อห้ามว่าง" }); return; }
@@ -81,6 +85,7 @@ export default function FinanceSettingsPage() {
         const data: { finance: FinanceConfig; receiptFormat: ReceiptFormats } = await res.json();
         if (data.finance) setConfig(data.finance);
         if (data.receiptFormat) setFormats(data.receiptFormat);
+        setInitial(JSON.stringify({ finance: data.finance ?? config, formats: data.receiptFormat ?? formats }));
         setMsg({ kind: "ok", text: "บันทึกสำเร็จ" });
         window.dispatchEvent(new Event("system-config-updated"));
       }
@@ -179,7 +184,7 @@ export default function FinanceSettingsPage() {
         )}
 
         <div>
-          <button className="btn-primary" onClick={save} disabled={saving}>
+          <button className="btn-primary" onClick={save} disabled={saving || !dirty}>
             {saving ? "กำลังบันทึก…" : "บันทึก"}
           </button>
         </div>

@@ -12,6 +12,7 @@ export default function ServicesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", price: "", duration: "60", categoryId: "" });
+  const [initialForm, setInitialForm] = useState<string>(""); // JSON snapshot when opening edit modal
   
   const [showPinModal, setShowPinModal] = useState(false);
   const [pin, setPin] = useState("");
@@ -34,14 +35,16 @@ export default function ServicesPage() {
     if (!Array.isArray(services)) return;
     const s = services.find(sv => sv.id === selectedServiceId);
     if (!s) return;
-    
-    setEditingId(s.id);
-    setForm({
+
+    const next = {
       name: s.name,
       price: s.price.toString(),
       duration: s.duration.toString(),
       categoryId: s.category.id,
-    });
+    };
+    setEditingId(s.id);
+    setForm(next);
+    setInitialForm(JSON.stringify(next));
     setShowForm(true);
   }
 
@@ -116,7 +119,7 @@ export default function ServicesPage() {
           >
             แก้ไขบริการ
           </button>
-          <button className="btn-primary" onClick={() => { setEditingId(null); setSelectedServiceId(null); setForm({ name: "", price: "", duration: "60", categoryId: "" }); setShowForm(true); }}>
+          <button className="btn-primary" onClick={() => { setEditingId(null); setSelectedServiceId(null); setForm({ name: "", price: "", duration: "60", categoryId: "" }); setInitialForm(""); setShowForm(true); }}>
             + เพิ่มบริการ
           </button>
         </div>
@@ -174,7 +177,14 @@ export default function ServicesPage() {
               </div>
             </div>
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={handleSaveClick}>บันทึก</button>
+              {(() => {
+                const filledForCreate = !editingId && !!form.name && !!form.price && !!form.categoryId;
+                const changedForEdit = !!editingId && JSON.stringify(form) !== initialForm;
+                const canSave = editingId ? changedForEdit : filledForCreate;
+                return (
+                  <button className="btn-primary" style={{ flex: 1 }} onClick={handleSaveClick} disabled={!canSave}>บันทึก</button>
+                );
+              })()}
               <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowForm(false)}>ยกเลิก</button>
             </div>
           </div>
