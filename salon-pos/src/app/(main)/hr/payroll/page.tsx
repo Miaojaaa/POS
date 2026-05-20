@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import type { CommissionMode } from "@/lib/system-config";
 
 type PayrollItem = {
   id: string;
@@ -46,6 +47,7 @@ export default function PayrollPage() {
   const [year, setYear] = useState(today.getFullYear());
   const [run, setRun] = useState<PayrollRun | null>(null);
   const [loading, setLoading] = useState(false);
+  const [commissionMode, setCommissionMode] = useState<CommissionMode>("POOL");
 
   // confirm flow
   const [showConfirmWarning, setShowConfirmWarning] = useState(false);
@@ -91,6 +93,20 @@ export default function PayrollPage() {
       clearInterval(interval);
     };
   }, [load]);
+
+  useEffect(() => {
+    const loadCfg = () => {
+      fetch("/api/system-config")
+        .then(r => r.json())
+        .then((d: { finance?: { commissionMode?: CommissionMode } }) => {
+          if (d.finance?.commissionMode) setCommissionMode(d.finance.commissionMode);
+        })
+        .catch(() => { /* keep default */ });
+    };
+    loadCfg();
+    window.addEventListener("system-config-updated", loadCfg);
+    return () => window.removeEventListener("system-config-updated", loadCfg);
+  }, []);
 
   async function openTx(item: PayrollItem) {
     setTxUser(item);
@@ -202,49 +218,64 @@ export default function PayrollPage() {
           )}
 
           <div className="card">
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
-                  <th style={{ textAlign: "left", padding: "8px 12px" }}>พนักงาน</th>
-                  <th style={{ textAlign: "center", padding: "8px 12px" }}>ตำแหน่ง</th>
-                  <th style={{ textAlign: "center", padding: "8px 12px" }}>ออร์เดอร์</th>
-                  <th style={{ textAlign: "right", padding: "8px 12px" }}>เงินเดือนพื้นฐาน</th>
-                  <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าตำแหน่ง</th>
-                  <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าคอม Pool</th>
-                  <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าคอม Retail</th>
-                  <th style={{ textAlign: "right", padding: "8px 12px" }}>รวม</th>
-                </tr>
-              </thead>
-              <tbody>
-                {run.items.length === 0 ? (
-                  <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มีพนักงาน — กรุณาเพิ่มพนักงานก่อน</td></tr>
-                ) : run.items.slice().sort((a, b) => b.totalAmount - a.totalAmount).map(item => {
-                  const allowance = item.positionAllowance || 0;
-                  const rowTotal = item.totalAmount + allowance;
-
-                  return (
-                    <tr key={item.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
-                      <td style={{ padding: "8px 12px", fontWeight: 500 }}>{item.user.name}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "center", color: "#666" }}>
-                        {item.user.role.split(",").map(r => ROLES[r] || r).join(", ")}
-                      </td>
-                      <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                        {item.orderCount > 0 ? (
-                          <button onClick={() => openTx(item)} style={{ background: "var(--beige)", border: "1px solid var(--beige-dark)", borderRadius: 6, padding: "2px 8px", cursor: "pointer", fontSize: "0.75rem" }}>
-                            {item.orderCount} งาน
-                          </button>
-                        ) : "-"}
-                      </td>
-                      <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{item.baseSalary.toLocaleString()}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "right", color: allowance > 0 ? "var(--olive)" : "#ccc" }}>฿{allowance.toLocaleString()}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: "var(--olive)" }}>฿{item.poolCommission.toLocaleString()}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: "#d97706" }}>฿{item.retailCommission.toLocaleString()}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, fontSize: "0.95rem" }}>฿{rowTotal.toLocaleString()}</td>
+            {(() => {
+              const showCommission = commissionMode !== "NONE";
+              const poolHeader = commissionMode === "PER_HEAD" ? "ค่าคอม/หัว" : "ค่าคอม Pool";
+              const colCount = showCommission ? 8 : 6;
+              return (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
+                      <th style={{ textAlign: "left", padding: "8px 12px" }}>พนักงาน</th>
+                      <th style={{ textAlign: "center", padding: "8px 12px" }}>ตำแหน่ง</th>
+                      <th style={{ textAlign: "center", padding: "8px 12px" }}>ออร์เดอร์</th>
+                      <th style={{ textAlign: "right", padding: "8px 12px" }}>เงินเดือนพื้นฐาน</th>
+                      <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าตำแหน่ง</th>
+                      {showCommission && (
+                        <>
+                          <th style={{ textAlign: "right", padding: "8px 12px" }}>{poolHeader}</th>
+                          <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าคอม Retail</th>
+                        </>
+                      )}
+                      <th style={{ textAlign: "right", padding: "8px 12px" }}>รวม</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {run.items.length === 0 ? (
+                      <tr><td colSpan={colCount} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มีพนักงาน — กรุณาเพิ่มพนักงานก่อน</td></tr>
+                    ) : run.items.slice().sort((a, b) => b.totalAmount - a.totalAmount).map(item => {
+                      const allowance = item.positionAllowance || 0;
+                      const rowTotal = item.totalAmount + allowance;
+
+                      return (
+                        <tr key={item.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                          <td style={{ padding: "8px 12px", fontWeight: 500 }}>{item.user.name}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "center", color: "#666" }}>
+                            {item.user.role.split(",").map(r => ROLES[r] || r).join(", ")}
+                          </td>
+                          <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                            {item.orderCount > 0 ? (
+                              <button onClick={() => openTx(item)} style={{ background: "var(--beige)", border: "1px solid var(--beige-dark)", borderRadius: 6, padding: "2px 8px", cursor: "pointer", fontSize: "0.75rem" }}>
+                                {item.orderCount} งาน
+                              </button>
+                            ) : "-"}
+                          </td>
+                          <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{item.baseSalary.toLocaleString()}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "right", color: allowance > 0 ? "var(--olive)" : "#ccc" }}>฿{allowance.toLocaleString()}</td>
+                          {showCommission && (
+                            <>
+                              <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: "var(--olive)" }}>฿{item.poolCommission.toLocaleString()}</td>
+                              <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: "#d97706" }}>฿{item.retailCommission.toLocaleString()}</td>
+                            </>
+                          )}
+                          <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, fontSize: "0.95rem" }}>฿{rowTotal.toLocaleString()}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              );
+            })()}
           </div>
         </>
       )}

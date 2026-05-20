@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import type { CommissionMode } from "@/lib/system-config";
 
 const roleMap: Record<string, string> = {
   MANAGER: "ผู้จัดการ",
@@ -31,6 +32,7 @@ export default function KPIPage() {
   const [kpiData, setKpiData] = useState<TechKPI[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [commissionMode, setCommissionMode] = useState<CommissionMode>("POOL");
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -84,6 +86,20 @@ export default function KPIPage() {
     return () => clearInterval(timer);
   }, [load]);
 
+  useEffect(() => {
+    const loadCfg = () => {
+      fetch("/api/system-config")
+        .then(r => r.json())
+        .then((d: { finance?: { commissionMode?: CommissionMode } }) => {
+          if (d.finance?.commissionMode) setCommissionMode(d.finance.commissionMode);
+        })
+        .catch(() => { /* keep default */ });
+    };
+    loadCfg();
+    window.addEventListener("system-config-updated", loadCfg);
+    return () => window.removeEventListener("system-config-updated", loadCfg);
+  }, []);
+
   const teamAvg = kpiData.length > 0 ? kpiData.reduce((s, k) => s + k.orderCount, 0) / kpiData.length : 0;
 
   return (
@@ -123,43 +139,51 @@ export default function KPIPage() {
       )}
 
       <div className="card">
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
-          <thead>
-            <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
-              <th style={{ textAlign: "left", padding: "8px 12px" }}>ช่าง</th>
-              <th style={{ textAlign: "left", padding: "8px 12px" }}>ตำแหน่ง</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>จำนวนออร์เดอร์</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>% เทียบทีม</th>
-              <th style={{ textAlign: "right", padding: "8px 12px" }}>รายได้ที่สร้าง</th>
-              <th style={{ textAlign: "center", padding: "8px 12px" }}>สถานะ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {kpiData.sort((a, b) => b.orderCount - a.orderCount).map(k => {
-              const isLow = k.orderCount < teamAvg * 0.5;
-              return (
-                <tr key={k.id} style={{ borderBottom: "1px solid #f5f5f5", background: isLow ? "#fff8f8" : "white" }}>
-                  <td style={{ padding: "8px 12px", fontWeight: 500 }}>{k.name}</td>
-                  <td style={{ padding: "8px 12px", color: "#666", fontSize: "0.8rem" }}>{getRoleName(k.role)}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700 }}>{k.orderCount}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    <span style={{ color: k.avgPct >= 20 ? "var(--success-green)" : "#888" }}>
-                      {k.avgPct.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{k.revenue.toLocaleString()}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                    {isLow ? (
-                      <span style={{ color: "var(--alert-red)", fontSize: "0.8rem" }}>⚠️ ต่ำกว่าเกณฑ์</span>
-                    ) : (
-                      <span style={{ color: "var(--success-green)", fontSize: "0.8rem" }}>✓ ปกติ</span>
-                    )}
-                  </td>
+        {(() => {
+          const showShare = commissionMode !== "NONE";
+          const shareHeader = commissionMode === "PER_HEAD" ? "% ส่วนแบ่งงาน" : "% เทียบทีม";
+          return (
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
+                  <th style={{ textAlign: "left", padding: "8px 12px" }}>ช่าง</th>
+                  <th style={{ textAlign: "left", padding: "8px 12px" }}>ตำแหน่ง</th>
+                  <th style={{ textAlign: "center", padding: "8px 12px" }}>จำนวนออร์เดอร์</th>
+                  {showShare && <th style={{ textAlign: "center", padding: "8px 12px" }}>{shareHeader}</th>}
+                  <th style={{ textAlign: "right", padding: "8px 12px" }}>รายได้ที่สร้าง</th>
+                  <th style={{ textAlign: "center", padding: "8px 12px" }}>สถานะ</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {kpiData.sort((a, b) => b.orderCount - a.orderCount).map(k => {
+                  const isLow = k.orderCount < teamAvg * 0.5;
+                  return (
+                    <tr key={k.id} style={{ borderBottom: "1px solid #f5f5f5", background: isLow ? "#fff8f8" : "white" }}>
+                      <td style={{ padding: "8px 12px", fontWeight: 500 }}>{k.name}</td>
+                      <td style={{ padding: "8px 12px", color: "#666", fontSize: "0.8rem" }}>{getRoleName(k.role)}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700 }}>{k.orderCount}</td>
+                      {showShare && (
+                        <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                          <span style={{ color: k.avgPct >= 20 ? "var(--success-green)" : "#888" }}>
+                            {k.avgPct.toFixed(1)}%
+                          </span>
+                        </td>
+                      )}
+                      <td style={{ padding: "8px 12px", textAlign: "right" }}>฿{k.revenue.toLocaleString()}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                        {isLow ? (
+                          <span style={{ color: "var(--alert-red)", fontSize: "0.8rem" }}>⚠️ ต่ำกว่าเกณฑ์</span>
+                        ) : (
+                          <span style={{ color: "var(--success-green)", fontSize: "0.8rem" }}>✓ ปกติ</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          );
+        })()}
         {kpiData.length === 0 && !loading && <p style={{ color: "#aaa", textAlign: "center", padding: "2rem" }}>ไม่มีข้อมูล</p>}
         {loading && !kpiData.length && <p style={{ color: "#aaa", textAlign: "center", padding: "2rem" }}>กำลังโหลด...</p>}
       </div>
