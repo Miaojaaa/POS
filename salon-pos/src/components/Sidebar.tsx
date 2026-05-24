@@ -70,7 +70,6 @@ const MENU_DEFINITIONS: Record<SidebarModuleKey, MenuItem> = {
       { href: "/settings/features", label: "ฟีเจอร์ & Sidebar" },
       { href: "/settings/services", label: "บริการ" },
       { href: "/settings/products", label: "สินค้า/เคมี" },
-      { href: "/settings/commission", label: "ค่าคอม Pool" },
     ],
   },
 };

@@ -60,6 +60,13 @@ export default function PayrollPage() {
   const [confirming, setConfirming] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  // recalc flow — Owner PIN-gated regen that resets CONFIRMED back to DRAFT so the
+  // user can sanity-check commission-mode toggles without re-confirming.
+  const [showRecalcPin, setShowRecalcPin] = useState(false);
+  const [recalcPin, setRecalcPin] = useState("");
+  const [recalcError, setRecalcError] = useState("");
+  const [recalculating, setRecalculating] = useState(false);
+
   // transaction drill-down modal
   const [txUser, setTxUser] = useState<PayrollItem | null>(null);
   const [txOrders, setTxOrders] = useState<TxOrder[]>([]);
@@ -118,6 +125,32 @@ export default function PayrollPage() {
     setTxLoading(false);
   }
 
+  async function handleRecalc() {
+    setRecalculating(true);
+    setRecalcError("");
+    try {
+      const res = await fetch("/api/payroll", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month, year, pin: recalcPin }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowRecalcPin(false);
+        setRecalcPin("");
+        setToast("✅ คำนวณใหม่สำเร็จ — กลับเป็นฉบับร่างเรียบร้อย");
+        load();
+        setTimeout(() => setToast(null), 5000);
+      } else {
+        setRecalcError(data.error || "คำนวณใหม่ไม่สำเร็จ");
+      }
+    } catch {
+      setRecalcError("การเชื่อมต่อล้มเหลว");
+    } finally {
+      setRecalculating(false);
+    }
+  }
+
   function handleStartConfirm() {
     if (!run) return;
     const techs = run.items.filter(i => i.user.role.includes("TECHNICIAN"));
@@ -174,6 +207,15 @@ export default function PayrollPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>💸 เงินเดือน &amp; ค่าคอม</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
+          {run?.status === "CONFIRMED" && (
+            <button
+              className="btn-secondary"
+              onClick={() => { setRecalcPin(""); setRecalcError(""); setShowRecalcPin(true); }}
+              title="คำนวณค่าคอมใหม่ตามรูปแบบล่าสุดในการตั้งค่า (ต้องใช้ Owner PIN)"
+            >
+              🔄 คำนวณใหม่
+            </button>
+          )}
           <select className="input" style={{ width: 120 }} value={month} onChange={e => setMonth(Number(e.target.value))}>
             {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={i + 1}>เดือน {i + 1}</option>)}
           </select>
@@ -376,11 +418,11 @@ export default function PayrollPage() {
           <div className="modal" style={{ maxWidth: 320 }}>
             <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ป้อน Owner PIN</h3>
             <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "1rem" }}>กรุณาระบุ PIN ของเจ้าของร้านเพื่ออนุมัติการจ่ายเงินเดือน</p>
-            <input 
-              type="password" 
-              className="input" 
-              placeholder="Owner PIN" 
-              value={pin} 
+            <input
+              type="password"
+              className="input"
+              placeholder="Owner PIN"
+              value={pin}
               onChange={e => setPin(e.target.value)}
               onKeyDown={e => e.key === "Enter" && confirmPayroll()}
               autoFocus
@@ -391,6 +433,35 @@ export default function PayrollPage() {
                 {confirming ? "กำลังบันทึก..." : "ยืนยันยอด"}
               </button>
               <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPinModal(false); setPin(""); setPinError(""); }}>ยกเลิก</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRecalcPin && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 360 }}>
+            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>🔄 คำนวณค่าคอมใหม่</h3>
+            <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "1rem", lineHeight: 1.5 }}>
+              จะ regen รอบเงินเดือนของเดือน {month}/{year + 543} ตามรูปแบบค่าคอมล่าสุดในหน้าตั้งค่า
+              <strong style={{ color: "#854d0e" }}> ยอดที่ยืนยันไว้จะถูกแทนที่ และสถานะกลับเป็นฉบับร่าง</strong>
+              {" "}— กดยืนยันยอดอีกครั้งเมื่อพอใจกับตัวเลขใหม่
+            </p>
+            <input
+              type="password"
+              className="input"
+              placeholder="Owner PIN"
+              value={recalcPin}
+              onChange={e => setRecalcPin(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleRecalc()}
+              autoFocus
+            />
+            {recalcError && <div style={{ color: "var(--alert-red)", fontSize: "0.8rem", marginTop: 8 }}>{recalcError}</div>}
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.5rem" }}>
+              <button className="btn-primary" style={{ flex: 1 }} disabled={recalculating || !recalcPin} onClick={handleRecalc}>
+                {recalculating ? "กำลังคำนวณ..." : "คำนวณใหม่"}
+              </button>
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowRecalcPin(false); setRecalcPin(""); setRecalcError(""); }}>ยกเลิก</button>
             </div>
           </div>
         </div>

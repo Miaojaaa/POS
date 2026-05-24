@@ -40,16 +40,18 @@ export default function KPIPage() {
       const startOfMonth = new Date(year, month - 1, 1).toISOString();
       const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999).toISOString();
 
+      // PAID-only matches what generatePayrollRun consumes, so % share + orderCount line up
+      // with the Payroll page in PER_HEAD mode.
       const [usersRes, ordersRes] = await Promise.all([
         fetch("/api/users"),
-        fetch(`/api/orders?status=DONE,PAID&startDate=${startOfMonth}&endDate=${endOfMonth}`),
+        fetch(`/api/orders?status=PAID&startDate=${startOfMonth}&endDate=${endOfMonth}`),
       ]);
 
       if (!usersRes.ok || !ordersRes.ok) {
         const usersText = await usersRes.text();
         const ordersText = await ordersRes.text();
-        console.error("Fetch failed:", { 
-          usersStatus: usersRes.status, 
+        console.error("Fetch failed:", {
+          usersStatus: usersRes.status,
           usersText,
           ordersStatus: ordersRes.status,
           ordersText
@@ -57,21 +59,55 @@ export default function KPIPage() {
         throw new Error(`Failed to fetch data: Users ${usersRes.status}, Orders ${ordersRes.status}`);
       }
 
-      const users = await usersRes.json();
-      const orders = await ordersRes.json();
+      type UserRef = { id: string; name: string; role: string };
+      type AssistantRef = { user?: { id: string } };
+      type OrderForKpi = { technicianId: string; total: number; assistants: AssistantRef[] };
 
-      const totalOrders = orders.length;
+      const users: UserRef[] = await usersRes.json();
+      const orders: OrderForKpi[] = await ordersRes.json();
+
+      // Role-keyed sets + per-role order totals — same denominator the payroll PER_HEAD
+      // formula uses, so KPI's % column is exactly the share that drives commission.
+      const techIds = new Set(
+        users.filter(u => u.role.split(",").includes("TECHNICIAN")).map(u => u.id),
+      );
+      const assistIds = new Set(
+        users.filter(u => u.role.split(",").includes("ASSISTANT")).map(u => u.id),
+      );
+      const totalTechOrders = orders.filter(o => techIds.has(o.technicianId)).length;
+      const totalAssistSlots = orders.reduce(
+        (s, o) => s + o.assistants.filter(a => a.user && assistIds.has(a.user.id)).length,
+        0,
+      );
+
       const kpi = users
-        .filter((u: { role: string }) => u.role.split(",").some(r => ["TECHNICIAN", "ASSISTANT"].includes(r)))
-        .map((u: { id: string; name: string; role: string }) => {
-          const myOrders = orders.filter((o: { technicianId: string }) => o.technicianId === u.id);
-          const revenue = myOrders.reduce((s: number, o: { total: number }) => s + o.total, 0);
-          const avgPct = totalOrders > 0 ? (myOrders.length / totalOrders) * 100 : 0;
-          return { id: u.id, name: u.name, role: u.role, orderCount: myOrders.length, revenue, avgPct };
+        .filter(u => u.role.split(",").some(r => ["TECHNICIAN", "ASSISTANT"].includes(r)))
+        .map(u => {
+          const myTechOrders = orders.filter(o => o.technicianId === u.id);
+          const myAssistOrders = orders.filter(o => o.assistants.some(a => a.user?.id === u.id));
+          const myAllOrders = orders.filter(o =>
+            o.technicianId === u.id || o.assistants.some(a => a.user?.id === u.id),
+          );
+          const revenue = myAllOrders.reduce((s, o) => s + o.total, 0);
+
+          // Tech path wins when a user has both roles — matches the if/else if in payroll.ts.
+          const roles = u.role.split(",");
+          let shareNum = 0;
+          let shareDen = 0;
+          if (roles.includes("TECHNICIAN") && totalTechOrders > 0) {
+            shareNum = myTechOrders.length;
+            shareDen = totalTechOrders;
+          } else if (roles.includes("ASSISTANT") && totalAssistSlots > 0) {
+            shareNum = myAssistOrders.length;
+            shareDen = totalAssistSlots;
+          }
+          const avgPct = shareDen > 0 ? (shareNum / shareDen) * 100 : 0;
+
+          return { id: u.id, name: u.name, role: u.role, orderCount: myAllOrders.length, revenue, avgPct };
         });
 
-      const teamAvg = kpi.reduce((s: number, k: TechKPI) => s + k.orderCount, 0) / (kpi.length || 1);
-      setKpiData(kpi.map((k: TechKPI) => ({ ...k, isLow: k.orderCount < teamAvg * 0.5 })));
+      const teamAvg = kpi.reduce((s, k) => s + k.orderCount, 0) / (kpi.length || 1);
+      setKpiData(kpi.map(k => ({ ...k, isLow: k.orderCount < teamAvg * 0.5 })));
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Failed to load KPI data", err);

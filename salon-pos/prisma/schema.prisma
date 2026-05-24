@@ -305,14 +305,6 @@ model Expense {
   createdBy   User     @relation(fields: [createdById], references: [id])
 }
 
-model CommissionPool {
-  id         String  @id @default(cuid())
-  name       String
-  role       String
-  percentage Float
-  isActive   Boolean @default(true)
-}
-
 model PayrollRun {
   id        String       @id @default(cuid())
   month     Int

@@ -1,4 +1,4 @@
-import { DEFAULT_RECEIPT_FORMATS, buildReceiptNumber, type ReceiptFormatConfig } from "@/lib/system-config";
+import { DEFAULT_RECEIPT_FORMATS, buildReceiptNumber, type ReceiptFormatConfig, type VatMode } from "@/lib/system-config";
 
 export const COMPANY = {
   name: "บริษัท ลานนาดีเซีย กรุ๊ป จำกัด",
@@ -48,6 +48,10 @@ export type ReceiptData = {
   payments: ReceiptPayment[];
   paidAt: Date;
   receiptNumber: number;
+  // Inclusive ⇒ vat is informational (embedded in the prices); exclusive ⇒ vat is
+  // added on top. Defaults to EXCLUSIVE in the renderer when omitted, matching legacy
+  // behavior for orders printed before this field existed.
+  vatMode?: VatMode;
   // For FULL: use the canonical taxInvoiceNumber from DB (locked at first issuance).
   // For SHORT: leave undefined and the builder formats from receiptNumber + paidAt.
   taxInvoiceNumber?: string | null;
@@ -75,6 +79,16 @@ export function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: F
   const shopAddress = branding?.address?.trim() || COMPANY.address;
   const shopTaxId = branding?.taxId?.trim() || COMPANY.taxId;
   const logoUrl = branding?.logoDataUrl || null;
+
+  // VAT line is rendered either "+ ภาษีมูลค่าเพิ่ม 7%" (added) or "ภาษีมูลค่าเพิ่ม 7% (รวมในราคา)"
+  // (already inside the price). For INCLUSIVE orders whose stored r.vat is 0 (legacy /
+  // mid-rollout), extract the embedded VAT from baseTotal+SC on the fly so the receipt
+  // still shows a useful number rather than ฿0.00 next to a VAT INCLUDED badge.
+  const isInclusive = r.vatMode === "INCLUSIVE";
+  const vatToShow = isInclusive && r.vat === 0
+    ? Math.round((r.baseTotal + r.serviceCharge) * 7 / 107 * 100) / 100
+    : r.vat;
+  const vatLabel = isInclusive ? "ภาษีมูลค่าเพิ่ม 7% (รวมในราคา)" : "+ ภาษีมูลค่าเพิ่ม 7%";
 
   if (mode === "SHORT") {
     const itemRows = r.items.map(it =>
@@ -127,7 +141,7 @@ ${r.customerPhone ? `<p class="sm">โทร: ${r.customerPhone}</p>` : ""}
   ${r.discountTotal > 0 ? `<tr><td>ส่วนลด</td><td class="r" style="color:#c00">-${fmt(r.discountTotal)}</td></tr>` : ""}
   <tr class="net"><td>ยอดสุทธิ (หลังหักส่วนลด)</td><td class="r">${fmt(r.baseTotal)}</td></tr>
   ${hasCC ? `<tr><td>+ Service Charge 3% (CC)</td><td class="r">${fmt(r.serviceCharge)}</td></tr>` : ""}
-  <tr><td>+ ภาษีมูลค่าเพิ่ม 7%</td><td class="r">${fmt(r.vat)}</td></tr>
+  <tr><td>${vatLabel}</td><td class="r">${fmt(vatToShow)}</td></tr>
   ${r.roundingAdjustment !== 0 ? `<tr><td>ค่าปัดเศษ</td><td class="r">${r.roundingAdjustment > 0 ? "+" : ""}${fmt(r.roundingAdjustment)}</td></tr>` : ""}
   <tr class="grand"><td>รวมทั้งสิ้น</td><td class="r">${fmt(r.finalTotal)}</td></tr>
 </table>
@@ -149,7 +163,12 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
       <td class="r">${fmt(it.total)}</td>
     </tr>`).join("");
 
-  const priceExclVat = r.baseTotal + r.serviceCharge;
+  // In EXCLUSIVE mode baseTotal is already pre-VAT, so priceExclVat = base + SC.
+  // In INCLUSIVE mode baseTotal is post-VAT, so subtract the embedded VAT to get the
+  // legitimate pre-VAT line that the tax invoice must show.
+  const priceExclVat = isInclusive
+    ? r.baseTotal + r.serviceCharge - vatToShow
+    : r.baseTotal + r.serviceCharge;
 
   const buildPage = (variant: "ORIGINAL" | "COPY") => {
     const variantLabel = variant === "ORIGINAL" ? "ต้นฉบับ / Original" : "สำเนา / Copy";
@@ -209,7 +228,7 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
           <tr class="net"><td class="label">ยอดสุทธิ (หลังหักส่วนลด)</td><td class="val">${fmt(r.baseTotal)} บาท</td></tr>
           ${hasCC ? `<tr><td class="label">+ Service Charge 3% (Credit Card)</td><td class="val">${fmt(r.serviceCharge)} บาท</td></tr>` : ""}
           <tr><td class="label">ราคาไม่รวมภาษีมูลค่าเพิ่ม</td><td class="val">${fmt(priceExclVat)} บาท</td></tr>
-          <tr><td class="label">+ ภาษีมูลค่าเพิ่ม 7%</td><td class="val">${fmt(r.vat)} บาท</td></tr>
+          <tr><td class="label">${vatLabel}</td><td class="val">${fmt(vatToShow)} บาท</td></tr>
           ${r.roundingAdjustment !== 0 ? `<tr><td class="label">ค่าปัดเศษ</td><td class="val">${r.roundingAdjustment > 0 ? "+" : ""}${fmt(r.roundingAdjustment)} บาท</td></tr>` : ""}
           <tr class="total"><td>รวมทั้งสิ้น</td><td class="val">${fmt(r.finalTotal)} บาท</td></tr>
         </table>

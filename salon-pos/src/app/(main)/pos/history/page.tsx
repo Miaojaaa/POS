@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useBranch } from "@/context/BranchContext";
 import { buildReceiptHtml, type ReceiptBranding, type ReceiptData as PrintableReceipt } from "@/lib/receipt";
-import { DEFAULT_RECEIPT_FORMATS, buildReceiptNumber, type ReceiptFormats } from "@/lib/system-config";
+import { DEFAULT_RECEIPT_FORMATS, buildReceiptNumber, type ReceiptFormats, type VatMode } from "@/lib/system-config";
 
 type Branch = { id: string; name: string };
 type OrderRow = {
@@ -56,6 +56,19 @@ const STATUS_BG: Record<string, string> = { PAID: "#D4EDDA", CANCELLED: "#F8D7DA
 const STATUS_COLOR: Record<string, string> = { PAID: "#155724", CANCELLED: "#721c24" };
 const METHOD_LABEL: Record<string, string> = { CASH: "เงินสด", TRANSFER: "โอน", CREDIT_CARD: "บัตร", WALLET: "Wallet" };
 
+// Orders don't carry a `vatMode` column, so we infer the mode at reprint time by
+// checking whether `total` already accounts for VAT or not. Returns null when the
+// numbers are too ambiguous (e.g. vat=0) and the caller falls back to current setting.
+function detectVatMode(o: { total: number; subtotal: number; retailSubtotal: number; discountAmount: number; serviceCharge: number; vat: number; roundingAdjustment: number }): VatMode | null {
+  if (!o.vat) return null;
+  const base = o.subtotal + o.retailSubtotal - o.discountAmount;
+  const exclusiveTotal = base + o.serviceCharge + o.vat + o.roundingAdjustment;
+  const inclusiveTotal = base + o.serviceCharge + o.roundingAdjustment;
+  const distExcl = Math.abs(o.total - exclusiveTotal);
+  const distIncl = Math.abs(o.total - inclusiveTotal);
+  return distIncl < distExcl ? "INCLUSIVE" : "EXCLUSIVE";
+}
+
 function formatReceiptNo(seq: number, type: string | null | undefined, completedAt: string | Date, formats: ReceiptFormats) {
   if (!type) return null;
   const d = new Date(completedAt);
@@ -70,13 +83,15 @@ export default function HistoryPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PAID" | "CANCELLED">("ALL");
   const [formats, setFormats] = useState<ReceiptFormats>(DEFAULT_RECEIPT_FORMATS);
+  const [vatMode, setVatMode] = useState<VatMode>("EXCLUSIVE");
 
   useEffect(() => {
     const refresh = () => {
       fetch("/api/system-config")
         .then(r => r.ok ? r.json() : null)
-        .then((d: { receiptFormat?: ReceiptFormats } | null) => {
+        .then((d: { receiptFormat?: ReceiptFormats; finance?: { vatMode?: VatMode } } | null) => {
           if (d?.receiptFormat) setFormats(d.receiptFormat);
+          if (d?.finance?.vatMode) setVatMode(d.finance.vatMode);
         })
         .catch(() => {});
     };
@@ -263,6 +278,9 @@ export default function HistoryPage() {
       paidAt: refDate,
       receiptNumber: saved?.receiptNumber ?? selected.receiptNumber ?? 0,
       taxInvoiceNumber: saved?.taxInvoiceNumber ?? selected.taxInvoiceNumber ?? null,
+      // Best-effort: orders don't store the mode they were checked out under, so we
+      // detect by comparing total against base+SC+VAT — close-to-base means INCLUSIVE.
+      vatMode: detectVatMode(selected) ?? vatMode,
     };
     win.document.write(buildReceiptHtml(printable, reprintMode, {
       customerName: invoiceCustomerName || selected.customerName,

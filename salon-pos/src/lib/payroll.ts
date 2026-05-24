@@ -1,5 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import type { CommissionMode } from "@/lib/system-config";
+import { DEFAULT_FINANCE, normalizePct, type CommissionMode } from "@/lib/system-config";
+
+const CFG_KEYS = [
+  "finance.commissionMode",
+  "finance.commission.pool.tech",
+  "finance.commission.pool.assist",
+  "finance.commission.perHead.tech",
+  "finance.commission.perHead.assist",
+] as const;
 
 export async function generatePayrollRun(month: number, year: number) {
   const startOfMonth = new Date(year, month - 1, 1);
@@ -15,12 +23,21 @@ export async function generatePayrollRun(month: number, year: number) {
 
   // Commission mode drives the formula — POOL = equal split per role,
   // PER_HEAD = share by individual order count, NONE = no commission at all.
-  const modeRow = await prisma.systemConfig.findUnique({ where: { key: "finance.commissionMode" } });
+  // Rates are stored per-mode under finance.commission.{pool,perHead}.{tech,assist}
+  // so the owner can use different percentages for each distribution method.
+  const cfgRows = await prisma.systemConfig.findMany({ where: { key: { in: [...CFG_KEYS] } } });
+  const cfg = new Map(cfgRows.map(r => [r.key, r.value]));
+  const modeRaw = cfg.get("finance.commissionMode");
   const commissionMode: CommissionMode =
-    modeRow?.value === "PER_HEAD" ? "PER_HEAD" :
-    modeRow?.value === "NONE" ? "NONE" : "POOL";
+    modeRaw === "PER_HEAD" ? "PER_HEAD" :
+    modeRaw === "NONE" ? "NONE" : "POOL";
+  const techPct = commissionMode === "PER_HEAD"
+    ? normalizePct(cfg.get("finance.commission.perHead.tech"), DEFAULT_FINANCE.perHeadRates.techPct)
+    : normalizePct(cfg.get("finance.commission.pool.tech"), DEFAULT_FINANCE.poolRates.techPct);
+  const assistPct = commissionMode === "PER_HEAD"
+    ? normalizePct(cfg.get("finance.commission.perHead.assist"), DEFAULT_FINANCE.perHeadRates.assistPct)
+    : normalizePct(cfg.get("finance.commission.pool.assist"), DEFAULT_FINANCE.poolRates.assistPct);
 
-  const pools = await prisma.commissionPool.findMany({ where: { isActive: true } });
   const users = await prisma.user.findMany({ where: { isActive: true } });
 
   // Source-of-truth: PAID orders only (same as ประวัติ Transaction page)
@@ -38,11 +55,8 @@ export async function generatePayrollRun(month: number, year: number) {
   const techCount = techIds.size;
   const assistCount = assistIds.size;
 
-  const techPool = pools.find(p => p.role === "TECHNICIAN");
-  const assistPool = pools.find(p => p.role === "ASSISTANT");
-
-  const techPoolAmount = techPool ? (netRevenue * techPool.percentage) / 100 : 0;
-  const assistPoolAmount = assistPool ? (netRevenue * assistPool.percentage) / 100 : 0;
+  const techPoolAmount = (netRevenue * techPct) / 100;
+  const assistPoolAmount = (netRevenue * assistPct) / 100;
 
   // PER_HEAD needs total per-role order counts to compute each person's share
   const totalTechOrders = orders.filter(o => techIds.has(o.technicianId)).length;

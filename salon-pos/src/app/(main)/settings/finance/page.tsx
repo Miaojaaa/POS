@@ -6,6 +6,7 @@ import {
   DEFAULT_RECEIPT_FORMATS,
   buildReceiptNumber,
   type CommissionMode,
+  type CommissionRates,
   type DateOrder,
   type FinanceConfig,
   type LetterPosition,
@@ -107,18 +108,33 @@ export default function FinanceSettingsPage() {
         <section>
           <h2 style={{ fontSize: "1rem", fontWeight: 600, margin: "0 0 0.5rem" }}>รูปแบบค่าคอมมิชชั่น</h2>
           <p style={{ fontSize: "0.8rem", color: "#888", margin: "0 0 0.75rem" }}>
-            ส่งผลต่อหน้า HR &amp; Payroll และการคำนวณเงินเดือน
+            ส่งผลต่อหน้า HR &amp; Payroll และการคำนวณเงินเดือน — POOL กับ PER_HEAD เก็บ % แยกกัน
           </p>
           <div style={{ display: "grid", gap: "0.5rem" }}>
-            {COMMISSION_OPTIONS.map(opt => (
-              <RadioCard
-                key={opt.value}
-                checked={config.commissionMode === opt.value}
-                title={opt.title}
-                hint={opt.hint}
-                onChange={() => setConfig(c => ({ ...c, commissionMode: opt.value }))}
-              />
-            ))}
+            {COMMISSION_OPTIONS.map(opt => {
+              const active = config.commissionMode === opt.value;
+              const rates = opt.value === "POOL" ? config.poolRates
+                : opt.value === "PER_HEAD" ? config.perHeadRates
+                : null;
+              return (
+                <RadioCard
+                  key={opt.value}
+                  checked={active}
+                  title={opt.title}
+                  hint={opt.hint}
+                  onChange={() => setConfig(c => ({ ...c, commissionMode: opt.value }))}
+                >
+                  {active && rates && (
+                    <RateEditor
+                      rates={rates}
+                      onChange={next => setConfig(c => opt.value === "POOL"
+                        ? { ...c, poolRates: next }
+                        : { ...c, perHeadRates: next })}
+                    />
+                  )}
+                </RadioCard>
+              );
+            })}
           </div>
         </section>
 
@@ -278,22 +294,75 @@ function ReceiptFormatEditor({ title, value, onChange, onReset }: {
   );
 }
 
-function RadioCard({ checked, title, hint, onChange }: { checked: boolean; title: string; hint: string; onChange: () => void }) {
+function RadioCard({ checked, title, hint, onChange, children }: { checked: boolean; title: string; hint: string; onChange: () => void; children?: React.ReactNode }) {
   return (
-    <label style={{
-      display: "flex", alignItems: "flex-start", gap: "0.75rem",
-      padding: "0.75rem 1rem",
+    <div style={{
       border: `2px solid ${checked ? "var(--olive)" : "var(--beige-dark)"}`,
-      borderRadius: 12, cursor: "pointer",
+      borderRadius: 12,
       background: checked ? "rgba(107,124,69,0.06)" : "white",
       transition: "border-color 0.15s, background 0.15s",
     }}>
-      <input type="radio" checked={checked} onChange={onChange} style={{ marginTop: 3, accentColor: "var(--olive)" }} />
-      <div>
-        <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{title}</div>
-        <div style={{ fontSize: "0.75rem", color: "#888", marginTop: 2 }}>{hint}</div>
+      <label style={{
+        display: "flex", alignItems: "flex-start", gap: "0.75rem",
+        padding: "0.75rem 1rem", cursor: "pointer",
+      }}>
+        <input type="radio" checked={checked} onChange={onChange} style={{ marginTop: 3, accentColor: "var(--olive)" }} />
+        <div>
+          <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{title}</div>
+          <div style={{ fontSize: "0.75rem", color: "#888", marginTop: 2 }}>{hint}</div>
+        </div>
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function RateEditor({ rates, onChange }: { rates: CommissionRates; onChange: (next: CommissionRates) => void }) {
+  return (
+    <div style={{
+      borderTop: "1px dashed var(--beige-dark)",
+      padding: "0.75rem 1rem 0.875rem",
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "0.75rem",
+    }}>
+      <PctField
+        label="% ของช่าง"
+        value={rates.techPct}
+        onChange={v => onChange({ ...rates, techPct: v })}
+      />
+      <PctField
+        label="% ของผู้ช่วย"
+        value={rates.assistPct}
+        onChange={v => onChange({ ...rates, assistPct: v })}
+      />
+    </div>
+  );
+}
+
+function PctField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <div>
+      <label className="label" style={{ fontSize: "0.75rem" }}>{label}</label>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <input
+          type="number"
+          min={0}
+          max={100}
+          step={0.5}
+          className="input"
+          style={{ fontFamily: "monospace", textAlign: "right" }}
+          value={value}
+          onChange={e => {
+            const raw = e.target.value;
+            if (raw === "") return onChange(0);
+            const n = Number(raw);
+            if (Number.isFinite(n)) onChange(Math.max(0, Math.min(100, n)));
+          }}
+        />
+        <span style={{ fontSize: "0.85rem", color: "#666" }}>%</span>
       </div>
-    </label>
+    </div>
   );
 }
 

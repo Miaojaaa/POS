@@ -5,8 +5,10 @@ import {
   DEFAULT_RECEIPT_FORMATS,
   DEFAULT_SIDEBAR_CONFIG,
   mergeSidebarConfig,
+  normalizePct,
   normalizeReceiptFormat,
   type CommissionMode,
+  type CommissionRates,
   type ReceiptFormatConfig,
   type ReceiptFormats,
   type SidebarModuleConfig,
@@ -16,12 +18,18 @@ import {
 const FINANCE_COMMISSION_KEY = "finance.commissionMode";
 const FINANCE_POSITION_KEY = "finance.positionAllowance";
 const FINANCE_VAT_KEY = "finance.vatMode";
+const FINANCE_POOL_TECH_KEY = "finance.commission.pool.tech";
+const FINANCE_POOL_ASSIST_KEY = "finance.commission.pool.assist";
+const FINANCE_PERHEAD_TECH_KEY = "finance.commission.perHead.tech";
+const FINANCE_PERHEAD_ASSIST_KEY = "finance.commission.perHead.assist";
 const SIDEBAR_CONFIG_KEY = "sidebar.config";
 const RECEIPT_FORMAT_SHORT_KEY = "receipt.format.short";
 const RECEIPT_FORMAT_FULL_KEY = "receipt.format.full";
 
 const ALL_KEYS = [
   FINANCE_COMMISSION_KEY, FINANCE_POSITION_KEY, FINANCE_VAT_KEY,
+  FINANCE_POOL_TECH_KEY, FINANCE_POOL_ASSIST_KEY,
+  FINANCE_PERHEAD_TECH_KEY, FINANCE_PERHEAD_ASSIST_KEY,
   SIDEBAR_CONFIG_KEY,
   RECEIPT_FORMAT_SHORT_KEY, RECEIPT_FORMAT_FULL_KEY,
 ];
@@ -48,6 +56,11 @@ function parseReceiptFormat(raw: string | undefined, fallback: ReceiptFormatConf
   }
 }
 
+function readPct(raw: string | undefined, fallback: number): number {
+  if (raw === undefined) return fallback;
+  return normalizePct(raw, fallback);
+}
+
 function readConfig(map: Record<string, string>) {
   const commissionRaw = map[FINANCE_COMMISSION_KEY];
   const commissionMode: CommissionMode = VALID_COMMISSION_MODES.includes(commissionRaw as CommissionMode)
@@ -66,6 +79,14 @@ function readConfig(map: Record<string, string>) {
         ? DEFAULT_FINANCE.positionAllowance
         : map[FINANCE_POSITION_KEY] === "true",
       vatMode,
+      poolRates: {
+        techPct: readPct(map[FINANCE_POOL_TECH_KEY], DEFAULT_FINANCE.poolRates.techPct),
+        assistPct: readPct(map[FINANCE_POOL_ASSIST_KEY], DEFAULT_FINANCE.poolRates.assistPct),
+      },
+      perHeadRates: {
+        techPct: readPct(map[FINANCE_PERHEAD_TECH_KEY], DEFAULT_FINANCE.perHeadRates.techPct),
+        assistPct: readPct(map[FINANCE_PERHEAD_ASSIST_KEY], DEFAULT_FINANCE.perHeadRates.assistPct),
+      },
     },
     sidebar: parseSidebarConfig(map[SIDEBAR_CONFIG_KEY]),
     receiptFormat: {
@@ -85,10 +106,20 @@ type PutBody = {
     commissionMode?: CommissionMode;
     positionAllowance?: boolean;
     vatMode?: VatMode;
+    poolRates?: Partial<CommissionRates>;
+    perHeadRates?: Partial<CommissionRates>;
   };
   sidebar?: SidebarModuleConfig[];
   receiptFormat?: Partial<ReceiptFormats>;
 };
+
+function upsertPct(key: string, value: number) {
+  return prisma.systemConfig.upsert({
+    where: { key },
+    update: { value: String(value) },
+    create: { key, value: String(value) },
+  });
+}
 
 export async function PUT(req: NextRequest) {
   const body = await req.json().catch(() => null) as PutBody | null;
@@ -97,7 +128,7 @@ export async function PUT(req: NextRequest) {
   const updates: Array<Promise<unknown>> = [];
 
   if (body.finance) {
-    const { commissionMode, positionAllowance, vatMode } = body.finance;
+    const { commissionMode, positionAllowance, vatMode, poolRates, perHeadRates } = body.finance;
     if (commissionMode !== undefined) {
       if (!VALID_COMMISSION_MODES.includes(commissionMode)) {
         return NextResponse.json({ error: "ค่าคอมไม่ถูกต้อง" }, { status: 400 });
@@ -127,6 +158,18 @@ export async function PUT(req: NextRequest) {
         update: { value: vatMode },
         create: { key: FINANCE_VAT_KEY, value: vatMode },
       }));
+    }
+    if (poolRates?.techPct !== undefined) {
+      updates.push(upsertPct(FINANCE_POOL_TECH_KEY, normalizePct(poolRates.techPct, DEFAULT_FINANCE.poolRates.techPct)));
+    }
+    if (poolRates?.assistPct !== undefined) {
+      updates.push(upsertPct(FINANCE_POOL_ASSIST_KEY, normalizePct(poolRates.assistPct, DEFAULT_FINANCE.poolRates.assistPct)));
+    }
+    if (perHeadRates?.techPct !== undefined) {
+      updates.push(upsertPct(FINANCE_PERHEAD_TECH_KEY, normalizePct(perHeadRates.techPct, DEFAULT_FINANCE.perHeadRates.techPct)));
+    }
+    if (perHeadRates?.assistPct !== undefined) {
+      updates.push(upsertPct(FINANCE_PERHEAD_ASSIST_KEY, normalizePct(perHeadRates.assistPct, DEFAULT_FINANCE.perHeadRates.assistPct)));
     }
   }
 

@@ -11,6 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     serviceCharge = 0,
     vat = 0,
     roundingAdjustment = 0,
+    vatMode = "EXCLUSIVE",
     ticketId = null,
     ticketDiscount = 0,
     retailItems = [],
@@ -39,7 +40,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const safeSC = round2(Number(serviceCharge) || 0);
   const safeVat = round2(Number(vat) || 0);
   const safeRounding = round2(Number(roundingAdjustment) || 0);
-  const total = round2(order.subtotal + finalRetailSubtotal - safeDiscount - safeTicketDiscount + safeSC + safeVat + safeRounding);
+  // INCLUSIVE prices already contain the VAT, so total = base + SC + rounding (no
+  // VAT added on top). safeVat is still persisted for tax reporting — it represents
+  // the embedded VAT portion of the total. EXCLUSIVE adds safeVat on top of base+SC.
+  const baseAfterDiscount = order.subtotal + finalRetailSubtotal - safeDiscount - safeTicketDiscount;
+  const total = vatMode === "INCLUSIVE"
+    ? round2(baseAfterDiscount + safeSC + safeRounding)
+    : round2(baseAfterDiscount + safeSC + safeVat + safeRounding);
 
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());

@@ -51,7 +51,10 @@
       "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);p.$queryRawUnsafe\\('\\\\''PRAGMA table_info\\(\"Order\"\\)'\\\\''\\).then\\(r=>{console.log\\(r.filter\\(c=>c.name.startsWith\\('\\\\''tax'\\\\''\\)||c.name.startsWith\\('\\\\''receipt'\\\\''\\)\\).map\\(c=>c.name+'\\\\'':'\\\\''+c.type\\).join\\('\\\\''\\\\n'\\\\''\\)\\);p.$disconnect\\(\\);}\\)')",
       "Bash(node -e \"const db=require\\('better-sqlite3'\\)\\('./dev.db'\\);const cols=db.prepare\\(\\\\\"PRAGMA table_info\\('Order'\\)\\\\\"\\).all\\(\\);console.log\\(cols.filter\\(c=>c.name.startsWith\\('tax'\\)||c.name.startsWith\\('receipt'\\)\\).map\\(c=>c.name+':'+c.type\\).join\\('\\\\n'\\)\\);db.close\\(\\);\")",
       "Bash(node -e \"const db=require\\('better-sqlite3'\\)\\('./dev.db'\\);const rows=db.prepare\\(\\\\\"SELECT status, COUNT\\(*\\) as cnt, COUNT\\(receiptNumber\\) as withNum, MIN\\(receiptNumber\\) as minNum FROM \\\\\\\\\\\\\"Order\\\\\\\\\\\\\" WHERE status='PAID' GROUP BY status\\\\\"\\).all\\(\\);console.log\\(JSON.stringify\\(rows,null,2\\)\\);db.close\\(\\);\")",
-      "Bash(node -e \"const db=require\\('better-sqlite3'\\)\\('./dev.db'\\);const rows=db.prepare\\(\\\\\"SELECT COUNT\\(*\\) cnt, COUNT\\(completedAt\\) withCompleted, COUNT\\(receiptNumber\\) withNum, COUNT\\(receiptType\\) withType FROM \\\\\\\\\\\\\"Order\\\\\\\\\\\\\" WHERE status='PAID'\\\\\"\\).all\\(\\);console.log\\(JSON.stringify\\(rows,null,2\\)\\);db.close\\(\\);\")"
+      "Bash(node -e \"const db=require\\('better-sqlite3'\\)\\('./dev.db'\\);const rows=db.prepare\\(\\\\\"SELECT COUNT\\(*\\) cnt, COUNT\\(completedAt\\) withCompleted, COUNT\\(receiptNumber\\) withNum, COUNT\\(receiptType\\) withType FROM \\\\\\\\\\\\\"Order\\\\\\\\\\\\\" WHERE status='PAID'\\\\\"\\).all\\(\\);console.log\\(JSON.stringify\\(rows,null,2\\)\\);db.close\\(\\);\")",
+      "Bash(rm -v \"salon-pos/src/app/\\(main\\)/settings/commission/page.tsx\" \"salon-pos/src/app/api/commission/route.ts\")",
+      "Bash(rmdir \"src/app/\\(main\\)/settings/commission\" \"src/app/api/commission\")",
+      "Bash(rm -v \"src/app/\\(main\\)/settings/commission/page.tsx\" \"src/app/api/commission/route.ts\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\api\\payroll\\items",

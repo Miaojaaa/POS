@@ -5,17 +5,36 @@
 export type CommissionMode = "POOL" | "PER_HEAD" | "NONE";
 export type VatMode = "EXCLUSIVE" | "INCLUSIVE";
 
+// Per-mode commission rates. Each mode tracks its own tech / assistant percentage —
+// the salon owner often wants different rates for POOL vs PER_HEAD (e.g. higher
+// per-head rate to incentivise individual sales).
+export type CommissionRates = {
+  techPct: number;
+  assistPct: number;
+};
+
 export type FinanceConfig = {
   commissionMode: CommissionMode;
   positionAllowance: boolean;
   vatMode: VatMode;
+  poolRates: CommissionRates;
+  perHeadRates: CommissionRates;
 };
 
 export const DEFAULT_FINANCE: FinanceConfig = {
   commissionMode: "POOL",
   positionAllowance: true,
   vatMode: "EXCLUSIVE",
+  poolRates: { techPct: 10, assistPct: 5 },
+  perHeadRates: { techPct: 10, assistPct: 5 },
 };
+
+// Clamp a raw user-supplied percentage to a sane range; reject NaN with a fallback.
+export function normalizePct(raw: unknown, fallback: number): number {
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(0, Math.min(100, n));
+}
 
 // Top-level sidebar modules the user can toggle / reorder. Sub-pages stay grouped under their module
 // and are not individually controllable from settings (to keep the UX simple).

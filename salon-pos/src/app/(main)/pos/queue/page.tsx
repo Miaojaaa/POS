@@ -8,6 +8,7 @@ import {
   buildReceiptNumber,
   type ReceiptFormatConfig,
   type ReceiptFormats,
+  type VatMode,
 } from "@/lib/system-config";
 
 /* ─────────────────────────── types ─────────────────────────── */
@@ -57,11 +58,12 @@ type ReceiptData = {
   discountTotal: number;   // manual discount + ticket discount
   baseTotal: number;       // after discount, before SC/VAT
   serviceCharge: number;   // 3% if CC
-  vat: number;             // 7% on (baseTotal + SC)
+  vat: number;             // 7% — added in EXCLUSIVE, embedded in INCLUSIVE
   roundingAdjustment: number; // diff to round final to whole baht (cash/wallet only)
   finalTotal: number;
   change: number;
   payments: Payment[]; paidAt: Date; receiptNumber: number;
+  vatMode?: VatMode;       // drives both math + receipt rendering
 };
 
 type FullInvoiceInfo = {
@@ -110,6 +112,14 @@ function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvo
   const shopAddress = branding?.address?.trim() || COMPANY.address;
   const shopTaxId = branding?.taxId?.trim() || COMPANY.taxId;
   const logoUrl = branding?.logoDataUrl || null;
+
+  // Mirrors src/lib/receipt.ts logic — INCLUSIVE renders an informational VAT line
+  // ("รวมในราคา") and falls back to extracting from base+SC if the stored vat is 0.
+  const isInclusive = r.vatMode === "INCLUSIVE";
+  const vatToShow = isInclusive && r.vat === 0
+    ? Math.round((r.baseTotal + r.serviceCharge) * 7 / 107 * 100) / 100
+    : r.vat;
+  const vatLabel = isInclusive ? "ภาษีมูลค่าเพิ่ม 7% (รวมในราคา)" : "+ ภาษีมูลค่าเพิ่ม 7%";
 
   // unify services + retail items
   const lineItems = [
@@ -174,7 +184,7 @@ ${r.order.customerPhone ? `<p class="sm">โทร: ${r.order.customerPhone}</p>
   ${r.discountTotal > 0 ? `<tr><td>ส่วนลด</td><td class="r" style="color:#c00">-${fmt(r.discountTotal)}</td></tr>` : ""}
   <tr class="net"><td>ยอดสุทธิ (หลังหักส่วนลด)</td><td class="r">${fmt(r.baseTotal)}</td></tr>
   ${hasCC ? `<tr><td>+ Service Charge 3% (CC)</td><td class="r">${fmt(r.serviceCharge)}</td></tr>` : ""}
-  <tr><td>+ ภาษีมูลค่าเพิ่ม 7%</td><td class="r">${fmt(r.vat)}</td></tr>
+  <tr><td>${vatLabel}</td><td class="r">${fmt(vatToShow)}</td></tr>
   ${r.roundingAdjustment !== 0 ? `<tr><td>ค่าปัดเศษ</td><td class="r">${r.roundingAdjustment > 0 ? "+" : ""}${fmt(r.roundingAdjustment)}</td></tr>` : ""}
   <tr class="grand"><td>รวมทั้งสิ้น</td><td class="r">${fmt(r.finalTotal)}</td></tr>
 </table>
@@ -196,7 +206,9 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
       <td class="r">${fmt(it.total)}</td>
     </tr>`).join("");
 
-  const priceExclVat = r.baseTotal + r.serviceCharge;
+  const priceExclVat = isInclusive
+    ? r.baseTotal + r.serviceCharge - vatToShow
+    : r.baseTotal + r.serviceCharge;
 
   const buildPage = (variant: "ORIGINAL" | "COPY") => {
     const variantLabel = variant === "ORIGINAL" ? "ต้นฉบับ / Original" : "สำเนา / Copy";
@@ -256,7 +268,7 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
           <tr class="net"><td class="label">ยอดสุทธิ (หลังหักส่วนลด)</td><td class="val">${fmt(r.baseTotal)} บาท</td></tr>
           ${hasCC ? `<tr><td class="label">+ Service Charge 3% (Credit Card)</td><td class="val">${fmt(r.serviceCharge)} บาท</td></tr>` : ""}
           <tr><td class="label">ราคาไม่รวมภาษีมูลค่าเพิ่ม</td><td class="val">${fmt(priceExclVat)} บาท</td></tr>
-          <tr><td class="label">+ ภาษีมูลค่าเพิ่ม 7%</td><td class="val">${fmt(r.vat)} บาท</td></tr>
+          <tr><td class="label">${vatLabel}</td><td class="val">${fmt(vatToShow)} บาท</td></tr>
           ${r.roundingAdjustment !== 0 ? `<tr><td class="label">ค่าปัดเศษ</td><td class="val">${r.roundingAdjustment > 0 ? "+" : ""}${fmt(r.roundingAdjustment)} บาท</td></tr>` : ""}
           <tr class="total"><td>รวมทั้งสิ้น</td><td class="val">${fmt(r.finalTotal)} บาท</td></tr>
         </table>
@@ -337,6 +349,7 @@ export default function QueuePage() {
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [branding, setBranding] = useState<Branding | null>(null);
+  const [vatMode, setVatMode] = useState<VatMode>("EXCLUSIVE");
 
   /* alert modal */
   const [alertMsg, setAlertMsg] = useState<string | null>(null);
@@ -402,7 +415,7 @@ export default function QueuePage() {
       Promise.all([
         fetch("/api/branding").then(r => r.ok ? r.json() : null).catch(() => null),
         fetch("/api/system-config").then(r => r.ok ? r.json() : null).catch(() => null),
-      ]).then(([b, sc]: [Branding | null, { receiptFormat?: ReceiptFormats } | null]) => {
+      ]).then(([b, sc]: [Branding | null, { receiptFormat?: ReceiptFormats; finance?: { vatMode?: VatMode } } | null]) => {
         setBranding({
           shopName: b?.shopName ?? null,
           logoDataUrl: b?.logoDataUrl ?? null,
@@ -410,6 +423,7 @@ export default function QueuePage() {
           taxId: b?.taxId ?? null,
           receiptFormat: sc?.receiptFormat,
         });
+        if (sc?.finance?.vatMode) setVatMode(sc.finance.vatMode);
       });
     };
     refresh();
@@ -436,9 +450,12 @@ export default function QueuePage() {
     const order: OrderDetail = await res.json();
     setCheckoutOrder(order);
     const initialBase = order.subtotal + (order.retailSubtotal || 0);
-    // TRANSFER is digital → no rounding, keep satang
-    const initialVat = Math.round(initialBase * 0.07 * 100) / 100;
-    setPayments([{ method: "TRANSFER", amount: Math.round((initialBase + initialVat) * 100) / 100 }]);
+    // TRANSFER is digital → no rounding, keep satang. INCLUSIVE prices already contain
+    // the VAT, so the upfront prefilled amount equals the base without adding 7%.
+    const initialAmount = vatMode === "INCLUSIVE"
+      ? Math.round(initialBase * 100) / 100
+      : Math.round((initialBase * 1.07) * 100) / 100;
+    setPayments([{ method: "TRANSFER", amount: initialAmount }]);
     setDiscountAmount(0);
     setDiscountPct(0);
     setApprovedById(null);
@@ -495,12 +512,14 @@ export default function QueuePage() {
 
   // Compute the final amount a single payment should be set to, given the base and method.
   // Mirrors the finalTotal logic: 2-decimal SC/VAT, round to whole baht only for CASH/WALLET.
+  // INCLUSIVE skips the VAT addition since the price already contains it.
   function computePaymentAmount(base: number, method: string): number {
     const r2 = (n: number) => Math.round(n * 100) / 100;
     const hasCC = method === "CREDIT_CARD";
     const sc = hasCC ? r2(base * 0.03) : 0;
-    const v = r2((base + sc) * 0.07);
-    const raw = r2(base + sc + v);
+    const raw = vatMode === "INCLUSIVE"
+      ? r2(base + sc)
+      : r2(base + sc + r2((base + sc) * 0.07));
     const willRound = method === "CASH" || method === "WALLET";
     return willRound ? Math.round(raw) : raw;
   }
@@ -616,8 +635,14 @@ export default function QueuePage() {
   // Thai tax rule: round at the 3rd decimal place (keep 2 decimals)
   const round2 = (n: number) => Math.round(n * 100) / 100;
   const currentServiceCharge = hasCreditCard ? round2(currentBaseTotal * 0.03) : 0;
-  const currentVat = round2((currentBaseTotal + currentServiceCharge) * 0.07);
-  const currentRawTotal = round2(currentBaseTotal + currentServiceCharge + currentVat);
+  // EXCLUSIVE: 7% added on top of base+SC. INCLUSIVE: prices already include VAT,
+  // so we extract the embedded portion (×7/107) for reporting but DON'T add it again.
+  const currentVat = vatMode === "INCLUSIVE"
+    ? round2((currentBaseTotal + currentServiceCharge) * 7 / 107)
+    : round2((currentBaseTotal + currentServiceCharge) * 0.07);
+  const currentRawTotal = vatMode === "INCLUSIVE"
+    ? round2(currentBaseTotal + currentServiceCharge)
+    : round2(currentBaseTotal + currentServiceCharge + currentVat);
   // Round to whole baht only when all payments are CASH/WALLET. Track the difference as a separate line.
   const cashOrWalletOnly = payments.length > 0 && payments.every(p => p.method === "CASH" || p.method === "WALLET");
   const currentRoundingAdjustment = cashOrWalletOnly ? round2(Math.round(currentRawTotal) - currentRawTotal) : 0;
@@ -635,6 +660,7 @@ export default function QueuePage() {
         payments: payments.filter(p => p.amount > 0),
         discountAmount, discountPct, approvedById,
         serviceCharge: currentServiceCharge, vat: currentVat, roundingAdjustment: currentRoundingAdjustment,
+        vatMode,
         ticketId: selectedTicket?.id ?? null,
         ticketDiscount,
         retailItems: retailLines.map(l => ({ retailProductId: l.retailProductId, quantity: l.quantity, price: l.price })),
@@ -670,6 +696,7 @@ export default function QueuePage() {
         payments: payments.filter(p => p.amount > 0),
         paidAt: new Date(),
         receiptNumber: data.receiptNumber ?? 1,
+        vatMode,
       };
       closeCheckout();
       setReceipt(receiptPayload);
@@ -1013,7 +1040,7 @@ export default function QueuePage() {
                     </div>
                   )}
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginTop: 2 }}>
-                    <span>VAT (7%)</span><span>฿{currentVat.toFixed(2)}</span>
+                    <span>{vatMode === "INCLUSIVE" ? "VAT (7% รวมในราคา)" : "VAT (7%)"}</span><span>฿{currentVat.toFixed(2)}</span>
                   </div>
                   {currentRoundingAdjustment !== 0 && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginTop: 2, color: "#888" }}>
@@ -1188,7 +1215,10 @@ export default function QueuePage() {
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>+ ภาษีมูลค่าเพิ่ม 7%</span><span>฿{receipt.vat.toFixed(2)}</span>
+                <span>{receipt.vatMode === "INCLUSIVE" ? "ภาษีมูลค่าเพิ่ม 7% (รวมในราคา)" : "+ ภาษีมูลค่าเพิ่ม 7%"}</span>
+                <span>฿{(receipt.vatMode === "INCLUSIVE" && receipt.vat === 0
+                  ? Math.round((receipt.baseTotal + receipt.serviceCharge) * 7 / 107 * 100) / 100
+                  : receipt.vat).toFixed(2)}</span>
               </div>
               {receipt.roundingAdjustment !== 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between", color: "#888" }}>
