@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import type { CommissionMode } from "@/lib/system-config";
+import { useBranch } from "@/context/BranchContext";
 
 type PayrollItem = {
   id: string;
@@ -13,7 +14,7 @@ type PayrollItem = {
   retailCommission: number;
   totalAmount: number;
   orderCount: number;
-  user: { name: string; role: string };
+  user: { name: string; role: string; branchId?: string };
 };
 type PayrollRun = { id: string; month: number; year: number; status: string; items: PayrollItem[] };
 
@@ -42,9 +43,11 @@ function formatReceiptNo(seq: number, completedAt: string | Date) {
 const ROLES: Record<string, string> = { OWNER: "เจ้าของ", MANAGER: "ผู้จัดการ", CASHIER: "แคชเชียร์", TECHNICIAN: "ช่าง", ASSISTANT: "ผู้ช่วย" };
 
 export default function PayrollPage() {
+  const { branches } = useBranch();
   const today = new Date();
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [year, setYear] = useState(today.getFullYear());
+  const [branchFilter, setBranchFilter] = useState<string>("ALL");
   const [run, setRun] = useState<PayrollRun | null>(null);
   const [loading, setLoading] = useState(false);
   const [commissionMode, setCommissionMode] = useState<CommissionMode>("POOL");
@@ -153,7 +156,7 @@ export default function PayrollPage() {
 
   function handleStartConfirm() {
     if (!run) return;
-    const techs = run.items.filter(i => i.user.role.includes("TECHNICIAN"));
+    const techs = filteredItems.filter(i => i.user.role.includes("TECHNICIAN"));
     const teamAvg = techs.length > 0 ? techs.reduce((s, i) => s + i.orderCount, 0) / techs.length : 0;
     const low = techs.filter(i => i.orderCount < teamAvg * 0.5);
     
@@ -192,9 +195,14 @@ export default function PayrollPage() {
     }
   }
 
-  const totalBase = run?.items ? run.items.reduce((s, i) => s + i.baseSalary, 0) : 0;
-  const totalAllowances = run?.items ? run.items.reduce((s, i) => s + (i.positionAllowance || 0), 0) : 0;
-  const totalPayroll = (run?.items ? run.items.reduce((s, i) => s + i.totalAmount, 0) : 0) + totalAllowances;
+  const filteredItems = run?.items
+    ? branchFilter === "ALL"
+      ? run.items
+      : run.items.filter(i => (i.user.branchId ?? "main") === branchFilter)
+    : [];
+  const totalBase = filteredItems.reduce((s, i) => s + i.baseSalary, 0);
+  const totalAllowances = filteredItems.reduce((s, i) => s + (i.positionAllowance || 0), 0);
+  const totalPayroll = filteredItems.reduce((s, i) => s + i.totalAmount, 0) + totalAllowances;
 
   return (
     <div style={{ position: "relative" }}>
@@ -216,6 +224,10 @@ export default function PayrollPage() {
               🔄 คำนวณใหม่
             </button>
           )}
+          <select className="input" style={{ width: 140 }} value={branchFilter} onChange={e => setBranchFilter(e.target.value)}>
+            <option value="ALL">🏢 ทุกสาขา</option>
+            {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
           <select className="input" style={{ width: 120 }} value={month} onChange={e => setMonth(Number(e.target.value))}>
             {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={i + 1}>เดือน {i + 1}</option>)}
           </select>
@@ -283,9 +295,11 @@ export default function PayrollPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {run.items.length === 0 ? (
-                      <tr><td colSpan={colCount} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มีพนักงาน — กรุณาเพิ่มพนักงานก่อน</td></tr>
-                    ) : run.items.slice().sort((a, b) => b.totalAmount - a.totalAmount).map(item => {
+                    {filteredItems.length === 0 ? (
+                      <tr><td colSpan={colCount} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>
+                        {branchFilter === "ALL" ? "ไม่มีพนักงาน — กรุณาเพิ่มพนักงานก่อน" : "ไม่มีพนักงานในสาขานี้"}
+                      </td></tr>
+                    ) : filteredItems.slice().sort((a, b) => b.totalAmount - a.totalAmount).map(item => {
                       const allowance = item.positionAllowance || 0;
                       const rowTotal = item.totalAmount + allowance;
 

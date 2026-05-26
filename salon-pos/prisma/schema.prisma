@@ -66,10 +66,19 @@ model Customer {
   serviceHistory ServiceHistory[]
 }
 
+model ServiceGroup {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  sortOrder  Int      @default(0)
+  categories ServiceCategory[]
+}
+
 model ServiceCategory {
   id       String    @id @default(cuid())
   name     String
   icon     String?
+  groupId  String?
+  group    ServiceGroup? @relation(fields: [groupId], references: [id])
   services Service[]
 }
 

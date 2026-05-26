@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import type { CommissionMode } from "@/lib/system-config";
+import { useBranch } from "@/context/BranchContext";
 
 const roleMap: Record<string, string> = {
   MANAGER: "ผู้จัดการ",
@@ -26,9 +27,11 @@ type TechKPI = {
 };
 
 export default function KPIPage() {
+  const { branches } = useBranch();
   const today = new Date();
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [year, setYear] = useState(today.getFullYear());
+  const [branchFilter, setBranchFilter] = useState<string>("ALL");
   const [kpiData, setKpiData] = useState<TechKPI[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -42,9 +45,10 @@ export default function KPIPage() {
 
       // PAID-only matches what generatePayrollRun consumes, so % share + orderCount line up
       // with the Payroll page in PER_HEAD mode.
+      const branchQS = branchFilter !== "ALL" ? `&branchId=${branchFilter}` : "";
       const [usersRes, ordersRes] = await Promise.all([
         fetch("/api/users"),
-        fetch(`/api/orders?status=PAID&startDate=${startOfMonth}&endDate=${endOfMonth}`),
+        fetch(`/api/orders?status=PAID&startDate=${startOfMonth}&endDate=${endOfMonth}${branchQS}`),
       ]);
 
       if (!usersRes.ok || !ordersRes.ok) {
@@ -59,11 +63,12 @@ export default function KPIPage() {
         throw new Error(`Failed to fetch data: Users ${usersRes.status}, Orders ${ordersRes.status}`);
       }
 
-      type UserRef = { id: string; name: string; role: string };
+      type UserRef = { id: string; name: string; role: string; branchId?: string };
       type AssistantRef = { user?: { id: string } };
       type OrderForKpi = { technicianId: string; total: number; assistants: AssistantRef[] };
 
-      const users: UserRef[] = await usersRes.json();
+      const allUsers: UserRef[] = await usersRes.json();
+      const users = branchFilter === "ALL" ? allUsers : allUsers.filter(u => (u.branchId ?? "main") === branchFilter);
       const orders: OrderForKpi[] = await ordersRes.json();
 
       // Role-keyed sets + per-role order totals — same denominator the payroll PER_HEAD
@@ -114,7 +119,7 @@ export default function KPIPage() {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [month, year]);
+  }, [month, year, branchFilter]);
 
   useEffect(() => {
     load();
@@ -159,6 +164,10 @@ export default function KPIPage() {
           >
             {loading ? "..." : "🔄"}
           </button>
+          <select className="input" style={{ width: 140 }} value={branchFilter} onChange={e => setBranchFilter(e.target.value)}>
+            <option value="ALL">🏢 ทุกสาขา</option>
+            {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
           <select className="input" style={{ width: 120 }} value={month} onChange={e => setMonth(Number(e.target.value))}>
             {Array.from({ length: 12 }, (_, i) => <option key={i + 1} value={i + 1}>เดือน {i + 1}</option>)}
           </select>

@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   let run = await prisma.payrollRun.findFirst({
     where: { month, year },
-    include: { items: { include: { user: { select: { id: true, name: true, role: true } } } } },
+    include: { items: { include: { user: { select: { id: true, name: true, role: true, branchId: true } } } } },
   });
 
   if (!run || run.status === "DRAFT") {
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       // Re-fetch so the response includes the freshly-added items with their user joins.
       run = await prisma.payrollRun.findFirst({
         where: { month, year },
-        include: { items: { include: { user: { select: { id: true, name: true, role: true } } } } },
+        include: { items: { include: { user: { select: { id: true, name: true, role: true, branchId: true } } } } },
       });
     }
   }

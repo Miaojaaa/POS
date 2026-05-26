@@ -34,6 +34,7 @@ export default function NewOrderPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [serviceGroups, setServiceGroups] = useState<{ id: string; name: string; categories: { id: string; name: string }[] }[]>([]);
 
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -73,14 +74,12 @@ export default function NewOrderPage() {
   const [priceUnlocked, setPriceUnlocked] = useState(false);
   const [pendingPriceEdit, setPendingPriceEdit] = useState<{ serviceId: string; price: number } | null>(null);
 
-  // Category tab filter — 3 high-level groups
+  // Category tab filter — groups loaded from /api/service-groups
   const [selectedTab, setSelectedTab] = useState<string>("ทั้งหมด");
-  const tabGroups: Record<string, string[]> = {
-    "💇 ผม": ["ตัด & สระไดร์", "ทรีทเมนท์", "สีผม", "ยืด ดัด"],
-    "💅 เล็บ": ["ทาสีเล็บ (มือ / เท้า)", "งานต่อ / งานถอด", "งานเทคนิค"],
-    "🧖 สปา": ["สปามือ / เท้า"],
-  };
-  const tabNames = ["ทั้งหมด", ...Object.keys(tabGroups)];
+  const tabGroups: Record<string, string[]> = Object.fromEntries(
+    serviceGroups.map(g => [g.name, g.categories.map(c => c.name)])
+  );
+  const tabNames = ["ทั้งหมด", ...serviceGroups.map(g => g.name)];
 
   useEffect(() => {
     const fetchData = async (url: string, setter: (data: any) => void) => {
@@ -101,6 +100,7 @@ export default function NewOrderPage() {
     fetchData("/api/users", setUsers);
     fetchData("/api/products", setProducts);
     fetchData("/api/retail-products", setRetailProducts);
+    fetchData("/api/service-groups", setServiceGroups);
   }, []);
 
   const lookupPhone = useCallback(async (phone: string) => {
