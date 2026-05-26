@@ -9,7 +9,10 @@
     "lint": "eslint",
     "seed": "ts-node --project tsconfig.json -e \"require('dotenv/config')\" prisma/seed.ts",
     "config:export": "ts-node --project tsconfig.json scripts/export-config.ts",
-    "config:import": "ts-node --project tsconfig.json scripts/import-config.ts"
+    "config:import": "ts-node --project tsconfig.json scripts/import-config.ts",
+    "config:check": "node scripts/check-config-sync.js",
+    "setup-hooks": "node scripts/setup-hooks.js",
+    "postinstall": "node scripts/setup-hooks.js"
   },
   "prisma": {
     "seed": "npx ts-node prisma/seed.ts"

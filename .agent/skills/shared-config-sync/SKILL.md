@@ -6,9 +6,14 @@ description: >
   developers' local SQLite databases. Use this skill whenever: (a) a dev reports
   that branding/theme/tax-ID/PIN looks wrong after a git pull, (b) a dev adds a
   new SystemConfig key, (c) anyone asks how to share settings between machines,
-  or (d) writing or modifying scripts/export-config.ts or scripts/import-config.ts.
+  (d) writing or modifying scripts/export-config.ts, scripts/import-config.ts, or
+  scripts/check-config-sync.js, (e) the pre-commit hook reports "Settings sync
+  check failed", or (f) one dev sees defaults (e.g. shop.name "Salon", theme
+  olive, tax ID 0505567002730) while another sees customised values after a pull.
   Trigger even if the user says "settings reset after pull", "logo disappeared",
-  "theme color wrong", "tax ID is default again", or "config not synced".
+  "theme color wrong", "tax ID is default again", "config not synced", "อีกฝั่ง
+  ไม่เห็น settings", "logo หาย", "ธีมเพี้ยน", "หลังจาก pull แล้วการตั้งค่าหาย".
+  Also trigger when triaging an untracked prisma/shared-config.json in git status.
 ---
 
 # Shared Config Sync — Salon POS
@@ -54,13 +59,14 @@ the same PR** whenever you add a new SystemConfig key that should be shared.
 │                                │
 │  npm run config:export         │  ← snapshots DB → prisma/shared-config.json
 │  git add prisma/shared-config.json
-│  git commit
+│  git commit                    │  ← pre-commit hook re-runs the check
 │  git push
 │                                │
 └────────────────────────────────┘
                 ↓ git pull
 ┌─ Dev B picks up changes ───────┐
 │                                │
+│  npm install                   │  ← postinstall wires up the pre-commit hook
 │  npm run config:import         │  ← applies snapshot → DB (upsert)
 │  (restart dev server)          │
 │                                │
@@ -69,7 +75,8 @@ the same PR** whenever you add a new SystemConfig key that should be shared.
 
 **The export step is manual on purpose.** A merge conflict in a JSON snapshot
 is easy to resolve; an auto-export inside a git hook would clobber a teammate's
-changes without warning.
+changes without warning. The pre-commit hook is a **safety net** (it blocks
+forgetting export); it never silently runs export for you.
 
 ---
 
@@ -103,6 +110,70 @@ changes without warning.
 
 ---
 
+## 3a. Diagnostic checklist (use this when triaging "settings didn't sync")
+
+Run these in order. Stop at the first one that's `❌` — that's the fix.
+
+1. **Is `prisma/shared-config.json` tracked in git on the pushing side?**
+   ```sh
+   git ls-files --error-unmatch salon-pos/prisma/shared-config.json
+   ```
+   Exit 0 = tracked ✅. Exit 1 = untracked ❌ → `git add` + commit + re-push.
+
+2. **Does the snapshot reflect the pushing dev's current DB?**
+   ```sh
+   cd salon-pos && npm run config:check
+   ```
+   Exit 0 = in sync ✅. Exit 1 = DB has drifted from snapshot ❌ →
+   `npm run config:export`, then stage and commit.
+
+3. **Is the pulling dev on the same commit as the push?**
+   ```sh
+   git log --oneline -1 salon-pos/prisma/shared-config.json
+   ```
+   Both devs should report the same commit hash for that file.
+
+4. **Did the pulling dev run `npm run config:import`?** The snapshot is data,
+   not code — pulling alone does nothing until import is run.
+
+5. **Did the pulling dev restart `next dev` after import?** Branding/theme is
+   cached in some client components; a restart is the cleanest reset. If still
+   stale, delete `.next/` and restart.
+
+6. **Is the missing key actually in `SYNCED_KEYS`?** Check
+   `scripts/export-config.ts` — anything not in that list is intentionally
+   per-machine and will never sync.
+
+If steps 1–6 all pass and behaviour is still wrong, the bug is in the
+application code (reading the wrong key, caching too aggressively), not in
+the sync pipeline.
+
+---
+
+## 3b. The pre-commit hook
+
+`.githooks/pre-commit` (wired up by `npm install` → `setup-hooks.js`) runs
+`scripts/check-config-sync.js` before every commit. The check:
+
+- Opens `prisma/dev.db` read-only with `better-sqlite3`
+- Reads every `SYNCED_KEYS` row from the `SystemConfig` table
+- Diffs against `prisma/shared-config.json`
+- Exits non-zero (blocking the commit) if any key has drifted
+
+The hook is silent when everything matches, prints a "drifted keys" list and
+the exact fix command when it doesn't, and skips itself if `dev.db` is absent
+(fresh clone) or the `SystemConfig` table doesn't exist yet (pre-seed).
+
+**Bypass (rare):** `git commit --no-verify` — only legitimate when the commit
+genuinely shouldn't touch settings (e.g. an emergency revert that excludes
+`shared-config.json`).
+
+**If the hook never fires:** the most common cause is `core.hooksPath` not
+being set — re-run `cd salon-pos && npm run setup-hooks`, or set it directly
+with `git config core.hooksPath .githooks` from the repo root.
+
+---
+
 ## 4. When something goes wrong
 
 | Symptom | Likely cause | Fix |
@@ -113,6 +184,9 @@ changes without warning.
 | `prisma/shared-config.json not found` | Fresh clone with no snapshot yet | Ask a teammate to `npm run config:export` + commit |
 | `Unsupported snapshot version` | Snapshot was bumped in a newer commit | Pull latest, then re-import |
 | Import says success but UI still shows old values | Next.js cached the old branding | Stop dev server, delete `.next/`, restart |
+| Pre-commit hook says "Settings sync check failed" | `dev.db` has settings that `shared-config.json` doesn't | Run `npm run config:export`, `git add` the snapshot, re-commit |
+| Hook never runs on commit | `core.hooksPath` not configured | `cd salon-pos && npm run setup-hooks` |
+| `shared-config.json` shows as `??` in `git status` | Snapshot exists but was never `git add`-ed | `git add salon-pos/prisma/shared-config.json` |
 
 ---
 
