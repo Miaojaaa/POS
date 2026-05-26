@@ -27,6 +27,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Lint with `npm run lint`. Fix warnings related to files you touched; don't drive-by-fix unrelated noise.
 - Build smoke-test with `npm run build` before raising a PR that touches build-critical files (routes, layouts, `next.config.ts`, Prisma schema).
 - For schema changes: run `npx prisma migrate dev --name <descriptive>` so a migration is committed, then re-seed if existing data is incompatible. Never edit a migration file after it has been committed and applied.
+- After **any** schema change (new model, new field, renamed relation): stop `next dev`, run `npx prisma generate`, delete `.next/`, then `npm run dev` again. Turbopack caches the Prisma client in memory and does not hot-reload it — calling a newly added `prisma.<model>` from an API route in an un-restarted server returns 500 with `Cannot read properties of undefined` even though the DB and schema are both correct.
 
 # PR instructions
 
