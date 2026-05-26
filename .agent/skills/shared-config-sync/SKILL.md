@@ -1,19 +1,28 @@
 ---
 name: shared-config-sync
 description: >
-  Workflow and rules for keeping settings-page data (logo, theme colors, tax ID,
-  shop address, receipt format, commission config, PINs) in sync between multiple
-  developers' local SQLite databases. Use this skill whenever: (a) a dev reports
-  that branding/theme/tax-ID/PIN looks wrong after a git pull, (b) a dev adds a
-  new SystemConfig key, (c) anyone asks how to share settings between machines,
-  (d) writing or modifying scripts/export-config.ts, scripts/import-config.ts, or
-  scripts/check-config-sync.js, (e) the pre-commit hook reports "Settings sync
-  check failed", or (f) one dev sees defaults (e.g. shop.name "Salon", theme
-  olive, tax ID 0505567002730) while another sees customised values after a pull.
-  Trigger even if the user says "settings reset after pull", "logo disappeared",
-  "theme color wrong", "tax ID is default again", "config not synced", "อีกฝั่ง
-  ไม่เห็น settings", "logo หาย", "ธีมเพี้ยน", "หลังจาก pull แล้วการตั้งค่าหาย".
-  Also trigger when triaging an untracked prisma/shared-config.json in git status.
+  Workflow and rules for keeping two snapshots in sync between multiple
+  developers' local SQLite databases:
+    (1) shared-config.json — SystemConfig keys (logo, theme, tax ID, shop
+        address, receipt format, commission config, PINs).
+    (2) shared-catalog.json — catalog rows (branches, users incl. password
+        hashes, service groups/categories/services, products, retail products).
+  Use this skill whenever: (a) a dev reports that branding/theme/tax-ID/PIN
+  looks wrong after a git pull, (b) a dev reports that services/staff/products
+  are missing or different after a pull, (c) a dev adds a new SystemConfig key
+  or a new row to a synced catalog table, (d) anyone asks how to share data
+  between machines, (e) writing or modifying any scripts/{export,import,check}-{config,catalog}-sync.* file,
+  (f) the pre-commit hook reports "Settings sync check failed" or "Catalog
+  sync check failed", or (g) one dev sees defaults (e.g. shop.name "Salon",
+  theme olive, tax ID 0505567002730, empty service list, missing staff)
+  while another sees customised values after a pull. Trigger even if the user
+  says: "settings reset after pull", "logo disappeared", "theme color wrong",
+  "tax ID is default again", "config not synced", "services missing", "staff
+  list empty", "can't login after pull", "อีกฝั่งไม่เห็น settings", "logo
+  หาย", "ธีมเพี้ยน", "การตั้งค่าหาย", "บริการหาย", "data บริการหาย",
+  "พนักงานหาย", "login ไม่ได้หลัง pull", "รหัส pin ไม่มี". Also trigger when
+  triaging an untracked prisma/shared-config.json or prisma/shared-catalog.json
+  in git status.
 ---
 
 # Shared Config Sync — Salon POS
@@ -29,7 +38,14 @@ This skill governs that subset.
 
 ## 1. What's in scope
 
-These rows in the `SystemConfig` table are committed via `prisma/shared-config.json`:
+Two snapshots live in `prisma/`, both committed:
+
+| Snapshot | Source tables | Whitelist defined in |
+|---|---|---|
+| `shared-config.json` | `SystemConfig` rows | `scripts/export-config.ts` → `SYNCED_KEYS` |
+| `shared-catalog.json` | `Branch`, `User`, `ServiceGroup`, `ServiceCategory`, `Service`, `Product`, `RetailProduct` | `scripts/export-catalog.ts` (full-table dump) |
+
+### 1a. `shared-config.json` — SystemConfig keys
 
 | Key | What it controls | Lives in |
 |---|---|---|
@@ -50,27 +66,50 @@ These rows in the `SystemConfig` table are committed via `prisma/shared-config.j
 The whitelist lives in `scripts/export-config.ts` → `SYNCED_KEYS`. **Update it in
 the same PR** whenever you add a new SystemConfig key that should be shared.
 
+### 1b. `shared-catalog.json` — catalog rows
+
+| Table | What it controls | Sync rule |
+|---|---|---|
+| `Branch` | Shop branches | Full upsert by `id` |
+| `User` | Staff (incl. login emails + bcrypt password hashes) | Full upsert by `id` — passwords ride along so the other dev can log in immediately |
+| `ServiceGroup` | Top-level service tabs (e.g. 💇 ผม) | Full upsert by `id` |
+| `ServiceCategory` | Sub-categories under each group | Full upsert by `id` |
+| `Service` | Individual menu items (name, price, duration) | Full upsert by `id` |
+| `Product` | Chemical/back-bar catalog (name, cost, sellable) — **no stock** | Catalog fields upsert; stock lives in `MainStock`/`SubStock` and stays per-env |
+| `RetailProduct` | Front-of-house retail SKUs | `stock` field is excluded on update — preserves per-env inventory counts; only used on create |
+
+Tables intentionally **not** in the snapshot: `Order`, `OrderItem`, `Customer`,
+`ServiceHistory`, `MainStock`, `SubStock`, `StockMovement`, `StockTransfer`,
+`PayrollRun`, `PayrollItem`. These are transactional / per-environment and
+would clobber each dev's working data.
+
+`Promise.all`-batched read in `scripts/export-catalog.ts` is the source of
+truth for which tables are dumped. Adding a new catalog-shaped model? Add it
+there and update the table above in the same PR.
+
 ---
 
 ## 2. The workflow
 
 ```
-┌─ Dev A changes setting in UI ──┐
-│                                │
-│  npm run config:export         │  ← snapshots DB → prisma/shared-config.json
-│  git add prisma/shared-config.json
-│  git commit                    │  ← pre-commit hook re-runs the check
+┌─ Dev A changes setting OR catalog in UI ──┐
+│                                           │
+│  npm run config:export    (if Settings changed)
+│  npm run catalog:export   (if Services / Users / Products changed)
+│  git add prisma/shared-config.json prisma/shared-catalog.json
+│  git commit               ← pre-commit hook runs BOTH checks
 │  git push
-│                                │
-└────────────────────────────────┘
+│                                           │
+└───────────────────────────────────────────┘
                 ↓ git pull
-┌─ Dev B picks up changes ───────┐
-│                                │
-│  npm install                   │  ← postinstall wires up the pre-commit hook
-│  npm run config:import         │  ← applies snapshot → DB (upsert)
-│  (restart dev server)          │
-│                                │
-└────────────────────────────────┘
+┌─ Dev B picks up changes ──────────────────┐
+│                                           │
+│  npm install              ← postinstall wires up the pre-commit hook
+│  npm run config:import    (settings → DB upsert)
+│  npm run catalog:import   (catalog → DB upsert; preserves RetailProduct stock)
+│  (restart dev server)                     │
+│                                           │
+└───────────────────────────────────────────┘
 ```
 
 **The export step is manual on purpose.** A merge conflict in a JSON snapshot
@@ -114,18 +153,21 @@ forgetting export); it never silently runs export for you.
 
 Run these in order. Stop at the first one that's `❌` — that's the fix.
 
-1. **Is `prisma/shared-config.json` tracked in git on the pushing side?**
+1. **Are BOTH snapshots tracked in git on the pushing side?**
    ```sh
-   git ls-files --error-unmatch salon-pos/prisma/shared-config.json
+   git ls-files --error-unmatch \
+     salon-pos/prisma/shared-config.json \
+     salon-pos/prisma/shared-catalog.json
    ```
-   Exit 0 = tracked ✅. Exit 1 = untracked ❌ → `git add` + commit + re-push.
+   Both exit 0 = tracked ✅. Exit 1 on either = untracked ❌ →
+   `git add` the missing file(s) + commit + re-push.
 
-2. **Does the snapshot reflect the pushing dev's current DB?**
+2. **Do the snapshots reflect the pushing dev's current DB?**
    ```sh
-   cd salon-pos && npm run config:check
+   cd salon-pos && npm run config:check && npm run catalog:check
    ```
-   Exit 0 = in sync ✅. Exit 1 = DB has drifted from snapshot ❌ →
-   `npm run config:export`, then stage and commit.
+   Both exit 0 = in sync ✅. Any exit 1 = drift ❌ — run the matching
+   `*:export` for the failing one, then stage + commit.
 
 3. **Is the pulling dev on the same commit as the push?**
    ```sh
@@ -133,16 +175,21 @@ Run these in order. Stop at the first one that's `❌` — that's the fix.
    ```
    Both devs should report the same commit hash for that file.
 
-4. **Did the pulling dev run `npm run config:import`?** The snapshot is data,
-   not code — pulling alone does nothing until import is run.
+4. **Did the pulling dev run BOTH imports?** Each snapshot is data, not code:
+   ```sh
+   npm run config:import   # branding, theme, PINs
+   npm run catalog:import  # services, staff, products
+   ```
+   Pulling alone does nothing until import is run.
 
 5. **Did the pulling dev restart `next dev` after import?** Branding/theme is
    cached in some client components; a restart is the cleanest reset. If still
    stale, delete `.next/` and restart.
 
-6. **Is the missing key actually in `SYNCED_KEYS`?** Check
-   `scripts/export-config.ts` — anything not in that list is intentionally
-   per-machine and will never sync.
+6. **Is the missing key actually in `SYNCED_KEYS` (config) or in the catalog
+   table list (catalog)?** Check `scripts/export-config.ts` for SystemConfig
+   keys and `scripts/export-catalog.ts` for catalog tables — anything outside
+   those lists is intentionally per-machine and will never sync.
 
 If steps 1–6 all pass and behaviour is still wrong, the bug is in the
 application code (reading the wrong key, caching too aggressively), not in
@@ -153,16 +200,22 @@ the sync pipeline.
 ## 3b. The pre-commit hook
 
 `.githooks/pre-commit` (wired up by `npm install` → `setup-hooks.js`) runs
-`scripts/check-config-sync.js` before every commit. The check:
+TWO checks before every commit. Both must pass:
 
-- Opens `prisma/dev.db` read-only with `better-sqlite3`
-- Reads every `SYNCED_KEYS` row from the `SystemConfig` table
-- Diffs against `prisma/shared-config.json`
-- Exits non-zero (blocking the commit) if any key has drifted
+- `scripts/check-config-sync.js` — opens `dev.db` read-only with
+  `better-sqlite3`, reads every `SYNCED_KEYS` row from `SystemConfig`, diffs
+  against `prisma/shared-config.json`.
+- `scripts/check-catalog-sync.js` — opens `dev.db` read-only, dumps every
+  catalog table (Branch, User, ServiceGroup, ServiceCategory, Service,
+  Product, RetailProduct) and diffs against `prisma/shared-catalog.json`.
+  Handles SQLite quirks: 0/1 ↔ boolean, `+00:00` ↔ `Z` dates, and the
+  `unitVolumeMg` ↔ `unitVolumeG` `@map` rename. Excludes `RetailProduct.stock`
+  (per-env) from the diff.
 
-The hook is silent when everything matches, prints a "drifted keys" list and
-the exact fix command when it doesn't, and skips itself if `dev.db` is absent
-(fresh clone) or the `SystemConfig` table doesn't exist yet (pre-seed).
+Both checks exit non-zero (blocking the commit) on drift and print the
+drifted rows + the exact `*:export` command to fix. They skip themselves
+silently if `dev.db` is absent (fresh clone) or the target table doesn't
+exist yet (pre-seed).
 
 **Bypass (rare):** `git commit --no-verify` — only legitimate when the commit
 genuinely shouldn't touch settings (e.g. an emergency revert that excludes
@@ -185,8 +238,11 @@ with `git config core.hooksPath .githooks` from the repo root.
 | `Unsupported snapshot version` | Snapshot was bumped in a newer commit | Pull latest, then re-import |
 | Import says success but UI still shows old values | Next.js cached the old branding | Stop dev server, delete `.next/`, restart |
 | Pre-commit hook says "Settings sync check failed" | `dev.db` has settings that `shared-config.json` doesn't | Run `npm run config:export`, `git add` the snapshot, re-commit |
+| Pre-commit hook says "Catalog sync check failed" | `dev.db` has services/users/products that `shared-catalog.json` doesn't | Run `npm run catalog:export`, `git add` the snapshot, re-commit |
+| Services missing on B / login fails on B | `shared-catalog.json` not committed or `npm run catalog:import` not run | Verify the file is committed; pulling dev runs `npm run catalog:import` then restart `next dev` |
+| RetailProduct stock counts changed after import | Should NOT happen — stock is excluded on update | If it did, check that `import-catalog.ts` still has the `stock` destructure in the upsert |
 | Hook never runs on commit | `core.hooksPath` not configured | `cd salon-pos && npm run setup-hooks` |
-| `shared-config.json` shows as `??` in `git status` | Snapshot exists but was never `git add`-ed | `git add salon-pos/prisma/shared-config.json` |
+| `shared-config.json` or `shared-catalog.json` shows as `??` in `git status` | Snapshot exists but was never `git add`-ed | `git add` the relevant file |
 
 ---
 

@@ -1,18 +1,25 @@
 #!/usr/bin/env sh
 # Salon POS pre-commit hook.
-# Blocks commits that would push stale settings to teammates.
+# Blocks commits that would push stale settings or catalog rows to teammates.
 # Bypass once with: git commit --no-verify
 
 repo_root="$(git rev-parse --show-toplevel)"
-checker="$repo_root/salon-pos/scripts/check-config-sync.js"
-
-if [ ! -f "$checker" ]; then
-  exit 0
-fi
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "[pre-commit] node not on PATH — skipping config-sync check."
+  echo "[pre-commit] node not on PATH — skipping sync checks."
   exit 0
 fi
 
-node "$checker"
+status=0
+for checker in \
+  "$repo_root/salon-pos/scripts/check-config-sync.js" \
+  "$repo_root/salon-pos/scripts/check-catalog-sync.js"
+do
+  if [ -f "$checker" ]; then
+    if ! node "$checker"; then
+      status=1
+    fi
+  fi
+done
+
+exit $status

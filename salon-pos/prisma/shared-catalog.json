@@ -1,0 +1,2914 @@
+{
+  "_version": 1,
+  "_exportedAt": "2026-05-26T03:26:03.690Z",
+  "_comment": "Edited by export-catalog.ts — do not hand-edit; re-export via `npm run catalog:export`",
+  "branches": [
+    {
+      "id": "main",
+      "name": "หนองหอย",
+      "address": "เชียงใหม่",
+      "phone": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:07:26.495Z",
+      "updatedAt": "2026-05-18T02:17:40.773Z"
+    },
+    {
+      "id": "second",
+      "name": "จริงใจ",
+      "address": "เชียงใหม่",
+      "phone": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:07:26.513Z",
+      "updatedAt": "2026-05-18T02:17:40.789Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "cmox38cdy0003bonu4rnv0mxa",
+      "name": "เจ้าของร้าน",
+      "email": "owner@salon.com",
+      "password": "$2b$10$9cN/gBVDQSQG1FdJCKWOKe1zJOohyUmoniLyfp.EeUugWtDFon19a",
+      "role": "OWNER",
+      "phone": "0891234567",
+      "baseSalary": 400000,
+      "positionAllowance": 15000,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-08T15:46:38.134Z",
+      "updatedAt": "2026-05-17T16:07:26.643Z"
+    },
+    {
+      "id": "cmox38ce60004bonueb1tk9ju",
+      "name": "ผู้จัดการ สมใจ",
+      "email": "manager@salon.com",
+      "password": "$2b$10$rm.NtlqDglU7lCAJws/F9.XYst6vH5ieHOfdHgK26wPez.FmXoffm",
+      "role": "MANAGER,TECHNICIAN",
+      "phone": "0812345678",
+      "baseSalary": 18000,
+      "positionAllowance": 8000,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-08T15:46:38.142Z",
+      "updatedAt": "2026-05-11T09:08:06.596Z"
+    },
+    {
+      "id": "cmox38cei0005bonuxas6qoqj",
+      "name": "แคชเชียร์ นงนุช",
+      "email": "cashier@salon.com",
+      "password": "$2b$10$Ebc/LRhwkCKitRUuke0RFOcYWD1Ub2MirprIeZo3X.clJLzCyIOJC",
+      "role": "CASHIER",
+      "phone": "0823456789",
+      "baseSalary": 14000,
+      "positionAllowance": 2000,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-08T15:46:38.154Z",
+      "updatedAt": "2026-05-11T09:23:07.084Z"
+    },
+    {
+      "id": "cmox38cep0006bonuhprflrzd",
+      "name": "ช่าง สมหญิง",
+      "email": "tech1@salon.com",
+      "password": "$2b$10$LY.zvgFYnR7XL9E50RjpM.DcZ7K/gKkORQaS6.Fz2jT22MXiegwne",
+      "role": "TECHNICIAN",
+      "phone": "0834567890",
+      "baseSalary": 12000,
+      "positionAllowance": 3000,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-08T15:46:38.161Z",
+      "updatedAt": "2026-05-17T16:07:26.676Z"
+    },
+    {
+      "id": "cmox38cew0007bonumx0jiooi",
+      "name": "ช่าง มณีรัตน์",
+      "email": "tech2@salon.com",
+      "password": "$2b$10$LY.zvgFYnR7XL9E50RjpM.DcZ7K/gKkORQaS6.Fz2jT22MXiegwne",
+      "role": "TECHNICIAN",
+      "phone": "0845678901",
+      "baseSalary": 12000,
+      "positionAllowance": 3000,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-08T15:46:38.168Z",
+      "updatedAt": "2026-05-17T16:07:26.717Z"
+    },
+    {
+      "id": "cmox38cf60008bonuzn72me43",
+      "name": "ผู้ช่วย สุดา",
+      "email": "assist1@salon.com",
+      "password": "$2b$10$LY.zvgFYnR7XL9E50RjpM.DcZ7K/gKkORQaS6.Fz2jT22MXiegwne",
+      "role": "ASSISTANT",
+      "phone": "0856789012",
+      "baseSalary": 9000,
+      "positionAllowance": 1500,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-08T15:46:38.178Z",
+      "updatedAt": "2026-05-11T09:27:07.076Z"
+    },
+    {
+      "id": "cmp9yxrr30003gwvdw5mp3r30",
+      "name": "ผู้จัดการ สมใจ (M)",
+      "email": "manager1@salon.com",
+      "password": "$2b$10$Ei3U4uKNcDujgzkUHm0EmOZ9nv0If48wIMjJpnrvdJPfdoqe9dMIK",
+      "role": "MANAGER",
+      "phone": null,
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:07:26.655Z",
+      "updatedAt": "2026-05-17T16:07:26.655Z"
+    },
+    {
+      "id": "cmp9yxrse0005gwvd15cyzwuw",
+      "name": "ผู้จัดการ สมศักดิ์ (S)",
+      "email": "manager2@salon.com",
+      "password": "$2b$10$Ei3U4uKNcDujgzkUHm0EmOZ9nv0If48wIMjJpnrvdJPfdoqe9dMIK",
+      "role": "MANAGER",
+      "phone": null,
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:07:26.702Z",
+      "updatedAt": "2026-05-17T16:07:26.702Z"
+    },
+    {
+      "id": "cmp9zrxhj00007ovdc1l0j0ep",
+      "name": "กอบเกียรติ์ แซ่เฉิน",
+      "email": "2sn2t12sj2sw2sn2sx2s22s92to.2sq2t32sa2rl2sj2sw2se2@gmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "TECHNICIAN",
+      "phone": "0 5335 3610",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:30:53.767Z",
+      "updatedAt": "2026-05-17T16:30:53.767Z"
+    },
+    {
+      "id": "cmp9zrxhx00017ovd8lsxov6q",
+      "name": "พัชรพร เกตุกระโทก",
+      "email": "2s02sy2s92t02sq2sy_2rr2sy2sh2se2t02sh2sy2si98@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "TECHNICIAN",
+      "phone": "0 2642 6130",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:30:53.781Z",
+      "updatedAt": "2026-05-17T16:30:53.781Z"
+    },
+    {
+      "id": "cmp9zrxil00027ovd6a09nmc3",
+      "name": "ธนาคช มนตรีกุล",
+      "email": "2sb2sj2sy2sb2s52to_2sr2si2t52s42tl2sn2rr@gmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "TECHNICIAN",
+      "phone": "08 5947 7932",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:30:53.805Z",
+      "updatedAt": "2026-05-17T16:30:53.805Z"
+    },
+    {
+      "id": "cmp9zrxiz00037ovdoilyx0fk",
+      "name": "กัญญารัตน์ แซ่หลี่",
+      "email": "2sg2sx2s72sj2sq2t42s42sy91@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "TECHNICIAN",
+      "phone": "08 2029 5597",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:30:53.819Z",
+      "updatedAt": "2026-05-17T16:30:53.819Z"
+    },
+    {
+      "id": "cmp9zrxjg00047ovdnhjuzbln",
+      "name": "นิรชา เกิดค้างพลู",
+      "email": "2s72s92t42ru2t52se2rr2sp2to54@gmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "TECHNICIAN",
+      "phone": "08 1695 8573",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:30:53.836Z",
+      "updatedAt": "2026-05-17T16:30:53.836Z"
+    },
+    {
+      "id": "cmp9zrxk300057ovdhtclcm7l",
+      "name": "กรณ์ เทพหัสดิน",
+      "email": "2sj2s32rl2sk2s5_2rr2sy2sh2ro2tl2sy2rr2se2sl2t5-2sh@yahoo.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "TECHNICIAN",
+      "phone": "06 5402 6644",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:30:53.859Z",
+      "updatedAt": "2026-05-17T16:30:53.859Z"
+    },
+    {
+      "id": "cmp9zrxki00067ovdl4nbg84b",
+      "name": "กัญจนา เกตุพิมาย",
+      "email": "2sj2sn2t02sn2sj2sj2s3.2sh2s92s52sj2t12rl2t42sl85@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "TECHNICIAN",
+      "phone": "09 3368 9666",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:30:53.874Z",
+      "updatedAt": "2026-05-17T16:30:53.874Z"
+    },
+    {
+      "id": "cmp9zrxl800077ovdgemdqr6z",
+      "name": "นิศาชล บางจันทึก",
+      "email": "2rs2t02sj2sw2se2rr2so2to_2tc2rs2t12si2sn2rl2sj2sw2@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "TECHNICIAN",
+      "phone": "08 9499 1191",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:30:53.900Z",
+      "updatedAt": "2026-05-17T16:30:53.900Z"
+    },
+    {
+      "id": "cmp9zrxlx00087ovdtnq4hk6g",
+      "name": "ศิธร มณีสีสุก",
+      "email": "2sh2sx2s72sn2sj2sj2s3_2td2rm2s92st2rl@yahoo.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "TECHNICIAN",
+      "phone": "0 2862 8901",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:30:53.925Z",
+      "updatedAt": "2026-05-17T16:30:53.925Z"
+    },
+    {
+      "id": "cmp9zrxmd00097ovdb7uy049i",
+      "name": "อรอุมา พลจรัส",
+      "email": "2rl2sn2t12si2t42s72s8.2sa2sy2rr2sq2t12sq2t42rl@yahoo.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "TECHNICIAN",
+      "phone": "0 2684 5296",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:30:53.941Z",
+      "updatedAt": "2026-05-17T16:30:53.941Z"
+    },
+    {
+      "id": "cmp9zrxmw000a7ovdb0y0b6d7",
+      "name": "สุกฤษฎิ์ เกตุจันทึก",
+      "email": "2sn2t12sj2sw2rl2sj_2sn2rr2so2to2rl2sj2sw2te2s72rl@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "ASSISTANT",
+      "phone": "06 2336 1686",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:30:53.960Z",
+      "updatedAt": "2026-05-17T16:30:53.960Z"
+    },
+    {
+      "id": "cmp9zrxna000b7ovd8mlwa5nj",
+      "name": "รุจิภา เกิดจันทึก",
+      "email": "2rl2sj2sn2t02sg2sy.2sb2sj2sy2sa2se2sl30@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "ASSISTANT",
+      "phone": "09 8488 4291",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:30:53.974Z",
+      "updatedAt": "2026-05-17T16:30:53.974Z"
+    },
+    {
+      "id": "cmp9zrxnp000c7ovdiglubz1u",
+      "name": "โสรญา มธุรส",
+      "email": "2rx2sy2s32sg2sx2s72sj.2tc2rl2s52t42sq2t12sq2t42rl5@yahoo.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "ASSISTANT",
+      "phone": "09 4338 8210",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:30:53.989Z",
+      "updatedAt": "2026-05-17T16:30:53.989Z"
+    },
+    {
+      "id": "cmp9zrxo3000d7ovdh5o8jb3p",
+      "name": "เกศศรินทร์ ณ นคร",
+      "email": "2st2t02sa2s92t02sl2st2sy2si2sy2s4_2td2rm2s92st2rl-@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "ASSISTANT",
+      "phone": "08 7384 3891",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:30:54.003Z",
+      "updatedAt": "2026-05-17T16:30:54.003Z"
+    },
+    {
+      "id": "cmp9zrxoi000e7ovdm1jt6dx6",
+      "name": "นารี นรินทรางกูร",
+      "email": "2sq2t42sj2sw.2sa2t42sj2s32so2t02sj2t0@yahoo.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "ASSISTANT",
+      "phone": "08 3454 7510",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:30:54.018Z",
+      "updatedAt": "2026-05-17T16:30:54.018Z"
+    },
+    {
+      "id": "cmp9zrxow000f7ovdc8px25xl",
+      "name": "อาดิษฐ์ แซ่เฉิน",
+      "email": "2s32sx2s02se2sl_2st2sh2sy2s52si2rl2t42sl@gmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "MANAGER",
+      "phone": "06 3746 7300",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:30:54.032Z",
+      "updatedAt": "2026-05-17T16:30:54.032Z"
+    },
+    {
+      "id": "cmp9zrxpd000g7ovdme2n8pqz",
+      "name": "ธนภัทร์ เกตุกระโทก",
+      "email": "2sg2sx2s72sj2sq2t42s42sy51@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "MANAGER",
+      "phone": "08 8623 2984",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:30:54.049Z",
+      "updatedAt": "2026-05-17T16:30:54.049Z"
+    },
+    {
+      "id": "cmp9zrxpv000h7ovduzswlsyj",
+      "name": "ชัยพล วงศ์นอก",
+      "email": "2rl2sx2rx2ru2se2sj74@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "MANAGER",
+      "phone": "08 9476 2619",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:30:54.067Z",
+      "updatedAt": "2026-05-17T16:30:54.067Z"
+    },
+    {
+      "id": "cmp9zrxqa000i7ovdn3jyj5m6",
+      "name": "สำเภา แซ่ลิ้ม",
+      "email": "2sh2sy2sh2t063@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "CONTENT_CREATOR",
+      "phone": "0 5899 9970",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "main",
+      "createdAt": "2026-05-17T16:30:54.082Z",
+      "updatedAt": "2026-05-17T16:30:54.082Z"
+    },
+    {
+      "id": "cmp9zrxqr000j7ovd5uksirfz",
+      "name": "ยารอน๊ะ เกิดค้างพลู",
+      "email": "2sb2s32s5_2st2t02s92s72te2ru2s52t0@hotmail.com",
+      "password": "$2b$10$i8bVpRR69tV.E2.PJPLTM.Rtup6ZvGrXIZrnxgE8mly32kj9tsmNm",
+      "role": "CONTENT_CREATOR",
+      "phone": "08 5949 5732",
+      "baseSalary": 0,
+      "positionAllowance": 0,
+      "isActive": true,
+      "branchId": "second",
+      "createdAt": "2026-05-17T16:30:54.099Z",
+      "updatedAt": "2026-05-17T16:30:54.099Z"
+    }
+  ],
+  "serviceGroups": [
+    {
+      "id": "grp-hair",
+      "name": "💇 ผม",
+      "sortOrder": 0
+    },
+    {
+      "id": "grp-nail",
+      "name": "💅 เล็บ",
+      "sortOrder": 1
+    },
+    {
+      "id": "grp-spa",
+      "name": "🧖 สปา",
+      "sortOrder": 2
+    }
+  ],
+  "serviceCategories": [
+    {
+      "id": "cat-hair",
+      "name": "บริการผม",
+      "icon": "scissors",
+      "groupId": "grp-hair"
+    },
+    {
+      "id": "cat-nail",
+      "name": "บริการเล็บ",
+      "icon": "nail",
+      "groupId": "grp-nail"
+    },
+    {
+      "id": "cat-spa",
+      "name": "สปา",
+      "icon": "spa",
+      "groupId": "grp-spa"
+    },
+    {
+      "id": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "name": "ทาสีเล็บ (มือ / เท้า)",
+      "icon": null,
+      "groupId": "grp-nail"
+    },
+    {
+      "id": "cmp5qg33l000eukvdqddkpnmh",
+      "name": "งานต่อ / งานถอด",
+      "icon": null,
+      "groupId": "grp-nail"
+    },
+    {
+      "id": "cmp5qg3c6000sukvddcw8ss5i",
+      "name": "งานเทคนิค",
+      "icon": null,
+      "groupId": "grp-nail"
+    },
+    {
+      "id": "cmp5qg3h90014ukvdl6895hwn",
+      "name": "สปามือ / เท้า",
+      "icon": null,
+      "groupId": "grp-spa"
+    },
+    {
+      "id": "cmp5qg3kb001aukvdoveauj85",
+      "name": "ตัด & สระไดร์",
+      "icon": null,
+      "groupId": "grp-hair"
+    },
+    {
+      "id": "cmp5qg3n8001gukvd2flvospx",
+      "name": "ทรีทเมนท์",
+      "icon": null,
+      "groupId": "grp-hair"
+    },
+    {
+      "id": "cmp5qg3vg001xukvdtgio5oe8",
+      "name": "สีผม",
+      "icon": null,
+      "groupId": "grp-hair"
+    },
+    {
+      "id": "cmp5qg3yw0025ukvdjhpxgp4w",
+      "name": "ยืด ดัด",
+      "icon": null,
+      "groupId": "grp-hair"
+    }
+  ],
+  "services": [
+    {
+      "id": "cmp5qg2x30001ukvd8em6mb3w",
+      "name": "ทาสีเจลธรรมดา มือ",
+      "price": 350,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg2xv0002ukvdr5h3sf39",
+      "name": "ทาสีเจลธรรมดา เท้า",
+      "price": 400,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg2y90003ukvd2cvzxduw",
+      "name": "ทาสีเจลพรีเมียม gellyfit / gelish มือ",
+      "price": 600,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg2z40004ukvdbpcb2hhj",
+      "name": "ทาสีเจลพรีเมียม gellyfit / gelish เท้า",
+      "price": 650,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg2zx0005ukvd6g67qx18",
+      "name": "ทาสีเจล 2 สี",
+      "price": 500,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg30d0006ukvdal6w0rpd",
+      "name": "ทาสีเจล 3 สีขึ้นไป",
+      "price": 550,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg30r0007ukvd8se6redk",
+      "name": "ทาสีลูกแก้ว",
+      "price": 450,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3180008ukvd45hnn3nq",
+      "name": "ทาสีลูกแก้ว Gellyfit",
+      "price": 850,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg31m0009ukvd1y2pfekq",
+      "name": "ทาสีไซรัป (สีสุขภาพ)",
+      "price": 450,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg320000aukvdcht0f148",
+      "name": "ทาสีแฟลช",
+      "price": 450,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg32f000bukvdwf4srb9r",
+      "name": "ทาสี กริตเตอร์",
+      "price": 450,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg32r000cukvdbcn87yqf",
+      "name": "ทาสีออมเบร / ไล่สี",
+      "price": 500,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg339000dukvdbp0psq6s",
+      "name": "สีฝังลาย",
+      "price": 750,
+      "duration": 60,
+      "categoryId": "cmp5qg2wh0000ukvdgb9hu0dw",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg34k000fukvdrbbu2aen",
+      "name": "ต่อ PVC",
+      "price": 500,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg369000gukvdy500kopq",
+      "name": "ต่อ soft gel tip",
+      "price": 650,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg371000hukvdmwzqnzq8",
+      "name": "ต่อ GEL.",
+      "price": 700,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg37f000iukvdrrdv22tn",
+      "name": "ต่อ Polygel.",
+      "price": 800,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg37u000jukvd9aerz21c",
+      "name": "ต่อ Aclyilic",
+      "price": 900,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg38g000kukvdhymes3r9",
+      "name": "ถอดสีเจล",
+      "price": 200,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg39c000lukvdx8vuw9t8",
+      "name": "ถอด PVC",
+      "price": 300,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg39p000mukvdo35sytc2",
+      "name": "ถอด / เล็บต่อ GEL",
+      "price": 350,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3a2000nukvd7dkfaib8",
+      "name": "ถอด เล็บต่อ Aclyilic",
+      "price": 350,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3ah000oukvdgmugmchh",
+      "name": "ถอดอะไหล่ นิ้วละ",
+      "price": 80,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3au000pukvdspnbv9us",
+      "name": "ซ่อม / เคลียร์หน้าเล็บ",
+      "price": 250,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3b6000qukvd80o0or19",
+      "name": "ตัดหนัง / ตัดเล็บ",
+      "price": 250,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3bo000rukvdsict4lv3",
+      "name": "ตัดหนัง / ตัดเล็บ เมมเบอร์ (ถอดฟรี)",
+      "price": 0,
+      "duration": 60,
+      "categoryId": "cmp5qg33l000eukvdqddkpnmh",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3ci000tukvd7vntgxr2",
+      "name": "งานฝังลาย",
+      "price": 90,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3cx000uukvd51owcoai",
+      "name": "งานติดอะไหล่",
+      "price": 30,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3df000vukvdrqkxe8h2",
+      "name": "งานปั้นนูน",
+      "price": 50,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3du000wukvd3ntlrg0w",
+      "name": "งานอาร์ท วาดภาพ",
+      "price": 150,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3ed000xukvd3nz47qmh",
+      "name": "เสริมหน้าเล็บ เจล",
+      "price": 250,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3ep000yukvddqqoqhp4",
+      "name": "โอเวอร์เลย์",
+      "price": 350,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3f3000zukvdtd9sx02f",
+      "name": "ขัดผง",
+      "price": 120,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3fg0010ukvd21g88sqn",
+      "name": "ขัดผงออโรร่า",
+      "price": 120,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3fy0011ukvdpofdomqw",
+      "name": "เพ้นท์ลาย",
+      "price": 90,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3gj0012ukvdudulm7ai",
+      "name": "เพ้นท์ปลาย",
+      "price": 40,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3gv0013ukvdcymoamqz",
+      "name": "ท็อปกระจก",
+      "price": 150,
+      "duration": 60,
+      "categoryId": "cmp5qg3c6000sukvddcw8ss5i",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3hk0015ukvdnx287am1",
+      "name": "สปามือ Loccitane",
+      "price": 650,
+      "duration": 60,
+      "categoryId": "cmp5qg3h90014ukvdl6895hwn",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3i30016ukvd56uv7vmf",
+      "name": "สปาเท้า Loccitane",
+      "price": 850,
+      "duration": 60,
+      "categoryId": "cmp5qg3h90014ukvdl6895hwn",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3ig0017ukvd5s2e2p82",
+      "name": "สปามือ เท้า Loccitane",
+      "price": 1299,
+      "duration": 60,
+      "categoryId": "cmp5qg3h90014ukvdl6895hwn",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3iy0018ukvdgc1iojbe",
+      "name": "พาราฟิน มือ",
+      "price": 500,
+      "duration": 60,
+      "categoryId": "cmp5qg3h90014ukvdl6895hwn",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3jo0019ukvdiggl1pk0",
+      "name": "พาราฟิน เท้า",
+      "price": 600,
+      "duration": 60,
+      "categoryId": "cmp5qg3h90014ukvdl6895hwn",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3l1001bukvdh1r34m0j",
+      "name": "Senior Hair Cut",
+      "price": 1000,
+      "duration": 60,
+      "categoryId": "cmp5qg3kb001aukvdoveauj85",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3lk001cukvdfpdjpiar",
+      "name": "ตัดผมหญิง",
+      "price": 650,
+      "duration": 60,
+      "categoryId": "cmp5qg3kb001aukvdoveauj85",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3ly001dukvd1zzn3rxs",
+      "name": "ตัดผมชาย",
+      "price": 400,
+      "duration": 60,
+      "categoryId": "cmp5qg3kb001aukvdoveauj85",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3mb001eukvdt35d8z2a",
+      "name": "สระไดร์หญิง",
+      "price": 400,
+      "duration": 60,
+      "categoryId": "cmp5qg3kb001aukvdoveauj85",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3mw001fukvdjuw335qd",
+      "name": "สระไดร์ชาย",
+      "price": 300,
+      "duration": 60,
+      "categoryId": "cmp5qg3kb001aukvdoveauj85",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3nm001hukvdmb6oovul",
+      "name": "L - ทรีทเมนท์หนังศรีษะ",
+      "price": 1500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3ny001iukvdugv4kz1m",
+      "name": "L - ซีรีย์เอ็กซ์เพิร์ททรีทเมนท์",
+      "price": 1500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3od001jukvdqq01k5ju",
+      "name": "L - โมเลคกูล่าอาร์มทรีทเมนท์",
+      "price": 2500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3ou001kukvdkbtev3cx",
+      "name": "L - เมทัลดีเอ็กซ์ทรีทเมนท์",
+      "price": 2500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3p7001lukvdjd2zniqu",
+      "name": "มิลค์เชคเมคมายเดย์",
+      "price": 2000,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3pl001mukvd737l5ckh",
+      "name": "ดีพเลเยอร์",
+      "price": 2500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3q4001nukvd3afbmfdk",
+      "name": "ทรีทเมนท์รักษาพันธะแกนผม",
+      "price": 2000,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3qh001oukvdylcbo30u",
+      "name": "F - คัลเลอร์โปรเทสซ์",
+      "price": 3500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3r7001pukvde8vt4ucw",
+      "name": "F - เพียวริฟิกาโปร",
+      "price": 3500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3ro001qukvds8arepah",
+      "name": "F - โฟรเทค",
+      "price": 3500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3sf001rukvdwg5htroq",
+      "name": "K - พรีเมียร์",
+      "price": 3500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3sv001sukvddgyeyf7j",
+      "name": "K - เธอราพิส",
+      "price": 3500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3t9001tukvdc1buefr7",
+      "name": "K - ฟูซิโอโดล์",
+      "price": 3500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3tv001uukvdtvuoh9zg",
+      "name": "K - ทรีทเมนท์",
+      "price": 3000,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3ua001vukvd3oog28j9",
+      "name": "DD วีแกนเคราติน",
+      "price": 4000,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3us001wukvdf3bs2ks5",
+      "name": "มิลค์เชคเคเรล์เพคเคราติน",
+      "price": 4500,
+      "duration": 60,
+      "categoryId": "cmp5qg3n8001gukvd2flvospx",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3vt001yukvdty0tada6",
+      "name": "ทำสีผม",
+      "price": 3000,
+      "duration": 60,
+      "categoryId": "cmp5qg3vg001xukvdtgio5oe8",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3wa001zukvdrybwr53x",
+      "name": "เติมโคน",
+      "price": 2500,
+      "duration": 60,
+      "categoryId": "cmp5qg3vg001xukvdtgio5oe8",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3wx0020ukvd8gph4y37",
+      "name": "เติมประกายสีผม",
+      "price": 2000,
+      "duration": 60,
+      "categoryId": "cmp5qg3vg001xukvdtgio5oe8",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3xc0021ukvdljds16ki",
+      "name": "ฟอกสีผม",
+      "price": 3000,
+      "duration": 60,
+      "categoryId": "cmp5qg3vg001xukvdtgio5oe8",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3xt0022ukvdu51y9bdn",
+      "name": "ล้างประกายสีผม",
+      "price": 3000,
+      "duration": 60,
+      "categoryId": "cmp5qg3vg001xukvdtgio5oe8",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3y80023ukvd3fxjjs1e",
+      "name": "ทำไฮไลท์สีผม",
+      "price": 3000,
+      "duration": 60,
+      "categoryId": "cmp5qg3vg001xukvdtgio5oe8",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3yk0024ukvdttperrnt",
+      "name": "บาลาอาจ",
+      "price": 8000,
+      "duration": 60,
+      "categoryId": "cmp5qg3vg001xukvdtgio5oe8",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3zb0026ukvdqsp56wp4",
+      "name": "ดัดเย็น",
+      "price": 3000,
+      "duration": 60,
+      "categoryId": "cmp5qg3yw0025ukvdjhpxgp4w",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg3zs0027ukvd2yfhalpw",
+      "name": "ดัดดิจิตอล",
+      "price": 3000,
+      "duration": 60,
+      "categoryId": "cmp5qg3yw0025ukvdjhpxgp4w",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg4070028ukvdr3sn2bj4",
+      "name": "ยืดผม",
+      "price": 3000,
+      "duration": 60,
+      "categoryId": "cmp5qg3yw0025ukvdjhpxgp4w",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg40p0029ukvdtr34tvpz",
+      "name": "ดัดยกโคนผม",
+      "price": 1000,
+      "duration": 60,
+      "categoryId": "cmp5qg3yw0025ukvdjhpxgp4w",
+      "isActive": true
+    },
+    {
+      "id": "cmp5qg414002aukvdkascdbjd",
+      "name": "ดาวน์เพิร์มลดการชี้ฟู",
+      "price": 1000,
+      "duration": 60,
+      "categoryId": "cmp5qg3yw0025ukvdjhpxgp4w",
+      "isActive": true
+    },
+    {
+      "id": "svc-blowdry",
+      "name": "เป่าผม",
+      "price": 200,
+      "duration": 30,
+      "categoryId": "cat-hair",
+      "isActive": true
+    },
+    {
+      "id": "svc-color",
+      "name": "ทำสี/ย้อมผม",
+      "price": 1200,
+      "duration": 120,
+      "categoryId": "cat-hair",
+      "isActive": true
+    },
+    {
+      "id": "svc-cut",
+      "name": "ตัดผม",
+      "price": 250,
+      "duration": 45,
+      "categoryId": "cat-hair",
+      "isActive": true
+    },
+    {
+      "id": "svc-gel",
+      "name": "ต่อเล็บเจล",
+      "price": 800,
+      "duration": 90,
+      "categoryId": "cat-nail",
+      "isActive": true
+    },
+    {
+      "id": "svc-nail-mani",
+      "name": "ทำเล็บมือ",
+      "price": 400,
+      "duration": 60,
+      "categoryId": "cat-nail",
+      "isActive": true
+    },
+    {
+      "id": "svc-nail-pedi",
+      "name": "ทำเล็บเท้า",
+      "price": 500,
+      "duration": 75,
+      "categoryId": "cat-nail",
+      "isActive": true
+    },
+    {
+      "id": "svc-perm",
+      "name": "ดัดผม",
+      "price": 1500,
+      "duration": 150,
+      "categoryId": "cat-hair",
+      "isActive": true
+    },
+    {
+      "id": "svc-premium",
+      "name": "ทำสี Premium",
+      "price": 8000,
+      "duration": 60,
+      "categoryId": "cat-hair",
+      "isActive": true
+    },
+    {
+      "id": "svc-spa-foot",
+      "name": "สปาเท้า",
+      "price": 450,
+      "duration": 60,
+      "categoryId": "cat-spa",
+      "isActive": true
+    },
+    {
+      "id": "svc-spa-head",
+      "name": "สปาหัว",
+      "price": 350,
+      "duration": 45,
+      "categoryId": "cat-spa",
+      "isActive": true
+    },
+    {
+      "id": "svc-treat",
+      "name": "สปาผม",
+      "price": 600,
+      "duration": 60,
+      "categoryId": "cat-hair",
+      "isActive": true
+    }
+  ],
+  "products": [
+    {
+      "id": "cmp9zrxrq000k7ovdqwlb2xuc",
+      "name": "เคมี Sleek Ceramic Shirt",
+      "unitVolumeG": 1000,
+      "costPerUnit": 458,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.134Z"
+    },
+    {
+      "id": "cmp9zrxs4000o7ovdwki6uq3n",
+      "name": "เคมี Fresh Plastic Sausages",
+      "unitVolumeG": 1000,
+      "costPerUnit": 681,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.148Z"
+    },
+    {
+      "id": "cmp9zrxsm000s7ovdyva24gew",
+      "name": "เคมี Electronic Metal Gloves",
+      "unitVolumeG": 1000,
+      "costPerUnit": 897,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.167Z"
+    },
+    {
+      "id": "cmp9zrxt0000w7ovdccv0c0b5",
+      "name": "เคมี Modern Bamboo Bacon",
+      "unitVolumeG": 1000,
+      "costPerUnit": 501,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.180Z"
+    },
+    {
+      "id": "cmp9zrxtp00107ovdvcst71jl",
+      "name": "เคมี Recycled Metal Table",
+      "unitVolumeG": 1000,
+      "costPerUnit": 830,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.205Z"
+    },
+    {
+      "id": "cmp9zrxua00147ovd3lqibvut",
+      "name": "เคมี Incredible Bronze Mouse",
+      "unitVolumeG": 1000,
+      "costPerUnit": 715,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.226Z"
+    },
+    {
+      "id": "cmp9zrxuz00187ovdl1caady4",
+      "name": "เคมี Refined Rubber Pants",
+      "unitVolumeG": 1000,
+      "costPerUnit": 109,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.251Z"
+    },
+    {
+      "id": "cmp9zrxvs001c7ovdjs7e4o3d",
+      "name": "เคมี Fresh Bronze Chips",
+      "unitVolumeG": 1000,
+      "costPerUnit": 113,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.280Z"
+    },
+    {
+      "id": "cmp9zrxwa001g7ovd5rwu57ex",
+      "name": "เคมี Tasty Concrete Pants",
+      "unitVolumeG": 1000,
+      "costPerUnit": 908,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.298Z"
+    },
+    {
+      "id": "cmp9zrxww001k7ovdd4x25mek",
+      "name": "เคมี Tasty Bamboo Tuna",
+      "unitVolumeG": 1000,
+      "costPerUnit": 117,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.320Z"
+    },
+    {
+      "id": "cmp9zrxxa001o7ovdttz9ybsw",
+      "name": "เคมี Oriental Marble Soap",
+      "unitVolumeG": 1000,
+      "costPerUnit": 718,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.334Z"
+    },
+    {
+      "id": "cmp9zrxy1001s7ovdgz6i22hq",
+      "name": "เคมี Modern Bronze Fish",
+      "unitVolumeG": 1000,
+      "costPerUnit": 901,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.361Z"
+    },
+    {
+      "id": "cmp9zrxyi001w7ovdcow8i6v5",
+      "name": "เคมี Awesome Rubber Keyboard",
+      "unitVolumeG": 1000,
+      "costPerUnit": 550,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.378Z"
+    },
+    {
+      "id": "cmp9zrxz400207ovdvwacd32u",
+      "name": "เคมี Awesome Granite Shirt",
+      "unitVolumeG": 1000,
+      "costPerUnit": 975,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.400Z"
+    },
+    {
+      "id": "cmp9zrxzj00247ovd7a4qpac5",
+      "name": "เคมี Luxurious Concrete Bacon",
+      "unitVolumeG": 1000,
+      "costPerUnit": 475,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.415Z"
+    },
+    {
+      "id": "cmp9zrxzz00287ovd2xkjwyoc",
+      "name": "เคมี Practical Aluminum Towels",
+      "unitVolumeG": 1000,
+      "costPerUnit": 964,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.431Z"
+    },
+    {
+      "id": "cmp9zry0c002c7ovdgh6hn8hz",
+      "name": "เคมี Modern Silk Bacon",
+      "unitVolumeG": 1000,
+      "costPerUnit": 258,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.444Z"
+    },
+    {
+      "id": "cmp9zry0w002g7ovdn4hyx997",
+      "name": "เคมี Intelligent Marble Fish",
+      "unitVolumeG": 1000,
+      "costPerUnit": 949,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.464Z"
+    },
+    {
+      "id": "cmp9zry1f002k7ovd1fo8pcok",
+      "name": "เคมี Fresh Wooden Bike",
+      "unitVolumeG": 1000,
+      "costPerUnit": 380,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.483Z"
+    },
+    {
+      "id": "cmp9zry20002o7ovd47nj6geo",
+      "name": "เคมี Generic Concrete Chips",
+      "unitVolumeG": 1000,
+      "costPerUnit": 946,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.504Z"
+    },
+    {
+      "id": "cmp9zry2k002s7ovdnehsf7vi",
+      "name": "เคมี Elegant Concrete Car",
+      "unitVolumeG": 1000,
+      "costPerUnit": 863,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.524Z"
+    },
+    {
+      "id": "cmp9zry2x002w7ovds16rtjby",
+      "name": "เคมี Generic Concrete Car",
+      "unitVolumeG": 1000,
+      "costPerUnit": 728,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.537Z"
+    },
+    {
+      "id": "cmp9zry3l00307ovdd5qna1sp",
+      "name": "เคมี Elegant Ceramic Chicken",
+      "unitVolumeG": 1000,
+      "costPerUnit": 379,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.561Z"
+    },
+    {
+      "id": "cmp9zry3z00347ovdefp6msqx",
+      "name": "เคมี Generic Silk Tuna",
+      "unitVolumeG": 1000,
+      "costPerUnit": 707,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.575Z"
+    },
+    {
+      "id": "cmp9zry4k00387ovdiuxn2l6m",
+      "name": "เคมี Tasty Aluminum Gloves",
+      "unitVolumeG": 1000,
+      "costPerUnit": 417,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.596Z"
+    },
+    {
+      "id": "cmp9zry4x003c7ovdxxajq0tz",
+      "name": "เคมี Fantastic Bronze Chair",
+      "unitVolumeG": 1000,
+      "costPerUnit": 906,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.609Z"
+    },
+    {
+      "id": "cmp9zry5l003g7ovd9k74iqi3",
+      "name": "เคมี Elegant Granite Soap",
+      "unitVolumeG": 1000,
+      "costPerUnit": 112,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.633Z"
+    },
+    {
+      "id": "cmp9zry67003k7ovd5vqqgzg4",
+      "name": "เคมี Handmade Bronze Salad",
+      "unitVolumeG": 1000,
+      "costPerUnit": 557,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.655Z"
+    },
+    {
+      "id": "cmp9zry6w003o7ovdvfo1nmk5",
+      "name": "เคมี Fantastic Cotton Shirt",
+      "unitVolumeG": 1000,
+      "costPerUnit": 783,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.680Z"
+    },
+    {
+      "id": "cmp9zry7d003s7ovd3dw8p4ih",
+      "name": "เคมี Tasty Bamboo Pants",
+      "unitVolumeG": 1000,
+      "costPerUnit": 786,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.697Z"
+    },
+    {
+      "id": "cmp9zry7t003w7ovdn9a9f7on",
+      "name": "เคมี Handmade Cotton Bacon",
+      "unitVolumeG": 1000,
+      "costPerUnit": 811,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.713Z"
+    },
+    {
+      "id": "cmp9zry8b00407ovdh7q2ux6b",
+      "name": "เคมี Fresh Cotton Fish",
+      "unitVolumeG": 1000,
+      "costPerUnit": 504,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.731Z"
+    },
+    {
+      "id": "cmp9zry8n00447ovd6n62mozj",
+      "name": "เคมี Soft Aluminum Keyboard",
+      "unitVolumeG": 1000,
+      "costPerUnit": 808,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.743Z"
+    },
+    {
+      "id": "cmp9zry9000487ovd9su57pe6",
+      "name": "เคมี Practical Granite Table",
+      "unitVolumeG": 1000,
+      "costPerUnit": 536,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.756Z"
+    },
+    {
+      "id": "cmp9zry9l004c7ovdro31zvsm",
+      "name": "เคมี Ergonomic Bamboo Chips",
+      "unitVolumeG": 1000,
+      "costPerUnit": 438,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.777Z"
+    },
+    {
+      "id": "cmp9zryak004g7ovdg8c0wuwl",
+      "name": "เคมี Frozen Metal Fish",
+      "unitVolumeG": 1000,
+      "costPerUnit": 173,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.812Z"
+    },
+    {
+      "id": "cmp9zryb2004k7ovdnjten506",
+      "name": "เคมี Electronic Marble Tuna",
+      "unitVolumeG": 1000,
+      "costPerUnit": 615,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.830Z"
+    },
+    {
+      "id": "cmp9zrybf004o7ovd07bck0oq",
+      "name": "เคมี Tasty Concrete Fish",
+      "unitVolumeG": 1000,
+      "costPerUnit": 209,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.843Z"
+    },
+    {
+      "id": "cmp9zryc1004s7ovdpwob5btr",
+      "name": "เคมี Sleek Silk Towels",
+      "unitVolumeG": 1000,
+      "costPerUnit": 262,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.865Z"
+    },
+    {
+      "id": "cmp9zryci004w7ovdkygmtazb",
+      "name": "เคมี Small Bamboo Bacon",
+      "unitVolumeG": 1000,
+      "costPerUnit": 913,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.882Z"
+    },
+    {
+      "id": "cmp9zrycz00507ovdcw8lqf8m",
+      "name": "เคมี Refined Gold Keyboard",
+      "unitVolumeG": 1000,
+      "costPerUnit": 389,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.899Z"
+    },
+    {
+      "id": "cmp9zrydj00547ovdn5n7l7y6",
+      "name": "เคมี Modern Metal Shirt",
+      "unitVolumeG": 1000,
+      "costPerUnit": 396,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.919Z"
+    },
+    {
+      "id": "cmp9zrydy00587ovdwzfymsla",
+      "name": "เคมี Electronic Bronze Tuna",
+      "unitVolumeG": 1000,
+      "costPerUnit": 262,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.934Z"
+    },
+    {
+      "id": "cmp9zryek005c7ovdb8hby2lq",
+      "name": "เคมี Ergonomic Gold Pants",
+      "unitVolumeG": 1000,
+      "costPerUnit": 972,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.956Z"
+    },
+    {
+      "id": "cmp9zryex005g7ovdw71ahgim",
+      "name": "เคมี Licensed Wooden Cheese",
+      "unitVolumeG": 1000,
+      "costPerUnit": 773,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.969Z"
+    },
+    {
+      "id": "cmp9zryff005k7ovdwjjvp42h",
+      "name": "เคมี Generic Wooden Mouse",
+      "unitVolumeG": 1000,
+      "costPerUnit": 978,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:54.987Z"
+    },
+    {
+      "id": "cmp9zryfs005o7ovd6qw8gpks",
+      "name": "เคมี Refined Metal Tuna",
+      "unitVolumeG": 1000,
+      "costPerUnit": 910,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.000Z"
+    },
+    {
+      "id": "cmp9zryg7005s7ovd4843cl1l",
+      "name": "เคมี Sleek Bamboo Chips",
+      "unitVolumeG": 1000,
+      "costPerUnit": 589,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.015Z"
+    },
+    {
+      "id": "cmp9zrygq005w7ovdpt4nq6ew",
+      "name": "เคมี Oriental Aluminum Soap",
+      "unitVolumeG": 1000,
+      "costPerUnit": 277,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.034Z"
+    },
+    {
+      "id": "cmp9zryh600607ovdxkt2xdbg",
+      "name": "เคมี Practical Rubber Chips",
+      "unitVolumeG": 1000,
+      "costPerUnit": 359,
+      "reorderPoint": 0,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.050Z"
+    },
+    {
+      "id": "prod-color-a",
+      "name": "ครีมเปลี่ยนสี Brand A",
+      "unitVolumeG": 500,
+      "costPerUnit": 850,
+      "reorderPoint": 1000,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-08T15:46:38.307Z"
+    },
+    {
+      "id": "prod-color-b",
+      "name": "ครีมเปลี่ยนสี Brand B",
+      "unitVolumeG": 500,
+      "costPerUnit": 750,
+      "reorderPoint": 500,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-08T15:46:38.337Z"
+    },
+    {
+      "id": "prod-developer",
+      "name": "น้ำยาออกซิเดนท์ 6%",
+      "unitVolumeG": 1000,
+      "costPerUnit": 300,
+      "reorderPoint": 2000,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-08T15:46:38.363Z"
+    },
+    {
+      "id": "prod-perm-sol",
+      "name": "น้ำยาดัดผม",
+      "unitVolumeG": 400,
+      "costPerUnit": 450,
+      "reorderPoint": 400,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-08T15:46:38.393Z"
+    },
+    {
+      "id": "prod-shampoo",
+      "name": "แชมพูร้านเสริมสวย",
+      "unitVolumeG": 1000,
+      "costPerUnit": 400,
+      "reorderPoint": 3000,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-08T15:46:38.452Z"
+    },
+    {
+      "id": "prod-treat",
+      "name": "ทรีทเมนท์บำรุงผม",
+      "unitVolumeG": 300,
+      "costPerUnit": 650,
+      "reorderPoint": 600,
+      "sellable": false,
+      "salePrice": null,
+      "isActive": true,
+      "createdAt": "2026-05-08T15:46:38.424Z"
+    }
+  ],
+  "retailProducts": [
+    {
+      "id": "cmp9zryhl00647ovd546ulv40",
+      "name": "สินค้า Handcrafted Plastic Shoes",
+      "price": 1042,
+      "stock": 40,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.065Z"
+    },
+    {
+      "id": "cmp9zryhw00657ovdy6udirbi",
+      "name": "สินค้า Soft Rubber Pants",
+      "price": 1345,
+      "stock": 28,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.076Z"
+    },
+    {
+      "id": "cmp9zryie00667ovdde958xvm",
+      "name": "สินค้า Incredible Ceramic Salad",
+      "price": 1672,
+      "stock": 55,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.094Z"
+    },
+    {
+      "id": "cmp9zryip00677ovd3g0kyjbd",
+      "name": "สินค้า Handcrafted Concrete Keyboard",
+      "price": 804,
+      "stock": 88,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.105Z"
+    },
+    {
+      "id": "cmp9zryj100687ovdcnl0g3cz",
+      "name": "สินค้า Fantastic Plastic Computer",
+      "price": 1503,
+      "stock": 22,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.117Z"
+    },
+    {
+      "id": "cmp9zryjh00697ovdq7shpw8h",
+      "name": "สินค้า Gorgeous Rubber Cheese",
+      "price": 281,
+      "stock": 52,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.133Z"
+    },
+    {
+      "id": "cmp9zryjv006a7ovd6fhi8ljw",
+      "name": "สินค้า Handmade Wooden Soap",
+      "price": 532,
+      "stock": 91,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.147Z"
+    },
+    {
+      "id": "cmp9zrykg006b7ovdavf1il75",
+      "name": "สินค้า Handcrafted Ceramic Keyboard",
+      "price": 1807,
+      "stock": 31,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.168Z"
+    },
+    {
+      "id": "cmp9zryky006c7ovd6s3y70ka",
+      "name": "สินค้า Incredible Rubber Pizza",
+      "price": 1419,
+      "stock": 32,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.186Z"
+    },
+    {
+      "id": "cmp9zrylc006d7ovdbhi0zf0e",
+      "name": "สินค้า Gorgeous Bronze Cheese",
+      "price": 413,
+      "stock": 39,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.200Z"
+    },
+    {
+      "id": "cmp9zrylo006e7ovdas7v36t7",
+      "name": "สินค้า Sleek Steel Bacon",
+      "price": 934,
+      "stock": 76,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.212Z"
+    },
+    {
+      "id": "cmp9zrym5006f7ovd7078upgm",
+      "name": "สินค้า Electronic Metal Bike",
+      "price": 1950,
+      "stock": 81,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.229Z"
+    },
+    {
+      "id": "cmp9zryml006g7ovdjg7gxy9b",
+      "name": "สินค้า Modern Plastic Computer",
+      "price": 1217,
+      "stock": 58,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.245Z"
+    },
+    {
+      "id": "cmp9zrymv006h7ovd5qe27xj2",
+      "name": "สินค้า Rustic Gold Towels",
+      "price": 674,
+      "stock": 33,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.255Z"
+    },
+    {
+      "id": "cmp9zryn9006i7ovdwipurqu9",
+      "name": "สินค้า Ergonomic Metal Pants",
+      "price": 225,
+      "stock": 26,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.269Z"
+    },
+    {
+      "id": "cmp9zrynm006j7ovdbzzbcbn7",
+      "name": "สินค้า Tasty Bamboo Ball",
+      "price": 1353,
+      "stock": 85,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.282Z"
+    },
+    {
+      "id": "cmp9zrynt006k7ovdzfovne5p",
+      "name": "สินค้า Generic Wooden Chicken",
+      "price": 1447,
+      "stock": 32,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.289Z"
+    },
+    {
+      "id": "cmp9zryo1006l7ovdomjelj5r",
+      "name": "สินค้า Luxurious Rubber Towels",
+      "price": 1087,
+      "stock": 45,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.297Z"
+    },
+    {
+      "id": "cmp9zryo7006m7ovdkj10dh1u",
+      "name": "สินค้า Unbranded Plastic Pants",
+      "price": 1114,
+      "stock": 84,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.303Z"
+    },
+    {
+      "id": "cmp9zryoe006n7ovdrg7ggowv",
+      "name": "สินค้า Rustic Cotton Keyboard",
+      "price": 1753,
+      "stock": 27,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.310Z"
+    },
+    {
+      "id": "cmp9zryok006o7ovd7jdjnrsu",
+      "name": "สินค้า Fresh Rubber Mouse",
+      "price": 494,
+      "stock": 68,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.316Z"
+    },
+    {
+      "id": "cmp9zryox006p7ovd025puynj",
+      "name": "สินค้า Frozen Wooden Hat",
+      "price": 1107,
+      "stock": 50,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.329Z"
+    },
+    {
+      "id": "cmp9zryp3006q7ovd20zl1wfj",
+      "name": "สินค้า Handmade Plastic Bacon",
+      "price": 278,
+      "stock": 91,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.335Z"
+    },
+    {
+      "id": "cmp9zrypc006r7ovds5t4b64w",
+      "name": "สินค้า Elegant Cotton Towels",
+      "price": 1290,
+      "stock": 76,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.344Z"
+    },
+    {
+      "id": "cmp9zrypy006s7ovd70v4cmb0",
+      "name": "สินค้า Handmade Concrete Chair",
+      "price": 1495,
+      "stock": 19,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.366Z"
+    },
+    {
+      "id": "cmp9zryqb006t7ovdiac6gxtd",
+      "name": "สินค้า Licensed Plastic Shirt",
+      "price": 969,
+      "stock": 14,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.379Z"
+    },
+    {
+      "id": "cmp9zryqs006u7ovdddrngl18",
+      "name": "สินค้า Sleek Metal Keyboard",
+      "price": 1685,
+      "stock": 63,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.396Z"
+    },
+    {
+      "id": "cmp9zryr3006v7ovdufonfy7y",
+      "name": "สินค้า Frozen Steel Chair",
+      "price": 659,
+      "stock": 19,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.407Z"
+    },
+    {
+      "id": "cmp9zryri006w7ovdrspv576l",
+      "name": "สินค้า Ergonomic Granite Chips",
+      "price": 1173,
+      "stock": 19,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.422Z"
+    },
+    {
+      "id": "cmp9zrys0006x7ovd69mk051p",
+      "name": "สินค้า Tasty Marble Soap",
+      "price": 1062,
+      "stock": 44,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.440Z"
+    },
+    {
+      "id": "cmp9zrysb006y7ovdt6ipu9ld",
+      "name": "สินค้า Fantastic Concrete Sausages",
+      "price": 1743,
+      "stock": 85,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.451Z"
+    },
+    {
+      "id": "cmp9zrysv006z7ovdi66zq5d7",
+      "name": "สินค้า Fresh Silk Bike",
+      "price": 1235,
+      "stock": 15,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.471Z"
+    },
+    {
+      "id": "cmp9zryta00707ovdy12atn9h",
+      "name": "สินค้า Intelligent Silk Mouse",
+      "price": 1494,
+      "stock": 81,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.486Z"
+    },
+    {
+      "id": "cmp9zrytl00717ovdd9vnk6ch",
+      "name": "สินค้า Refined Wooden Table",
+      "price": 753,
+      "stock": 78,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.497Z"
+    },
+    {
+      "id": "cmp9zrytz00727ovdxv5z2ue9",
+      "name": "สินค้า Awesome Ceramic Cheese",
+      "price": 261,
+      "stock": 40,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.511Z"
+    },
+    {
+      "id": "cmp9zryub00737ovd1og0maeg",
+      "name": "สินค้า Fresh Marble Cheese",
+      "price": 532,
+      "stock": 45,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.523Z"
+    },
+    {
+      "id": "cmp9zryun00747ovdh0zqiph1",
+      "name": "สินค้า Elegant Ceramic Keyboard",
+      "price": 326,
+      "stock": 14,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.535Z"
+    },
+    {
+      "id": "cmp9zryv100757ovdacfrthv0",
+      "name": "สินค้า Recycled Plastic Mouse",
+      "price": 244,
+      "stock": 79,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.549Z"
+    },
+    {
+      "id": "cmp9zryvd00767ovdlznebry1",
+      "name": "สินค้า Fresh Concrete Pizza",
+      "price": 691,
+      "stock": 26,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.561Z"
+    },
+    {
+      "id": "cmp9zryvx00777ovde2p7ums7",
+      "name": "สินค้า Electronic Wooden Table",
+      "price": 1457,
+      "stock": 86,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.581Z"
+    },
+    {
+      "id": "cmp9zryw900787ovdvststtys",
+      "name": "สินค้า Handmade Bamboo Ball",
+      "price": 373,
+      "stock": 69,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.593Z"
+    },
+    {
+      "id": "cmp9zrywl00797ovdh3zmg9zi",
+      "name": "สินค้า Fresh Bronze Gloves",
+      "price": 541,
+      "stock": 96,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.605Z"
+    },
+    {
+      "id": "cmp9zryx0007a7ovdtg3f2dmj",
+      "name": "สินค้า Generic Cotton Keyboard",
+      "price": 685,
+      "stock": 22,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.620Z"
+    },
+    {
+      "id": "cmp9zryxk007b7ovdrza8ozfl",
+      "name": "สินค้า Unbranded Wooden Keyboard",
+      "price": 746,
+      "stock": 14,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.640Z"
+    },
+    {
+      "id": "cmp9zryy2007c7ovd0yyf6ejo",
+      "name": "สินค้า Handcrafted Steel Sausages",
+      "price": 1787,
+      "stock": 13,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.658Z"
+    },
+    {
+      "id": "cmp9zryyd007d7ovdt041rp0z",
+      "name": "สินค้า Tasty Granite Keyboard",
+      "price": 244,
+      "stock": 25,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.669Z"
+    },
+    {
+      "id": "cmp9zryz0007e7ovds77pcfo9",
+      "name": "สินค้า Awesome Bamboo Bike",
+      "price": 1644,
+      "stock": 82,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.692Z"
+    },
+    {
+      "id": "cmp9zryzc007f7ovd8bt98ctc",
+      "name": "สินค้า Awesome Silk Soap",
+      "price": 1183,
+      "stock": 58,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.704Z"
+    },
+    {
+      "id": "cmp9zryzo007g7ovd9txpcsnb",
+      "name": "สินค้า Frozen Gold Car",
+      "price": 1633,
+      "stock": 67,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.716Z"
+    },
+    {
+      "id": "cmp9zrz05007h7ovdhd1qy4mc",
+      "name": "สินค้า Fantastic Gold Gloves",
+      "price": 201,
+      "stock": 85,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.733Z"
+    },
+    {
+      "id": "cmp9zrz0l007i7ovddicqz3y3",
+      "name": "ทรีทเม้นท์ Unbranded Steel Computer",
+      "price": 581,
+      "stock": 56,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.26,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.749Z"
+    },
+    {
+      "id": "cmp9zrz15007j7ovdkka3w7cx",
+      "name": "ทรีทเม้นท์ Tasty Plastic Shirt",
+      "price": 225,
+      "stock": 26,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.73,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.769Z"
+    },
+    {
+      "id": "cmp9zrz1z007k7ovdt3r12v5x",
+      "name": "ทรีทเม้นท์ Generic Granite Pizza",
+      "price": 1150,
+      "stock": 49,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.79,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.799Z"
+    },
+    {
+      "id": "cmp9zrz2n007l7ovd2d8ttwer",
+      "name": "ทรีทเม้นท์ Fantastic Bronze Soap",
+      "price": 632,
+      "stock": 89,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.64,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.823Z"
+    },
+    {
+      "id": "cmp9zrz36007m7ovd0f9b9iuv",
+      "name": "ทรีทเม้นท์ Rustic Steel Soap",
+      "price": 894,
+      "stock": 39,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.96,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.843Z"
+    },
+    {
+      "id": "cmp9zrz3i007n7ovdbljkunn4",
+      "name": "ทรีทเม้นท์ Soft Ceramic Gloves",
+      "price": 1332,
+      "stock": 47,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.75,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.854Z"
+    },
+    {
+      "id": "cmp9zrz41007o7ovddwi99fvw",
+      "name": "ทรีทเม้นท์ Electronic Concrete Fish",
+      "price": 214,
+      "stock": 88,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.76,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.873Z"
+    },
+    {
+      "id": "cmp9zrz4i007p7ovd6ggyzsns",
+      "name": "ทรีทเม้นท์ Fantastic Marble Computer",
+      "price": 1838,
+      "stock": 43,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.97,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.890Z"
+    },
+    {
+      "id": "cmp9zrz4u007q7ovdg9es8nwz",
+      "name": "ทรีทเม้นท์ Sleek Rubber Chicken",
+      "price": 400,
+      "stock": 78,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.69,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.902Z"
+    },
+    {
+      "id": "cmp9zrz5d007r7ovdxaxw4ryr",
+      "name": "ทรีทเม้นท์ Recycled Bronze Ball",
+      "price": 1034,
+      "stock": 46,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.26,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.921Z"
+    },
+    {
+      "id": "cmp9zrz5p007s7ovdryd02axo",
+      "name": "ทรีทเม้นท์ Awesome Bronze Chicken",
+      "price": 1286,
+      "stock": 59,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.25,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.933Z"
+    },
+    {
+      "id": "cmp9zrz68007t7ovdqthgxbmf",
+      "name": "ทรีทเม้นท์ Fantastic Ceramic Computer",
+      "price": 1317,
+      "stock": 62,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.96,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.952Z"
+    },
+    {
+      "id": "cmp9zrz6w007u7ovdus0rub5s",
+      "name": "ทรีทเม้นท์ Generic Wooden Table",
+      "price": 532,
+      "stock": 78,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.17,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.976Z"
+    },
+    {
+      "id": "cmp9zrz7h007v7ovdb72zwmo7",
+      "name": "ทรีทเม้นท์ Licensed Steel Chips",
+      "price": 591,
+      "stock": 57,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.62,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:55.997Z"
+    },
+    {
+      "id": "cmp9zrz7y007w7ovdtstb90u9",
+      "name": "ทรีทเม้นท์ Sleek Gold Ball",
+      "price": 529,
+      "stock": 25,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.29,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.014Z"
+    },
+    {
+      "id": "cmp9zrz89007x7ovdlchxh3fe",
+      "name": "ทรีทเม้นท์ Fresh Bronze Cheese",
+      "price": 1654,
+      "stock": 52,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.95,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.025Z"
+    },
+    {
+      "id": "cmp9zrz8t007y7ovdxl0f6f6d",
+      "name": "ทรีทเม้นท์ Generic Marble Shirt",
+      "price": 1661,
+      "stock": 80,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.86,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.045Z"
+    },
+    {
+      "id": "cmp9zrz9a007z7ovdhp694s9d",
+      "name": "ทรีทเม้นท์ Generic Silk Ball",
+      "price": 1768,
+      "stock": 96,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.1,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.062Z"
+    },
+    {
+      "id": "cmp9zrz9m00807ovdu4vbm4x9",
+      "name": "ทรีทเม้นท์ Handmade Metal Towels",
+      "price": 563,
+      "stock": 61,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.58,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.074Z"
+    },
+    {
+      "id": "cmp9zrza800817ovd01kcqqb1",
+      "name": "ทรีทเม้นท์ Fantastic Concrete Bike",
+      "price": 1587,
+      "stock": 62,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.77,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.096Z"
+    },
+    {
+      "id": "cmp9zrzay00827ovd5exio34t",
+      "name": "ทรีทเม้นท์ Frozen Concrete Mouse",
+      "price": 893,
+      "stock": 74,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.38,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.122Z"
+    },
+    {
+      "id": "cmp9zrzba00837ovdiw7hcarf",
+      "name": "ทรีทเม้นท์ Fresh Rubber Chicken",
+      "price": 1746,
+      "stock": 62,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.67,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.134Z"
+    },
+    {
+      "id": "cmp9zrzbr00847ovdo9q2xqo4",
+      "name": "ทรีทเม้นท์ Fantastic Silk Computer",
+      "price": 327,
+      "stock": 88,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.85,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.151Z"
+    },
+    {
+      "id": "cmp9zrzc200857ovdqcdcwcnq",
+      "name": "ทรีทเม้นท์ Fresh Metal Table",
+      "price": 1073,
+      "stock": 59,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.62,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.162Z"
+    },
+    {
+      "id": "cmp9zrzcm00867ovd46b4hgxs",
+      "name": "ทรีทเม้นท์ Elegant Bamboo Chair",
+      "price": 1806,
+      "stock": 34,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.62,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.182Z"
+    },
+    {
+      "id": "cmp9zrzcy00877ovd3apms75s",
+      "name": "ทรีทเม้นท์ Electronic Ceramic Pizza",
+      "price": 1405,
+      "stock": 15,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.86,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.194Z"
+    },
+    {
+      "id": "cmp9zrzdp00887ovd67jik1v6",
+      "name": "ทรีทเม้นท์ Ergonomic Bronze Pants",
+      "price": 390,
+      "stock": 49,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.92,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.221Z"
+    },
+    {
+      "id": "cmp9zrze100897ovdvvr5vdpu",
+      "name": "ทรีทเม้นท์ Handmade Concrete Ball",
+      "price": 361,
+      "stock": 97,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.41,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.233Z"
+    },
+    {
+      "id": "cmp9zrzec008a7ovdcmjyvdm0",
+      "name": "ทรีทเม้นท์ Elegant Aluminum Salad",
+      "price": 1887,
+      "stock": 30,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.45,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.244Z"
+    },
+    {
+      "id": "cmp9zrzes008b7ovdmza2tqzx",
+      "name": "ทรีทเม้นท์ Frozen Granite Tuna",
+      "price": 1839,
+      "stock": 66,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.97,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.260Z"
+    },
+    {
+      "id": "cmp9zrzf4008c7ovd2t2scpoo",
+      "name": "ทรีทเม้นท์ Small Wooden Chair",
+      "price": 769,
+      "stock": 37,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.95,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.272Z"
+    },
+    {
+      "id": "cmp9zrzfo008d7ovds7hup2tl",
+      "name": "ทรีทเม้นท์ Licensed Ceramic Shirt",
+      "price": 1038,
+      "stock": 69,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.87,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.292Z"
+    },
+    {
+      "id": "cmp9zrzfz008e7ovdrf3s9fgf",
+      "name": "ทรีทเม้นท์ Electronic Silk Chair",
+      "price": 1180,
+      "stock": 57,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.69,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.303Z"
+    },
+    {
+      "id": "cmp9zrzgg008f7ovdgrmf8mwl",
+      "name": "ทรีทเม้นท์ Fresh Rubber Gloves",
+      "price": 914,
+      "stock": 63,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.07,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.320Z"
+    },
+    {
+      "id": "cmp9zrzgs008g7ovdoutrekvo",
+      "name": "ทรีทเม้นท์ Generic Aluminum Tuna",
+      "price": 1853,
+      "stock": 46,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.5,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.332Z"
+    },
+    {
+      "id": "cmp9zrzh9008h7ovdd13eofp1",
+      "name": "ทรีทเม้นท์ Sleek Silk Keyboard",
+      "price": 1600,
+      "stock": 24,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.88,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.349Z"
+    },
+    {
+      "id": "cmp9zrzhn008i7ovdv5n01dcy",
+      "name": "ทรีทเม้นท์ Unbranded Concrete Hat",
+      "price": 1986,
+      "stock": 79,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.76,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.363Z"
+    },
+    {
+      "id": "cmp9zrzhz008j7ovdgce1jes3",
+      "name": "ทรีทเม้นท์ Intelligent Ceramic Car",
+      "price": 1477,
+      "stock": 98,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.02,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.375Z"
+    },
+    {
+      "id": "cmp9zrzid008k7ovd9eam5b4v",
+      "name": "ทรีทเม้นท์ Generic Plastic Tuna",
+      "price": 1871,
+      "stock": 62,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.71,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.389Z"
+    },
+    {
+      "id": "cmp9zrzit008l7ovdfewcacre",
+      "name": "ทรีทเม้นท์ Electronic Aluminum Table",
+      "price": 1772,
+      "stock": 23,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.17,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.405Z"
+    },
+    {
+      "id": "cmp9zrzj7008m7ovd9d2zl4qt",
+      "name": "ทรีทเม้นท์ Bespoke Steel Shoes",
+      "price": 1267,
+      "stock": 67,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.39,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.419Z"
+    },
+    {
+      "id": "cmp9zrzjn008n7ovd95mgyvc7",
+      "name": "ทรีทเม้นท์ Recycled Granite Bike",
+      "price": 775,
+      "stock": 93,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.95,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.435Z"
+    },
+    {
+      "id": "cmp9zrzk3008o7ovdek25re1t",
+      "name": "ทรีทเม้นท์ Practical Concrete Cheese",
+      "price": 747,
+      "stock": 39,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.73,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.451Z"
+    },
+    {
+      "id": "cmp9zrzkq008p7ovd425tq91a",
+      "name": "ทรีทเม้นท์ Ergonomic Metal Chair",
+      "price": 614,
+      "stock": 42,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.56,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.474Z"
+    },
+    {
+      "id": "cmp9zrzld008q7ovds6bi4tmh",
+      "name": "ทรีทเม้นท์ Soft Plastic Chips",
+      "price": 1263,
+      "stock": 46,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.71,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.497Z"
+    },
+    {
+      "id": "cmp9zrzly008r7ovdc16lmxjj",
+      "name": "ทรีทเม้นท์ Licensed Ceramic Tuna",
+      "price": 917,
+      "stock": 48,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.98,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.518Z"
+    },
+    {
+      "id": "cmp9zrzmh008s7ovdgjjodbka",
+      "name": "ทรีทเม้นท์ Bespoke Ceramic Pants",
+      "price": 1734,
+      "stock": 74,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.12,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.537Z"
+    },
+    {
+      "id": "cmp9zrzmv008t7ovd7b17btlm",
+      "name": "ทรีทเม้นท์ Incredible Granite Chips",
+      "price": 1530,
+      "stock": 52,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.41,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.552Z"
+    },
+    {
+      "id": "cmp9zrzni008u7ovdkyn8nnnb",
+      "name": "ทรีทเม้นท์ Fantastic Rubber Salad",
+      "price": 850,
+      "stock": 60,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 0.66,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.574Z"
+    },
+    {
+      "id": "cmp9zrznz008v7ovduqqx1nki",
+      "name": "ทรีทเม้นท์ Tasty Rubber Fish",
+      "price": 1800,
+      "stock": 63,
+      "usableAsChemical": true,
+      "unitVolumeG": 500,
+      "costPerG": 1.93,
+      "isActive": true,
+      "createdAt": "2026-05-17T16:30:56.591Z"
+    }
+  ]
+}

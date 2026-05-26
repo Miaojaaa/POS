@@ -11,6 +11,9 @@
     "config:export": "ts-node --project tsconfig.json scripts/export-config.ts",
     "config:import": "ts-node --project tsconfig.json scripts/import-config.ts",
     "config:check": "node scripts/check-config-sync.js",
+    "catalog:export": "ts-node --project tsconfig.json scripts/export-catalog.ts",
+    "catalog:import": "ts-node --project tsconfig.json scripts/import-catalog.ts",
+    "catalog:check": "node scripts/check-catalog-sync.js",
     "setup-hooks": "node scripts/setup-hooks.js",
     "postinstall": "node scripts/setup-hooks.js"
   },
