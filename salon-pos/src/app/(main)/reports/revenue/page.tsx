@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { exportTransactionsXlsx, type OrderForExport } from "@/lib/excel";
+import WaterfallChart from "@/components/reports/WaterfallChart";
+import DonutChart from "@/components/reports/DonutChart";
+import TrendChart, { type DailyRow } from "@/components/reports/TrendChart";
+import CompareChart from "@/components/reports/CompareChart";
 
 type ReportData = {
   totalRevenue: number;
@@ -15,6 +19,17 @@ type ReportData = {
   orderCount: number;
   topServices: { name: string; count: number; revenue: number }[];
   topTechs: { name: string; count: number; revenue: number }[];
+  daily: DailyRow[];
+};
+
+type ViewMode = "default" | "waterfall" | "donut" | "trend" | "compare";
+
+const TAB_LABELS: Record<ViewMode, string> = {
+  default: "ข้อมูลดิบ",
+  waterfall: "Waterfall",
+  donut: "Donut",
+  trend: "Trend",
+  compare: "Compare",
 };
 
 export default function RevenuePage() {
@@ -24,6 +39,7 @@ export default function RevenuePage() {
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [view, setView] = useState<ViewMode>("default");
 
   async function load() {
     setLoading(true);
@@ -78,9 +94,61 @@ export default function RevenuePage() {
         </div>
       </div>
 
+      {/* View-mode tabs */}
+      <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+        {(Object.keys(TAB_LABELS) as ViewMode[]).map(v => {
+          const active = view === v;
+          return (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              style={{
+                padding: "6px 16px",
+                borderRadius: 20,
+                border: "1.5px solid",
+                borderColor: active ? "var(--olive)" : "var(--beige-dark)",
+                background: active ? "var(--olive)" : "white",
+                color: active ? "white" : "var(--text-dark)",
+                fontSize: "0.85rem",
+                fontWeight: active ? 600 : 400,
+                cursor: "pointer",
+              }}
+            >
+              {TAB_LABELS[v]}
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? (
         <div>กำลังโหลด...</div>
       ) : data ? (
+        view === "waterfall" ? (
+          <div className="card">
+            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>📊 รายได้ → กำไร (Waterfall)</h3>
+            <WaterfallChart
+              totalNet={data.totalNet}
+              totalChemCost={data.totalChemCost}
+              totalExpense={data.totalExpense}
+              netProfit={data.netProfit}
+            />
+          </div>
+        ) : view === "donut" ? (
+          <div className="card">
+            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>🍩 สัดส่วนรายได้ตามบริการ (Top 5)</h3>
+            <DonutChart topServices={data.topServices} />
+          </div>
+        ) : view === "trend" ? (
+          <div className="card">
+            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>📈 แนวโน้มรายวัน</h3>
+            <TrendChart daily={data.daily || []} month={month} year={year} />
+          </div>
+        ) : view === "compare" ? (
+          <div className="card">
+            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>📊 เปรียบเทียบช่วงเวลา</h3>
+            <CompareChart />
+          </div>
+        ) : (
         <>
           {/* Revenue breakdown: 3 columns */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "1rem" }}>
@@ -173,6 +241,7 @@ export default function RevenuePage() {
             </div>
           </div>
         </>
+        )
       ) : null}
     </div>
   );
