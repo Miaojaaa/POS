@@ -105,12 +105,24 @@ there and update the table above in the same PR.
 ┌─ Dev B picks up changes ──────────────────┐
 │                                           │
 │  npm install              ← postinstall wires up the pre-commit hook
-│  npm run config:import    (settings → DB upsert)
-│  npm run catalog:import   (catalog → DB upsert; preserves RetailProduct stock)
-│  (restart dev server)                     │
+│  npm run bootstrap        ← single command: db push + generate + both imports
+│  (stop next dev, delete .next/, restart)
 │                                           │
 └───────────────────────────────────────────┘
 ```
+
+`npm run bootstrap` is the single command Dev B should run after any pull
+that touches `schema.prisma` or either snapshot. It runs (in order):
+
+1. `prisma db push` — adds new tables/columns to `dev.db` (warn-only: if the
+   DB is already in sync, the "cannot drop index" SQLite quirk is harmless).
+2. `prisma generate` — refreshes the in-`node_modules` Prisma client so it
+   matches the just-pushed schema.
+3. `npm run config:import` — applies `shared-config.json` if present.
+4. `npm run catalog:import` — applies `shared-catalog.json` if present
+   (preserves `RetailProduct.stock` on update).
+
+It is idempotent — running it on an already-synced DB is safe.
 
 **The export step is manual on purpose.** A merge conflict in a JSON snapshot
 is easy to resolve; an auto-export inside a git hook would clobber a teammate's
@@ -239,7 +251,9 @@ with `git config core.hooksPath .githooks` from the repo root.
 | Import says success but UI still shows old values | Next.js cached the old branding | Stop dev server, delete `.next/`, restart |
 | Pre-commit hook says "Settings sync check failed" | `dev.db` has settings that `shared-config.json` doesn't | Run `npm run config:export`, `git add` the snapshot, re-commit |
 | Pre-commit hook says "Catalog sync check failed" | `dev.db` has services/users/products that `shared-catalog.json` doesn't | Run `npm run catalog:export`, `git add` the snapshot, re-commit |
-| Services missing on B / login fails on B | `shared-catalog.json` not committed or `npm run catalog:import` not run | Verify the file is committed; pulling dev runs `npm run catalog:import` then restart `next dev` |
+| Services missing on B / login fails on B | `shared-catalog.json` not committed or `npm run catalog:import` not run | Verify the file is committed; pulling dev runs `npm run bootstrap` (or `catalog:import` alone if schema hasn't changed) then restart `next dev` |
+| `/api/services` or `/api/service-groups` returns 500 on B after pull | Schema changed but B's `dev.db` doesn't have the new columns yet → Prisma client SELECTs missing column | Run `npm run bootstrap` (does `prisma db push` + `generate` + imports), then restart `next dev` and delete `.next/` |
+| `prisma db push` fails on A with "cannot drop index" | SQLite quirk when schema is already in sync — Prisma engine wants to redefine an index it can't | Harmless — bootstrap treats this as warn-only and continues. If running `prisma db push` standalone, ignore the error if the DB already matches `schema.prisma` |
 | RetailProduct stock counts changed after import | Should NOT happen — stock is excluded on update | If it did, check that `import-catalog.ts` still has the `stock` destructure in the upsert |
 | Hook never runs on commit | `core.hooksPath` not configured | `cd salon-pos && npm run setup-hooks` |
 | `shared-config.json` or `shared-catalog.json` shows as `??` in `git status` | Snapshot exists but was never `git add`-ed | `git add` the relevant file |
