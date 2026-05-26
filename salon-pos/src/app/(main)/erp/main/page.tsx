@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import SearchInput from "@/components/SearchInput";
 
 type StockItem = {
   id: string;
@@ -21,6 +22,13 @@ export default function MainStockPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editQty, setEditQty] = useState<number>(0);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return stock;
+    return stock.filter(p => p.name.toLowerCase().includes(q));
+  }, [stock, search]);
 
   async function load() {
     const res = await fetch("/api/stock");
@@ -84,6 +92,16 @@ export default function MainStockPage() {
         </div>
       </div>
 
+      <div style={{ marginBottom: "1rem", maxWidth: 360 }}>
+        <SearchInput
+          items={stock.map(s => ({ id: s.id, label: s.name, sublabel: `คงเหลือ ${s.mainQty} ขวด` }))}
+          value={search}
+          onChange={setSearch}
+          onSelect={(item) => setSearch(item.label)}
+          placeholder="🔍 ค้นหาสินค้าในคลังหลัก..."
+        />
+      </div>
+
       <div className="card">
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
           <thead>
@@ -99,7 +117,10 @@ export default function MainStockPage() {
             </tr>
           </thead>
           <tbody>
-            {stock.map(p => (
+            {filtered.length === 0 && (
+              <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่พบสินค้าตรงคำค้นหา</td></tr>
+            )}
+            {filtered.map(p => (
               <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5", background: p.isLow ? "#fff8f8" : "white" }}>
                 <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
                 <td style={{ padding: "8px 12px", textAlign: "center" }}>{(p.unitVolumeG).toLocaleString()}</td>

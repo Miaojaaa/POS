@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBranch } from "@/context/BranchContext";
+import PinRevealModal from "@/components/PinRevealModal";
 
 type Branch = { id: string; name: string };
 type User = { id: string; name: string; email: string; role: string; phone?: string; baseSalary?: number; positionAllowance?: number; isActive: boolean; branchId: string };
@@ -34,6 +35,8 @@ export default function StaffPage() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [unlockPin, setUnlockPin] = useState("");
   const [ownerPinStr, setOwnerPinStr] = useState("");
+
+  const [revealPin, setRevealPin] = useState<{ name: string; pin: string } | null>(null);
 
   const isChanged = () => {
     if (!editingId) return !!(form.name && form.email);
@@ -144,8 +147,12 @@ export default function StaffPage() {
           body: JSON.stringify({ ...form, ownerPin: ownerPinStr }),
         });
         if (res.ok) {
+          const data = await res.json();
           setShowForm(false);
-          fetch("/api/users").then(r => r.json()).then(data => { if (Array.isArray(data)) setUsers(data); });
+          if (data?.generatedPin) {
+            setRevealPin({ name: data.name || form.name, pin: data.generatedPin });
+          }
+          fetch("/api/users").then(r => r.json()).then(d => { if (Array.isArray(d)) setUsers(d); });
         } else {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
@@ -162,8 +169,12 @@ export default function StaffPage() {
           body: JSON.stringify({ ...form, ownerPin: ownerPinStr }),
         });
         if (res.ok) {
+          const data = await res.json();
           setShowForm(false);
-          fetch("/api/users").then(r => r.json()).then(data => { if (Array.isArray(data)) setUsers(data); });
+          if (data?.generatedPin) {
+            setRevealPin({ name: data.name || form.name, pin: data.generatedPin });
+          }
+          fetch("/api/users").then(r => r.json()).then(d => { if (Array.isArray(d)) setUsers(d); });
         } else {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
@@ -428,6 +439,13 @@ export default function StaffPage() {
           </div>
         </div>
       )}
+
+      <PinRevealModal
+        open={!!revealPin}
+        userName={revealPin?.name || ""}
+        pin={revealPin?.pin || ""}
+        onClose={() => setRevealPin(null)}
+      />
 
       {showExitConfirm && (
         <div className="modal-overlay" style={{ zIndex: 1100 }}>

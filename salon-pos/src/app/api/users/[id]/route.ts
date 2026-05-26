@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyPin } from "@/lib/auth";
+import { verifyPin, roleNeedsPin, generateUniquePin } from "@/lib/auth";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,6 +12,19 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const ok = await verifyPin("OWNER", ownerPin);
     if (!ok) return NextResponse.json({ error: "Owner PIN ไม่ถูกต้อง" }, { status: 401 });
 
+    // If the new role grants OWNER/MANAGER privilege and the user has no PIN
+    // yet, mint one. Existing PINs are left alone — promoting a user shouldn't
+    // rotate a PIN that may already be shared verbally; demoting them also
+    // leaves the PIN dormant in the DB so they can be re-promoted later.
+    const existing = await prisma.user.findUnique({
+      where: { id },
+      select: { pin: true },
+    });
+    let generatedPin: string | null = null;
+    if (role && roleNeedsPin(role) && !existing?.pin) {
+      generatedPin = await generateUniquePin();
+    }
+
     const user = await prisma.user.update({
       where: { id },
       data: {
@@ -19,6 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         email,
         phone: phone || null,
         role,
+        ...(generatedPin ? { pin: generatedPin } : {}),
         ...(baseSalary != null ? { baseSalary: Number(baseSalary) } : {}),
         ...(positionAllowance != null ? { positionAllowance: Number(positionAllowance) } : {}),
       },
@@ -44,7 +58,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       }
     }
 
-    return NextResponse.json({ id: user.id, name: user.name, role: user.role });
+    return NextResponse.json({ id: user.id, name: user.name, role: user.role, generatedPin });
   } catch (err: any) {
     console.error("Update user error:", err);
     if (err.code === "P2002") {

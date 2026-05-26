@@ -12,6 +12,7 @@ import {
   type SidebarModuleKey,
 } from "@/lib/system-config";
 import { OWNER_LOCKED_MODULES, useOwnerLock } from "@/context/OwnerLockContext";
+import { useBranding } from "@/context/BrandingContext";
 
 type MenuChild = { href: string; label: string };
 type MenuItem = {
@@ -79,10 +80,13 @@ const COLLAPSE_KEY = "sidebar.collapsed";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const branding = useBranding();
   const [openMenus, setOpenMenus] = useState<string[]>(["POS"]);
   const [collapsed, setCollapsed] = useState(false);
-  const [shopName, setShopName] = useState("ร้านเสริมสวย");
-  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+  // shopName / logo come straight from the SSR-provided branding context,
+  // so they're correct on the very first paint — no FOUC.
+  const shopName = branding.shopName;
+  const logoDataUrl = branding.logoDataUrl;
   const [sidebarConfig, setSidebarConfig] = useState<SidebarModuleConfig[]>(DEFAULT_SIDEBAR_CONFIG);
 
   // Owner lock
@@ -97,17 +101,6 @@ export default function Sidebar() {
     } catch {}
   }, []);
 
-  const loadBranding = useCallback(() => {
-    fetch("/api/branding")
-      .then(r => r.ok ? r.json() : null)
-      .then((b: { shopName: string; logoDataUrl: string | null } | null) => {
-        if (!b) return;
-        if (b.shopName) setShopName(b.shopName);
-        setLogoDataUrl(b.logoDataUrl);
-      })
-      .catch(() => {});
-  }, []);
-
   const loadSystemConfig = useCallback(() => {
     fetch("/api/system-config")
       .then(r => r.ok ? r.json() : null)
@@ -118,17 +111,13 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
-    loadBranding();
     loadSystemConfig();
-    const onBranding = () => loadBranding();
     const onSystem = () => loadSystemConfig();
-    window.addEventListener("branding-updated", onBranding);
     window.addEventListener("system-config-updated", onSystem);
     return () => {
-      window.removeEventListener("branding-updated", onBranding);
       window.removeEventListener("system-config-updated", onSystem);
     };
-  }, [loadBranding, loadSystemConfig]);
+  }, [loadSystemConfig]);
 
   // Build the rendered menu list from saved config — order matches the user's preference, disabled
   // modules are filtered out, and only modules that have a definition are surfaced.

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import SearchInput from "@/components/SearchInput";
 
 type RetailProduct = {
   id: string;
@@ -18,6 +19,13 @@ export default function RetailStockPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editQty, setEditQty] = useState<number>(0);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(p => p.name.toLowerCase().includes(q));
+  }, [items, search]);
 
   // Manager PIN gate (matches /settings/products)
   const [unlocked, setUnlocked] = useState(false);
@@ -136,6 +144,16 @@ export default function RetailStockPage() {
         </div>
       </div>
 
+      <div style={{ marginBottom: "1rem", maxWidth: 360 }}>
+        <SearchInput
+          items={items.map(p => ({ id: p.id, label: p.name, sublabel: `สต๊อก ${p.stock} ชิ้น · ฿${p.price.toLocaleString()}` }))}
+          value={search}
+          onChange={setSearch}
+          onSelect={(item) => setSearch(item.label)}
+          placeholder="🔍 ค้นหาสินค้า Retail..."
+        />
+      </div>
+
       {!unlocked && (
         <div className="card" style={{ marginBottom: "1rem", background: "#fff8e1", border: "1px solid #facc15" }}>
           <p style={{ margin: 0, fontSize: "0.85rem", color: "#854d0e" }}>
@@ -161,7 +179,9 @@ export default function RetailStockPage() {
           <tbody>
             {items.length === 0 ? (
               <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ยังไม่มีสินค้า Retail — เพิ่มได้ที่ Settings → สินค้า</td></tr>
-            ) : items.map(p => {
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่พบสินค้าตรงคำค้นหา</td></tr>
+            ) : filtered.map(p => {
               const low = p.stock <= 0;
               const warn = p.stock > 0 && p.stock <= 5;
               return (

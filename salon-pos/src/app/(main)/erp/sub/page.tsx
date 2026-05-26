@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useBranch } from "@/context/BranchContext";
+import SearchInput from "@/components/SearchInput";
 
 type Branch = { id: string; name: string };
 type StockItem = { id: string; name: string; unitVolumeG: number; costPerUnit: number; reorderPoint: number; mainQty: number; subQty: number; subVolumeG: number; isLow: boolean };
@@ -10,6 +11,13 @@ export default function SubStockPage() {
   const { branches, selectedBranchId, setSelectedBranchId } = useBranch();
   const [stock, setStock] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return stock;
+    return stock.filter(p => p.name.toLowerCase().includes(q));
+  }, [stock, search]);
 
   useEffect(() => {
     setLoading(true);
@@ -41,6 +49,16 @@ export default function SubStockPage() {
         </div>
       </div>
 
+      <div style={{ marginBottom: "1rem", maxWidth: 360 }}>
+        <SearchInput
+          items={stock.map(s => ({ id: s.id, label: s.name, sublabel: `คงเหลือ ${s.subQty} ขวด` }))}
+          value={search}
+          onChange={setSearch}
+          onSelect={(item) => setSearch(item.label)}
+          placeholder="🔍 ค้นหาสินค้าในคลังหน้าร้าน..."
+        />
+      </div>
+
       {low.length > 0 && (
         <div style={{ background: "#FFF0F0", border: "1px solid var(--alert-red)", borderRadius: 8, padding: "0.75rem 1rem", marginBottom: "1rem" }}>
           <strong style={{ color: "var(--alert-red)" }}>⚠️ สินค้าใกล้หมด {low.length} รายการ:</strong>
@@ -63,7 +81,7 @@ export default function SubStockPage() {
           <tbody>
             {loading ? (
               <tr><td colSpan={6} style={{ textAlign: "center", padding: "3rem", color: "#888" }}>กำลังโหลดข้อมูล...</td></tr>
-            ) : Array.isArray(stock) && stock.map(p => (
+            ) : Array.isArray(filtered) && filtered.map(p => (
               <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5", background: p.isLow ? "#fff8f8" : "white" }}>
                 <td style={{ padding: "8px 12px", fontWeight: 500 }}>{p.name}</td>
                 <td style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700 }}>{p.subQty}</td>
@@ -85,8 +103,10 @@ export default function SubStockPage() {
                 </td>
               </tr>
             ))}
-            {!loading && (!Array.isArray(stock) || stock.length === 0) && (
-              <tr><td colSpan={6} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่มีข้อมูลในคลัง</td></tr>
+            {!loading && (!Array.isArray(filtered) || filtered.length === 0) && (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>
+                {search.trim() ? "ไม่พบสินค้าตรงคำค้นหา" : "ไม่มีข้อมูลในคลัง"}
+              </td></tr>
             )}
           </tbody>
         </table>

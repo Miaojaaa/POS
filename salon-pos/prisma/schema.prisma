@@ -29,6 +29,7 @@ model User {
   password          String
   role              String
   phone             String?
+  pin               String?  @unique
   baseSalary        Float    @default(0)
   positionAllowance Float    @default(0)
   isActive          Boolean  @default(true)

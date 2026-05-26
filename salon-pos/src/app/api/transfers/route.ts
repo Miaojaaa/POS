@@ -36,8 +36,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const { items, note, createdById, branchId = "main" } = await req.json();
-    const fallbackUser = await prisma.user.findFirst({ where: { role: { contains: "OWNER" } } });
-    const userId = createdById || fallbackUser?.id || "";
+    let userId = createdById;
+    if (!userId) {
+      const fallbackUser = await prisma.user.findFirst({ where: { role: { contains: "OWNER" } } });
+      userId = fallbackUser?.id || "";
+    }
+    if (!userId) {
+      return NextResponse.json({ error: "ไม่พบผู้ใช้สำหรับบันทึกผู้ขอโอน" }, { status: 400 });
+    }
 
     const transfer = await prisma.stockTransfer.create({
       data: {
@@ -62,17 +68,25 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { id, action } = await req.json();
-    const approver = await prisma.user.findFirst({ where: { role: { contains: "MANAGER" } } });
+    const { id, action, approvedById } = await req.json();
 
     if (action === "APPROVE") {
+      let approverId = approvedById;
+      if (!approverId) {
+        const fallback = await prisma.user.findFirst({ where: { role: { contains: "MANAGER" } } });
+        approverId = fallback?.id;
+      }
+      if (!approverId) {
+        return NextResponse.json({ error: "ไม่พบผู้อนุมัติ" }, { status: 400 });
+      }
+
       const transfer = await prisma.stockTransfer.findUnique({ where: { id }, include: { items: true } });
       if (!transfer) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
       await prisma.$transaction(async (tx) => {
         await tx.stockTransfer.update({
           where: { id },
-          data: { status: "APPROVED", approvedById: approver?.id, approvedAt: new Date() },
+          data: { status: "APPROVED", approvedById: approverId, approvedAt: new Date() },
         });
         for (const item of transfer.items) {
           await tx.mainStock.update({ where: { productId: item.productId }, data: { quantity: { decrement: item.quantity } } });
