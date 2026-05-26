@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useBranch } from "@/context/BranchContext";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 
 type Branch = { id: string; name: string };
 type Service = { id: string; name: string; price: number; duration: number; category: { name: string } };
@@ -176,6 +177,34 @@ export default function NewOrderPage() {
     setSelectedRetail(prev => [...prev, { retailProductId: p.id, name: p.name, price: p.price, quantity: 1, maxStock: p.stock }]);
     setRetailSearch("");
   }
+
+  // Barcode scan → add to retail cart. If the product is already in the cart,
+  // increment qty (capped by stock); otherwise add a fresh line.
+  const handleScan = useCallback(async (code: string) => {
+    const res = await fetch(`/api/retail-products/by-barcode?code=${encodeURIComponent(code)}`);
+    const data = await res.json().catch(() => null);
+    if (!data?.found) {
+      alert(`ไม่พบสินค้าที่มีบาร์โค้ด ${code}\nไปเพิ่มที่ Settings → สินค้า/เคมี → Retail`);
+      return;
+    }
+    const p = data.product as RetailProduct;
+    if (p.stock <= 0) {
+      alert(`${p.name}: สต๊อกหมด`);
+      return;
+    }
+    setSelectedRetail(prev => {
+      const existing = prev.find(r => r.retailProductId === p.id);
+      if (existing) {
+        if (existing.quantity >= existing.maxStock) {
+          alert(`${p.name}: ถึงจำนวนสต๊อกที่มีแล้ว (${existing.maxStock})`);
+          return prev;
+        }
+        return prev.map(r => r.retailProductId === p.id ? { ...r, quantity: r.quantity + 1 } : r);
+      }
+      return [...prev, { retailProductId: p.id, name: p.name, price: p.price, quantity: 1, maxStock: p.stock }];
+    });
+  }, []);
+  useBarcodeScanner(handleScan);
 
   function updateRetailQty(id: string, qty: number) {
     setSelectedRetail(prev => prev.map(r => {

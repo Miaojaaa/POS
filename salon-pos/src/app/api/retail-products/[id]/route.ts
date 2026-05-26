@@ -12,6 +12,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.usableAsChemical != null) data.usableAsChemical = Boolean(body.usableAsChemical);
   if (body.unitVolumeG !== undefined) data.unitVolumeG = body.unitVolumeG === "" || body.unitVolumeG == null ? null : Number(body.unitVolumeG);
   if (body.costPerG !== undefined) data.costPerG = body.costPerG === "" || body.costPerG == null ? null : Number(body.costPerG);
+  if (body.barcode !== undefined) {
+    const trimmed = typeof body.barcode === "string" ? body.barcode.trim() : "";
+    if (trimmed) {
+      const clash = await prisma.retailProduct.findFirst({ where: { barcode: trimmed, NOT: { id } } });
+      if (clash) return NextResponse.json({ error: "บาร์โค้ดนี้ถูกใช้แล้วโดย: " + clash.name }, { status: 400 });
+      data.barcode = trimmed;
+    } else {
+      data.barcode = null;
+    }
+  }
 
   const item = await prisma.retailProduct.update({ where: { id }, data });
 

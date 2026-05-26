@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import SearchInput from "@/components/SearchInput";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 
 type RetailProduct = {
   id: string;
   name: string;
+  barcode: string | null;
   price: number;
   stock: number;
   usableAsChemical: boolean;
@@ -72,6 +74,58 @@ export default function RetailStockPage() {
     setEditingId(p.id);
     setEditQty(p.stock);
   }
+
+  // Quick-add modal (opened when scanner sees an unknown barcode)
+  const [quickAdd, setQuickAdd] = useState<{ barcode: string; name: string; price: string; stock: string } | null>(null);
+  const [quickAddSaving, setQuickAddSaving] = useState(false);
+
+  async function submitQuickAdd() {
+    if (!quickAdd) return;
+    if (!quickAdd.name.trim() || !quickAdd.price) {
+      alert("กรุณากรอกชื่อและราคา");
+      return;
+    }
+    setQuickAddSaving(true);
+    try {
+      const res = await fetch("/api/retail-products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: quickAdd.name.trim(),
+          barcode: quickAdd.barcode,
+          price: Number(quickAdd.price),
+          stock: Number(quickAdd.stock) || 0,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "เพิ่มสินค้าไม่สำเร็จ");
+        return;
+      }
+      setQuickAdd(null);
+      await load();
+    } finally {
+      setQuickAddSaving(false);
+    }
+  }
+
+  // Scanner handler — must come AFTER `load` is in scope (useCallback closure).
+  const handleScan = useCallback(async (code: string) => {
+    const res = await fetch(`/api/retail-products/by-barcode?code=${encodeURIComponent(code)}`);
+    const data = await res.json().catch(() => null);
+    if (data?.found) {
+      const p = data.product as RetailProduct;
+      // Setting search to the product name surfaces the row even if the table
+      // was filtered to something else; startEdit pops it into edit mode.
+      setSearch(p.name);
+      setEditingId(p.id);
+      setEditQty(p.stock);
+    } else {
+      // Unknown barcode → quick-add modal pre-filled with the scanned code.
+      setQuickAdd({ barcode: code, name: "", price: "", stock: "0" });
+    }
+  }, []);
+  useBarcodeScanner(handleScan);
 
   function cancelEdit() {
     setEditingId(null);
@@ -267,6 +321,72 @@ export default function RetailStockPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Quick-add modal — appears when scanner reads an unknown barcode */}
+      {quickAdd && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 380 }}>
+            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>เพิ่มสินค้าใหม่ (จากบาร์โค้ด)</h3>
+            <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "0.75rem" }}>
+              ไม่พบสินค้าที่มีบาร์โค้ดนี้ — กรอกชื่อกับราคาเพื่อบันทึกเป็นสินค้าใหม่
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div>
+                <label className="label">บาร์โค้ด</label>
+                <input className="input" value={quickAdd.barcode} readOnly style={{ background: "#f5f5f5", fontFamily: "monospace" }} />
+              </div>
+              <div>
+                <label className="label">ชื่อสินค้า</label>
+                <input
+                  className="input"
+                  placeholder="เช่น แชมพู Brand X"
+                  value={quickAdd.name}
+                  onChange={e => setQuickAdd(s => s ? { ...s, name: e.target.value } : s)}
+                  autoFocus
+                />
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <div style={{ flex: 1 }}>
+                  <label className="label">ราคาขาย (บาท)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={quickAdd.price}
+                    onChange={e => setQuickAdd(s => s ? { ...s, price: e.target.value } : s)}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label className="label">สต๊อกเริ่มต้น</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={quickAdd.stock}
+                    onChange={e => setQuickAdd(s => s ? { ...s, stock: e.target.value } : s)}
+                  />
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+              <button
+                className="btn-primary"
+                style={{ flex: 1 }}
+                onClick={submitQuickAdd}
+                disabled={quickAddSaving}
+              >
+                {quickAddSaving ? "กำลังบันทึก..." : "บันทึก"}
+              </button>
+              <button
+                className="btn-secondary"
+                style={{ flex: 1 }}
+                onClick={() => setQuickAdd(null)}
+                disabled={quickAddSaving}
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Manager PIN Modal */}
       {showPinModal && (

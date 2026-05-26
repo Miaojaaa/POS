@@ -19,6 +19,7 @@ type Chemical = {
 type RetailProduct = {
   id: string;
   name: string;
+  barcode: string | null;
   price: number;
   stock: number;
   usableAsChemical: boolean;
@@ -41,7 +42,7 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<FormType>("CHEMICAL");
   const [chemForm, setChemForm] = useState({ name: "", unitVolumeG: "", costPerUnit: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
-  const [retailForm, setRetailForm] = useState({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
+  const [retailForm, setRetailForm] = useState({ name: "", barcode: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
   const [editingChemId, setEditingChemId] = useState<string | null>(null);
   const [editingRetailId, setEditingRetailId] = useState<string | null>(null);
   const [initialEdit, setInitialEdit] = useState<string>(""); // JSON snapshot of form when opening edit modal
@@ -102,7 +103,7 @@ export default function ProductsPage() {
     setEditingChemId(null);
     setEditingRetailId(null);
     setChemForm({ name: "", unitVolumeG: "", costPerUnit: "", initialMain: "10", initialSub: "2", sellable: false, salePrice: "" });
-    setRetailForm({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
+    setRetailForm({ name: "", barcode: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
     setInitialEdit("");
     setShowForm(true);
   }
@@ -152,6 +153,7 @@ export default function ProductsPage() {
   function editRetail(p: RetailProduct) {
     const next = {
       name: p.name,
+      barcode: p.barcode || "",
       price: String(p.price),
       stock: String(p.stock),
       usableAsChemical: p.usableAsChemical,
@@ -211,23 +213,26 @@ export default function ProductsPage() {
       if (!retailForm.name || !retailForm.price) return alert("กรุณากรอกข้อมูลให้ครบ");
       gate(async () => {
         if (editingRetailId) {
-          await fetch(`/api/retail-products/${editingRetailId}`, {
+          const r = await fetch(`/api/retail-products/${editingRetailId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               name: retailForm.name,
+              barcode: retailForm.barcode.trim() || null,
               price: Number(retailForm.price),
               usableAsChemical: retailForm.usableAsChemical,
               unitVolumeG: retailForm.usableAsChemical && retailForm.unitVolumeG ? Number(retailForm.unitVolumeG) : null,
               costPerG: retailForm.usableAsChemical && retailForm.costPerG ? Number(retailForm.costPerG) : null,
             }),
           });
+          if (!r.ok) { const e = await r.json().catch(() => ({})); return alert(e.error || "บันทึกไม่สำเร็จ"); }
         } else {
-          await fetch("/api/retail-products", {
+          const r = await fetch("/api/retail-products", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               name: retailForm.name,
+              barcode: retailForm.barcode.trim() || null,
               price: Number(retailForm.price),
               stock: Number(retailForm.stock) || 0,
               usableAsChemical: retailForm.usableAsChemical,
@@ -235,9 +240,10 @@ export default function ProductsPage() {
               costPerG: retailForm.usableAsChemical && retailForm.costPerG ? Number(retailForm.costPerG) : null,
             }),
           });
+          if (!r.ok) { const e = await r.json().catch(() => ({})); return alert(e.error || "บันทึกไม่สำเร็จ"); }
         }
         closeForm();
-        setRetailForm({ name: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
+        setRetailForm({ name: "", barcode: "", price: "", stock: "0", usableAsChemical: false, unitVolumeG: "", costPerG: "" });
         await load();
       });
     }
@@ -589,6 +595,17 @@ export default function ProductsPage() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 <div><label className="label">ชื่อสินค้า</label><input className="input" placeholder="เช่น แชมพู Brand X" value={retailForm.name} onChange={e => setRetailForm({ ...retailForm, name: e.target.value })} /></div>
+                <div>
+                  <label className="label">บาร์โค้ด (ไม่บังคับ)</label>
+                  <input
+                    className="input"
+                    placeholder="สแกนเครื่องอ่านที่ช่องนี้ หรือพิมพ์ EAN-13 / UPC-A"
+                    value={retailForm.barcode}
+                    onChange={e => setRetailForm({ ...retailForm, barcode: e.target.value })}
+                    inputMode="numeric"
+                    autoComplete="off"
+                  />
+                </div>
                 <div><label className="label">ราคาขาย (บาท)</label><input type="number" className="input" value={retailForm.price} onChange={e => setRetailForm({ ...retailForm, price: e.target.value })} /></div>
                 {!editingRetailId && (
                   <div><label className="label">สต๊อกเริ่มต้น (ชิ้น)</label><input type="number" className="input" value={retailForm.stock} onChange={e => setRetailForm({ ...retailForm, stock: e.target.value })} /></div>

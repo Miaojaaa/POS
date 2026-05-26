@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import BranchSelector from "@/components/BranchSelector";
+import DailyExportButton from "@/components/DailyExportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -64,8 +65,11 @@ export default async function DashboardPage({ searchParams }: Props) {
         <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
           ภาพรวมร้านวันนี้
         </h1>
-        
-        <BranchSelector branches={branches} currentBranchId={branchId} />
+
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <DailyExportButton branches={branches.map(b => ({ id: b.id, name: b.name }))} />
+          <BranchSelector branches={branches} currentBranchId={branchId} />
+        </div>
       </div>
       
       <p style={{ color: "#888", fontSize: "0.875rem", marginBottom: "1.5rem" }}>

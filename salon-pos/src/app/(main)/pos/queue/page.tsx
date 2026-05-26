@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useBranch } from "@/context/BranchContext";
+import SearchInput from "@/components/SearchInput";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import {
   DEFAULT_RECEIPT_FORMATS,
   buildReceiptNumber,
@@ -371,7 +373,6 @@ export default function QueuePage() {
   /* retail products */
   const [retailProducts, setRetailProducts] = useState<RetailProduct[]>([]);
   const [retailLines, setRetailLines] = useState<RetailLine[]>([]);
-  const [retailPickerOpen, setRetailPickerOpen] = useState(false);
 
   /* PIN modal (discount approval) */
   const [showPinModal, setShowPinModal] = useState(false);
@@ -462,7 +463,6 @@ export default function QueuePage() {
     setSelectedTicket(null);
     setCustomerTickets([]);
     setRetailLines([]);
-    setRetailPickerOpen(false);
     if (order.customerId) {
       const tRes = await fetch(`/api/tickets?customerId=${order.customerId}`);
       const all: CustomerTicket[] = await tRes.json();
@@ -482,7 +482,6 @@ export default function QueuePage() {
     setSelectedTicket(null);
     setCustomerTickets([]);
     setRetailLines([]);
-    setRetailPickerOpen(false);
   }
 
   function addRetail(p: RetailProduct) {
@@ -497,8 +496,32 @@ export default function QueuePage() {
       recalcPaymentForRetail(next);
       return next;
     });
-    setRetailPickerOpen(false);
   }
+
+  // Scanner: relies on functional setState so we don't have to depend on
+  // addRetail / retailLines and re-register the hook on every keystroke.
+  const handleCheckoutScan = useCallback(async (code: string) => {
+    const res = await fetch(`/api/retail-products/by-barcode?code=${encodeURIComponent(code)}`);
+    const data = await res.json().catch(() => null);
+    if (!data?.found) {
+      alert(`ไม่พบสินค้าที่มีบาร์โค้ด ${code}`);
+      return;
+    }
+    const p = data.product as RetailProduct;
+    if (p.stock <= 0) {
+      alert(`${p.name}: สต๊อกหมด`);
+      return;
+    }
+    setRetailLines(prev => {
+      const existing = prev.find(l => l.retailProductId === p.id);
+      const next: RetailLine[] = existing
+        ? prev.map(l => l.retailProductId === p.id ? { ...l, quantity: l.quantity + 1 } : l)
+        : [...prev, { retailProductId: p.id, name: p.name, price: p.price, quantity: 1 }];
+      recalcPaymentForRetail(next);
+      return next;
+    });
+  }, [recalcPaymentForRetail]);
+  useBarcodeScanner(handleCheckoutScan);
 
   function updateRetailQty(productId: string, qty: number) {
     setRetailLines(prev => {
@@ -896,42 +919,27 @@ export default function QueuePage() {
 
                 {/* Retail Products */}
                 <div style={{ marginBottom: "0.75rem", background: "var(--beige)", borderRadius: 8, padding: "0.75rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--olive)" }}>🛍️ สินค้า Retail</div>
-                    <button
-                      onClick={() => setRetailPickerOpen(!retailPickerOpen)}
-                      style={{ background: "var(--olive)", color: "white", border: "none", borderRadius: 6, padding: "3px 10px", cursor: "pointer", fontSize: "0.75rem" }}
-                    >
-                      {retailPickerOpen ? "ปิด" : "+ เพิ่ม"}
-                    </button>
-                  </div>
+                  <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--olive)", marginBottom: 6 }}>🛍️ สินค้า Retail</div>
 
-                  {retailPickerOpen && (
-                    <div style={{ marginBottom: 6, background: "white", borderRadius: 6, maxHeight: 160, overflowY: "auto", border: "1px solid var(--beige-dark)" }}>
-                      {retailProducts.length === 0 ? (
-                        <p style={{ fontSize: "0.8rem", color: "#aaa", padding: "0.5rem", margin: 0, textAlign: "center" }}>ยังไม่มีสินค้า — เพิ่มได้ที่ Settings → สินค้า Retail</p>
-                      ) : retailProducts.map(p => {
+                  <div style={{ marginBottom: 6 }}>
+                    <SearchInput
+                      items={retailProducts.map(p => {
                         const inCart = retailLines.find(l => l.retailProductId === p.id);
                         const remain = p.stock - (inCart?.quantity || 0);
-                        return (
-                          <div key={p.id}
-                            onClick={() => remain > 0 && addRetail(p)}
-                            style={{
-                              display: "flex", justifyContent: "space-between", alignItems: "center",
-                              padding: "0.4rem 0.6rem", cursor: remain > 0 ? "pointer" : "not-allowed",
-                              borderBottom: "1px solid #f5f5f5",
-                              opacity: remain > 0 ? 1 : 0.4,
-                            }}
-                          >
-                            <div style={{ fontSize: "0.825rem" }}>{p.name}</div>
-                            <div style={{ fontSize: "0.75rem", color: "#666" }}>
-                              ฿{p.price.toLocaleString()} · เหลือ {remain}
-                            </div>
-                          </div>
-                        );
+                        return {
+                          id: p.id,
+                          label: p.name,
+                          sublabel: `฿${p.price.toLocaleString()} · เหลือ ${remain}`,
+                          disabled: remain <= 0,
+                        };
                       })}
-                    </div>
-                  )}
+                      onSelect={(picked) => {
+                        const p = retailProducts.find(rp => rp.id === picked.id);
+                        if (p) addRetail(p);
+                      }}
+                      placeholder="🔍 ค้นหา หรือสแกนบาร์โค้ด..."
+                    />
+                  </div>
 
                   {retailLines.length === 0 ? (
                     <p style={{ fontSize: "0.8rem", color: "#aaa", margin: 0 }}>ไม่มีสินค้า</p>

@@ -1,6 +1,6 @@
 {
   "_version": 1,
-  "_exportedAt": "2026-05-26T16:57:12.422Z",
+  "_exportedAt": "2026-05-26T18:55:07.656Z",
   "_comment": "Edited by export-catalog.ts — do not hand-edit; re-export via `npm run catalog:export`",
   "branches": [
     {
@@ -1841,6 +1841,7 @@
     {
       "id": "cmp9zryhl00647ovd546ulv40",
       "name": "สินค้า Handcrafted Plastic Shoes",
+      "barcode": null,
       "price": 1042,
       "stock": 40,
       "usableAsChemical": false,
@@ -1852,6 +1853,7 @@
     {
       "id": "cmp9zryhw00657ovdy6udirbi",
       "name": "สินค้า Soft Rubber Pants",
+      "barcode": null,
       "price": 1345,
       "stock": 28,
       "usableAsChemical": false,
@@ -1863,6 +1865,7 @@
     {
       "id": "cmp9zryie00667ovdde958xvm",
       "name": "สินค้า Incredible Ceramic Salad",
+      "barcode": null,
       "price": 1672,
       "stock": 55,
       "usableAsChemical": false,
@@ -1874,6 +1877,7 @@
     {
       "id": "cmp9zryip00677ovd3g0kyjbd",
       "name": "สินค้า Handcrafted Concrete Keyboard",
+      "barcode": null,
       "price": 804,
       "stock": 88,
       "usableAsChemical": false,
@@ -1885,6 +1889,7 @@
     {
       "id": "cmp9zryj100687ovdcnl0g3cz",
       "name": "สินค้า Fantastic Plastic Computer",
+      "barcode": null,
       "price": 1503,
       "stock": 22,
       "usableAsChemical": false,
@@ -1896,6 +1901,7 @@
     {
       "id": "cmp9zryjh00697ovdq7shpw8h",
       "name": "สินค้า Gorgeous Rubber Cheese",
+      "barcode": null,
       "price": 281,
       "stock": 52,
       "usableAsChemical": false,
@@ -1907,6 +1913,7 @@
     {
       "id": "cmp9zryjv006a7ovd6fhi8ljw",
       "name": "สินค้า Handmade Wooden Soap",
+      "barcode": null,
       "price": 532,
       "stock": 91,
       "usableAsChemical": false,
@@ -1918,6 +1925,7 @@
     {
       "id": "cmp9zrykg006b7ovdavf1il75",
       "name": "สินค้า Handcrafted Ceramic Keyboard",
+      "barcode": null,
       "price": 1807,
       "stock": 31,
       "usableAsChemical": false,
@@ -1929,6 +1937,7 @@
     {
       "id": "cmp9zryky006c7ovd6s3y70ka",
       "name": "สินค้า Incredible Rubber Pizza",
+      "barcode": null,
       "price": 1419,
       "stock": 32,
       "usableAsChemical": false,
@@ -1940,6 +1949,7 @@
     {
       "id": "cmp9zrylc006d7ovdbhi0zf0e",
       "name": "สินค้า Gorgeous Bronze Cheese",
+      "barcode": null,
       "price": 413,
       "stock": 39,
       "usableAsChemical": false,
@@ -1951,6 +1961,7 @@
     {
       "id": "cmp9zrylo006e7ovdas7v36t7",
       "name": "สินค้า Sleek Steel Bacon",
+      "barcode": null,
       "price": 934,
       "stock": 76,
       "usableAsChemical": false,
@@ -1962,6 +1973,7 @@
     {
       "id": "cmp9zrym5006f7ovd7078upgm",
       "name": "สินค้า Electronic Metal Bike",
+      "barcode": null,
       "price": 1950,
       "stock": 81,
       "usableAsChemical": false,
@@ -1973,6 +1985,7 @@
     {
       "id": "cmp9zryml006g7ovdjg7gxy9b",
       "name": "สินค้า Modern Plastic Computer",
+      "barcode": null,
       "price": 1217,
       "stock": 58,
       "usableAsChemical": false,
@@ -1984,6 +1997,7 @@
     {
       "id": "cmp9zrymv006h7ovd5qe27xj2",
       "name": "สินค้า Rustic Gold Towels",
+      "barcode": null,
       "price": 674,
       "stock": 33,
       "usableAsChemical": false,
@@ -1995,6 +2009,7 @@
     {
       "id": "cmp9zryn9006i7ovdwipurqu9",
       "name": "สินค้า Ergonomic Metal Pants",
+      "barcode": null,
       "price": 225,
       "stock": 26,
       "usableAsChemical": false,
@@ -2006,6 +2021,7 @@
     {
       "id": "cmp9zrynm006j7ovdbzzbcbn7",
       "name": "สินค้า Tasty Bamboo Ball",
+      "barcode": null,
       "price": 1353,
       "stock": 85,
       "usableAsChemical": false,
@@ -2017,6 +2033,7 @@
     {
       "id": "cmp9zrynt006k7ovdzfovne5p",
       "name": "สินค้า Generic Wooden Chicken",
+      "barcode": null,
       "price": 1447,
       "stock": 32,
       "usableAsChemical": false,
@@ -2028,6 +2045,7 @@
     {
       "id": "cmp9zryo1006l7ovdomjelj5r",
       "name": "สินค้า Luxurious Rubber Towels",
+      "barcode": null,
       "price": 1087,
       "stock": 45,
       "usableAsChemical": false,
@@ -2039,6 +2057,7 @@
     {
       "id": "cmp9zryo7006m7ovdkj10dh1u",
       "name": "สินค้า Unbranded Plastic Pants",
+      "barcode": null,
       "price": 1114,
       "stock": 84,
       "usableAsChemical": false,
@@ -2050,6 +2069,7 @@
     {
       "id": "cmp9zryoe006n7ovdrg7ggowv",
       "name": "สินค้า Rustic Cotton Keyboard",
+      "barcode": null,
       "price": 1753,
       "stock": 27,
       "usableAsChemical": false,
@@ -2061,6 +2081,7 @@
     {
       "id": "cmp9zryok006o7ovd7jdjnrsu",
       "name": "สินค้า Fresh Rubber Mouse",
+      "barcode": null,
       "price": 494,
       "stock": 68,
       "usableAsChemical": false,
@@ -2072,6 +2093,7 @@
     {
       "id": "cmp9zryox006p7ovd025puynj",
       "name": "สินค้า Frozen Wooden Hat",
+      "barcode": null,
       "price": 1107,
       "stock": 50,
       "usableAsChemical": false,
@@ -2083,6 +2105,7 @@
     {
       "id": "cmp9zryp3006q7ovd20zl1wfj",
       "name": "สินค้า Handmade Plastic Bacon",
+      "barcode": null,
       "price": 278,
       "stock": 91,
       "usableAsChemical": false,
@@ -2094,6 +2117,7 @@
     {
       "id": "cmp9zrypc006r7ovds5t4b64w",
       "name": "สินค้า Elegant Cotton Towels",
+      "barcode": null,
       "price": 1290,
       "stock": 76,
       "usableAsChemical": false,
@@ -2105,6 +2129,7 @@
     {
       "id": "cmp9zrypy006s7ovd70v4cmb0",
       "name": "สินค้า Handmade Concrete Chair",
+      "barcode": null,
       "price": 1495,
       "stock": 19,
       "usableAsChemical": false,
@@ -2116,6 +2141,7 @@
     {
       "id": "cmp9zryqb006t7ovdiac6gxtd",
       "name": "สินค้า Licensed Plastic Shirt",
+      "barcode": null,
       "price": 969,
       "stock": 14,
       "usableAsChemical": false,
@@ -2127,6 +2153,7 @@
     {
       "id": "cmp9zryqs006u7ovdddrngl18",
       "name": "สินค้า Sleek Metal Keyboard",
+      "barcode": null,
       "price": 1685,
       "stock": 63,
       "usableAsChemical": false,
@@ -2138,6 +2165,7 @@
     {
       "id": "cmp9zryr3006v7ovdufonfy7y",
       "name": "สินค้า Frozen Steel Chair",
+      "barcode": null,
       "price": 659,
       "stock": 19,
       "usableAsChemical": false,
@@ -2149,6 +2177,7 @@
     {
       "id": "cmp9zryri006w7ovdrspv576l",
       "name": "สินค้า Ergonomic Granite Chips",
+      "barcode": null,
       "price": 1173,
       "stock": 19,
       "usableAsChemical": false,
@@ -2160,6 +2189,7 @@
     {
       "id": "cmp9zrys0006x7ovd69mk051p",
       "name": "สินค้า Tasty Marble Soap",
+      "barcode": null,
       "price": 1062,
       "stock": 44,
       "usableAsChemical": false,
@@ -2171,6 +2201,7 @@
     {
       "id": "cmp9zrysb006y7ovdt6ipu9ld",
       "name": "สินค้า Fantastic Concrete Sausages",
+      "barcode": null,
       "price": 1743,
       "stock": 85,
       "usableAsChemical": false,
@@ -2182,6 +2213,7 @@
     {
       "id": "cmp9zrysv006z7ovdi66zq5d7",
       "name": "สินค้า Fresh Silk Bike",
+      "barcode": null,
       "price": 1235,
       "stock": 15,
       "usableAsChemical": false,
@@ -2193,6 +2225,7 @@
     {
       "id": "cmp9zryta00707ovdy12atn9h",
       "name": "สินค้า Intelligent Silk Mouse",
+      "barcode": null,
       "price": 1494,
       "stock": 81,
       "usableAsChemical": false,
@@ -2204,6 +2237,7 @@
     {
       "id": "cmp9zrytl00717ovdd9vnk6ch",
       "name": "สินค้า Refined Wooden Table",
+      "barcode": null,
       "price": 753,
       "stock": 78,
       "usableAsChemical": false,
@@ -2215,6 +2249,7 @@
     {
       "id": "cmp9zrytz00727ovdxv5z2ue9",
       "name": "สินค้า Awesome Ceramic Cheese",
+      "barcode": null,
       "price": 261,
       "stock": 40,
       "usableAsChemical": false,
@@ -2226,6 +2261,7 @@
     {
       "id": "cmp9zryub00737ovd1og0maeg",
       "name": "สินค้า Fresh Marble Cheese",
+      "barcode": null,
       "price": 532,
       "stock": 45,
       "usableAsChemical": false,
@@ -2237,6 +2273,7 @@
     {
       "id": "cmp9zryun00747ovdh0zqiph1",
       "name": "สินค้า Elegant Ceramic Keyboard",
+      "barcode": null,
       "price": 326,
       "stock": 14,
       "usableAsChemical": false,
@@ -2248,6 +2285,7 @@
     {
       "id": "cmp9zryv100757ovdacfrthv0",
       "name": "สินค้า Recycled Plastic Mouse",
+      "barcode": null,
       "price": 244,
       "stock": 79,
       "usableAsChemical": false,
@@ -2259,6 +2297,7 @@
     {
       "id": "cmp9zryvd00767ovdlznebry1",
       "name": "สินค้า Fresh Concrete Pizza",
+      "barcode": null,
       "price": 691,
       "stock": 26,
       "usableAsChemical": false,
@@ -2270,6 +2309,7 @@
     {
       "id": "cmp9zryvx00777ovde2p7ums7",
       "name": "สินค้า Electronic Wooden Table",
+      "barcode": null,
       "price": 1457,
       "stock": 86,
       "usableAsChemical": false,
@@ -2281,6 +2321,7 @@
     {
       "id": "cmp9zryw900787ovdvststtys",
       "name": "สินค้า Handmade Bamboo Ball",
+      "barcode": null,
       "price": 373,
       "stock": 69,
       "usableAsChemical": false,
@@ -2292,6 +2333,7 @@
     {
       "id": "cmp9zrywl00797ovdh3zmg9zi",
       "name": "สินค้า Fresh Bronze Gloves",
+      "barcode": null,
       "price": 541,
       "stock": 96,
       "usableAsChemical": false,
@@ -2303,6 +2345,7 @@
     {
       "id": "cmp9zryx0007a7ovdtg3f2dmj",
       "name": "สินค้า Generic Cotton Keyboard",
+      "barcode": null,
       "price": 685,
       "stock": 22,
       "usableAsChemical": false,
@@ -2314,6 +2357,7 @@
     {
       "id": "cmp9zryxk007b7ovdrza8ozfl",
       "name": "สินค้า Unbranded Wooden Keyboard",
+      "barcode": null,
       "price": 746,
       "stock": 14,
       "usableAsChemical": false,
@@ -2325,6 +2369,7 @@
     {
       "id": "cmp9zryy2007c7ovd0yyf6ejo",
       "name": "สินค้า Handcrafted Steel Sausages",
+      "barcode": null,
       "price": 1787,
       "stock": 13,
       "usableAsChemical": false,
@@ -2336,6 +2381,7 @@
     {
       "id": "cmp9zryyd007d7ovdt041rp0z",
       "name": "สินค้า Tasty Granite Keyboard",
+      "barcode": null,
       "price": 244,
       "stock": 25,
       "usableAsChemical": false,
@@ -2347,6 +2393,7 @@
     {
       "id": "cmp9zryz0007e7ovds77pcfo9",
       "name": "สินค้า Awesome Bamboo Bike",
+      "barcode": null,
       "price": 1644,
       "stock": 82,
       "usableAsChemical": false,
@@ -2358,6 +2405,7 @@
     {
       "id": "cmp9zryzc007f7ovd8bt98ctc",
       "name": "สินค้า Awesome Silk Soap",
+      "barcode": null,
       "price": 1183,
       "stock": 58,
       "usableAsChemical": false,
@@ -2369,6 +2417,7 @@
     {
       "id": "cmp9zryzo007g7ovd9txpcsnb",
       "name": "สินค้า Frozen Gold Car",
+      "barcode": null,
       "price": 1633,
       "stock": 67,
       "usableAsChemical": false,
@@ -2380,6 +2429,7 @@
     {
       "id": "cmp9zrz05007h7ovdhd1qy4mc",
       "name": "สินค้า Fantastic Gold Gloves",
+      "barcode": null,
       "price": 201,
       "stock": 85,
       "usableAsChemical": false,
@@ -2391,6 +2441,7 @@
     {
       "id": "cmp9zrz0l007i7ovddicqz3y3",
       "name": "ทรีทเม้นท์ Unbranded Steel Computer",
+      "barcode": null,
       "price": 581,
       "stock": 56,
       "usableAsChemical": true,
@@ -2402,6 +2453,7 @@
     {
       "id": "cmp9zrz15007j7ovdkka3w7cx",
       "name": "ทรีทเม้นท์ Tasty Plastic Shirt",
+      "barcode": null,
       "price": 225,
       "stock": 26,
       "usableAsChemical": true,
@@ -2413,6 +2465,7 @@
     {
       "id": "cmp9zrz1z007k7ovdt3r12v5x",
       "name": "ทรีทเม้นท์ Generic Granite Pizza",
+      "barcode": null,
       "price": 1150,
       "stock": 49,
       "usableAsChemical": true,
@@ -2424,6 +2477,7 @@
     {
       "id": "cmp9zrz2n007l7ovd2d8ttwer",
       "name": "ทรีทเม้นท์ Fantastic Bronze Soap",
+      "barcode": null,
       "price": 632,
       "stock": 89,
       "usableAsChemical": true,
@@ -2435,6 +2489,7 @@
     {
       "id": "cmp9zrz36007m7ovd0f9b9iuv",
       "name": "ทรีทเม้นท์ Rustic Steel Soap",
+      "barcode": null,
       "price": 894,
       "stock": 39,
       "usableAsChemical": true,
@@ -2446,6 +2501,7 @@
     {
       "id": "cmp9zrz3i007n7ovdbljkunn4",
       "name": "ทรีทเม้นท์ Soft Ceramic Gloves",
+      "barcode": null,
       "price": 1332,
       "stock": 47,
       "usableAsChemical": true,
@@ -2457,6 +2513,7 @@
     {
       "id": "cmp9zrz41007o7ovddwi99fvw",
       "name": "ทรีทเม้นท์ Electronic Concrete Fish",
+      "barcode": null,
       "price": 214,
       "stock": 88,
       "usableAsChemical": true,
@@ -2468,6 +2525,7 @@
     {
       "id": "cmp9zrz4i007p7ovd6ggyzsns",
       "name": "ทรีทเม้นท์ Fantastic Marble Computer",
+      "barcode": null,
       "price": 1838,
       "stock": 43,
       "usableAsChemical": true,
@@ -2479,6 +2537,7 @@
     {
       "id": "cmp9zrz4u007q7ovdg9es8nwz",
       "name": "ทรีทเม้นท์ Sleek Rubber Chicken",
+      "barcode": null,
       "price": 400,
       "stock": 78,
       "usableAsChemical": true,
@@ -2490,6 +2549,7 @@
     {
       "id": "cmp9zrz5d007r7ovdxaxw4ryr",
       "name": "ทรีทเม้นท์ Recycled Bronze Ball",
+      "barcode": null,
       "price": 1034,
       "stock": 46,
       "usableAsChemical": true,
@@ -2501,8 +2561,9 @@
     {
       "id": "cmp9zrz5p007s7ovdryd02axo",
       "name": "ทรีทเม้นท์ Awesome Bronze Chicken",
+      "barcode": null,
       "price": 1286,
-      "stock": 58,
+      "stock": 57,
       "usableAsChemical": true,
       "unitVolumeG": 500,
       "costPerG": 1.25,
@@ -2512,6 +2573,7 @@
     {
       "id": "cmp9zrz68007t7ovdqthgxbmf",
       "name": "ทรีทเม้นท์ Fantastic Ceramic Computer",
+      "barcode": null,
       "price": 1317,
       "stock": 62,
       "usableAsChemical": true,
@@ -2523,6 +2585,7 @@
     {
       "id": "cmp9zrz6w007u7ovdus0rub5s",
       "name": "ทรีทเม้นท์ Generic Wooden Table",
+      "barcode": null,
       "price": 532,
       "stock": 78,
       "usableAsChemical": true,
@@ -2534,6 +2597,7 @@
     {
       "id": "cmp9zrz7h007v7ovdb72zwmo7",
       "name": "ทรีทเม้นท์ Licensed Steel Chips",
+      "barcode": null,
       "price": 591,
       "stock": 57,
       "usableAsChemical": true,
@@ -2545,6 +2609,7 @@
     {
       "id": "cmp9zrz7y007w7ovdtstb90u9",
       "name": "ทรีทเม้นท์ Sleek Gold Ball",
+      "barcode": null,
       "price": 529,
       "stock": 25,
       "usableAsChemical": true,
@@ -2556,6 +2621,7 @@
     {
       "id": "cmp9zrz89007x7ovdlchxh3fe",
       "name": "ทรีทเม้นท์ Fresh Bronze Cheese",
+      "barcode": null,
       "price": 1654,
       "stock": 52,
       "usableAsChemical": true,
@@ -2567,6 +2633,7 @@
     {
       "id": "cmp9zrz8t007y7ovdxl0f6f6d",
       "name": "ทรีทเม้นท์ Generic Marble Shirt",
+      "barcode": null,
       "price": 1661,
       "stock": 80,
       "usableAsChemical": true,
@@ -2578,6 +2645,7 @@
     {
       "id": "cmp9zrz9a007z7ovdhp694s9d",
       "name": "ทรีทเม้นท์ Generic Silk Ball",
+      "barcode": null,
       "price": 1768,
       "stock": 96,
       "usableAsChemical": true,
@@ -2589,6 +2657,7 @@
     {
       "id": "cmp9zrz9m00807ovdu4vbm4x9",
       "name": "ทรีทเม้นท์ Handmade Metal Towels",
+      "barcode": null,
       "price": 563,
       "stock": 61,
       "usableAsChemical": true,
@@ -2600,6 +2669,7 @@
     {
       "id": "cmp9zrza800817ovd01kcqqb1",
       "name": "ทรีทเม้นท์ Fantastic Concrete Bike",
+      "barcode": null,
       "price": 1587,
       "stock": 62,
       "usableAsChemical": true,
@@ -2611,6 +2681,7 @@
     {
       "id": "cmp9zrzay00827ovd5exio34t",
       "name": "ทรีทเม้นท์ Frozen Concrete Mouse",
+      "barcode": null,
       "price": 893,
       "stock": 74,
       "usableAsChemical": true,
@@ -2622,6 +2693,7 @@
     {
       "id": "cmp9zrzba00837ovdiw7hcarf",
       "name": "ทรีทเม้นท์ Fresh Rubber Chicken",
+      "barcode": null,
       "price": 1746,
       "stock": 62,
       "usableAsChemical": true,
@@ -2633,6 +2705,7 @@
     {
       "id": "cmp9zrzbr00847ovdo9q2xqo4",
       "name": "ทรีทเม้นท์ Fantastic Silk Computer",
+      "barcode": null,
       "price": 327,
       "stock": 88,
       "usableAsChemical": true,
@@ -2644,6 +2717,7 @@
     {
       "id": "cmp9zrzc200857ovdqcdcwcnq",
       "name": "ทรีทเม้นท์ Fresh Metal Table",
+      "barcode": null,
       "price": 1073,
       "stock": 59,
       "usableAsChemical": true,
@@ -2655,6 +2729,7 @@
     {
       "id": "cmp9zrzcm00867ovd46b4hgxs",
       "name": "ทรีทเม้นท์ Elegant Bamboo Chair",
+      "barcode": null,
       "price": 1806,
       "stock": 34,
       "usableAsChemical": true,
@@ -2666,6 +2741,7 @@
     {
       "id": "cmp9zrzcy00877ovd3apms75s",
       "name": "ทรีทเม้นท์ Electronic Ceramic Pizza",
+      "barcode": null,
       "price": 1405,
       "stock": 15,
       "usableAsChemical": true,
@@ -2677,6 +2753,7 @@
     {
       "id": "cmp9zrzdp00887ovd67jik1v6",
       "name": "ทรีทเม้นท์ Ergonomic Bronze Pants",
+      "barcode": null,
       "price": 390,
       "stock": 49,
       "usableAsChemical": true,
@@ -2688,6 +2765,7 @@
     {
       "id": "cmp9zrze100897ovdvvr5vdpu",
       "name": "ทรีทเม้นท์ Handmade Concrete Ball",
+      "barcode": null,
       "price": 361,
       "stock": 97,
       "usableAsChemical": true,
@@ -2699,6 +2777,7 @@
     {
       "id": "cmp9zrzec008a7ovdcmjyvdm0",
       "name": "ทรีทเม้นท์ Elegant Aluminum Salad",
+      "barcode": null,
       "price": 1887,
       "stock": 30,
       "usableAsChemical": true,
@@ -2710,6 +2789,7 @@
     {
       "id": "cmp9zrzes008b7ovdmza2tqzx",
       "name": "ทรีทเม้นท์ Frozen Granite Tuna",
+      "barcode": null,
       "price": 1839,
       "stock": 66,
       "usableAsChemical": true,
@@ -2721,6 +2801,7 @@
     {
       "id": "cmp9zrzf4008c7ovd2t2scpoo",
       "name": "ทรีทเม้นท์ Small Wooden Chair",
+      "barcode": null,
       "price": 769,
       "stock": 37,
       "usableAsChemical": true,
@@ -2732,6 +2813,7 @@
     {
       "id": "cmp9zrzfo008d7ovds7hup2tl",
       "name": "ทรีทเม้นท์ Licensed Ceramic Shirt",
+      "barcode": null,
       "price": 1038,
       "stock": 69,
       "usableAsChemical": true,
@@ -2743,6 +2825,7 @@
     {
       "id": "cmp9zrzfz008e7ovdrf3s9fgf",
       "name": "ทรีทเม้นท์ Electronic Silk Chair",
+      "barcode": null,
       "price": 1180,
       "stock": 56,
       "usableAsChemical": true,
@@ -2754,6 +2837,7 @@
     {
       "id": "cmp9zrzgg008f7ovdgrmf8mwl",
       "name": "ทรีทเม้นท์ Fresh Rubber Gloves",
+      "barcode": null,
       "price": 914,
       "stock": 63,
       "usableAsChemical": true,
@@ -2765,6 +2849,7 @@
     {
       "id": "cmp9zrzgs008g7ovdoutrekvo",
       "name": "ทรีทเม้นท์ Generic Aluminum Tuna",
+      "barcode": null,
       "price": 1853,
       "stock": 46,
       "usableAsChemical": true,
@@ -2776,6 +2861,7 @@
     {
       "id": "cmp9zrzh9008h7ovdd13eofp1",
       "name": "ทรีทเม้นท์ Sleek Silk Keyboard",
+      "barcode": null,
       "price": 1600,
       "stock": 24,
       "usableAsChemical": true,
@@ -2787,6 +2873,7 @@
     {
       "id": "cmp9zrzhn008i7ovdv5n01dcy",
       "name": "ทรีทเม้นท์ Unbranded Concrete Hat",
+      "barcode": null,
       "price": 1986,
       "stock": 79,
       "usableAsChemical": true,
@@ -2798,6 +2885,7 @@
     {
       "id": "cmp9zrzhz008j7ovdgce1jes3",
       "name": "ทรีทเม้นท์ Intelligent Ceramic Car",
+      "barcode": null,
       "price": 1477,
       "stock": 98,
       "usableAsChemical": true,
@@ -2809,6 +2897,7 @@
     {
       "id": "cmp9zrzid008k7ovd9eam5b4v",
       "name": "ทรีทเม้นท์ Generic Plastic Tuna",
+      "barcode": null,
       "price": 1871,
       "stock": 62,
       "usableAsChemical": true,
@@ -2820,6 +2909,7 @@
     {
       "id": "cmp9zrzit008l7ovdfewcacre",
       "name": "ทรีทเม้นท์ Electronic Aluminum Table",
+      "barcode": null,
       "price": 1772,
       "stock": 23,
       "usableAsChemical": true,
@@ -2831,6 +2921,7 @@
     {
       "id": "cmp9zrzj7008m7ovd9d2zl4qt",
       "name": "ทรีทเม้นท์ Bespoke Steel Shoes",
+      "barcode": null,
       "price": 1267,
       "stock": 67,
       "usableAsChemical": true,
@@ -2842,6 +2933,7 @@
     {
       "id": "cmp9zrzjn008n7ovd95mgyvc7",
       "name": "ทรีทเม้นท์ Recycled Granite Bike",
+      "barcode": null,
       "price": 775,
       "stock": 93,
       "usableAsChemical": true,
@@ -2853,6 +2945,7 @@
     {
       "id": "cmp9zrzk3008o7ovdek25re1t",
       "name": "ทรีทเม้นท์ Practical Concrete Cheese",
+      "barcode": null,
       "price": 747,
       "stock": 39,
       "usableAsChemical": true,
@@ -2864,6 +2957,7 @@
     {
       "id": "cmp9zrzkq008p7ovd425tq91a",
       "name": "ทรีทเม้นท์ Ergonomic Metal Chair",
+      "barcode": null,
       "price": 614,
       "stock": 42,
       "usableAsChemical": true,
@@ -2875,6 +2969,7 @@
     {
       "id": "cmp9zrzld008q7ovds6bi4tmh",
       "name": "ทรีทเม้นท์ Soft Plastic Chips",
+      "barcode": null,
       "price": 1263,
       "stock": 46,
       "usableAsChemical": true,
@@ -2886,6 +2981,7 @@
     {
       "id": "cmp9zrzly008r7ovdc16lmxjj",
       "name": "ทรีทเม้นท์ Licensed Ceramic Tuna",
+      "barcode": null,
       "price": 917,
       "stock": 48,
       "usableAsChemical": true,
@@ -2897,6 +2993,7 @@
     {
       "id": "cmp9zrzmh008s7ovdgjjodbka",
       "name": "ทรีทเม้นท์ Bespoke Ceramic Pants",
+      "barcode": null,
       "price": 1734,
       "stock": 74,
       "usableAsChemical": true,
@@ -2908,6 +3005,7 @@
     {
       "id": "cmp9zrzmv008t7ovd7b17btlm",
       "name": "ทรีทเม้นท์ Incredible Granite Chips",
+      "barcode": null,
       "price": 1530,
       "stock": 52,
       "usableAsChemical": true,
@@ -2919,6 +3017,7 @@
     {
       "id": "cmp9zrzni008u7ovdkyn8nnnb",
       "name": "ทรีทเม้นท์ Fantastic Rubber Salad",
+      "barcode": null,
       "price": 850,
       "stock": 60,
       "usableAsChemical": true,
@@ -2930,6 +3029,7 @@
     {
       "id": "cmp9zrznz008v7ovduqqx1nki",
       "name": "ทรีทเม้นท์ Tasty Rubber Fish",
+      "barcode": null,
       "price": 1800,
       "stock": 63,
       "usableAsChemical": true,
@@ -2937,6 +3037,18 @@
       "costPerG": 1.93,
       "isActive": true,
       "createdAt": "2026-05-17T16:30:56.591Z"
+    },
+    {
+      "id": "cmpmzqimu000cckvdo5mb2rly",
+      "name": "แชมพูม่วง Milk_shake",
+      "barcode": "4901681540907",
+      "price": 1250,
+      "stock": 15,
+      "usableAsChemical": false,
+      "unitVolumeG": null,
+      "costPerG": null,
+      "isActive": true,
+      "createdAt": "2026-05-26T18:50:48.150Z"
     }
   ]
 }
