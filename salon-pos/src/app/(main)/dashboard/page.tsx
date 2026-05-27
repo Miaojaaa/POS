@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import BranchSelector from "@/components/BranchSelector";
 import DailyExportButton from "@/components/DailyExportButton";
+import DashboardBarChart from "@/components/dashboard/DashboardBarChart";
 
 export const dynamic = "force-dynamic";
 
@@ -17,33 +18,57 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   const branches = await prisma.branch.findMany({ where: { isActive: true } });
 
-  const whereBase: any = { createdAt: { gte: startOfDay } };
-  const whereMonth: any = { createdAt: { gte: startOfMonth } };
+  // Revenue cards: filter by completedAt (payment time) so totals match the
+  // transaction history page and the daily Excel export, which both key off
+  // when the order was paid — not when it was opened.
+  const whereTodayRevenue: any = { completedAt: { gte: startOfDay }, status: "PAID" };
+  const whereMonthRevenue: any = { completedAt: { gte: startOfMonth }, status: "PAID" };
+  // "Recent orders" table: orders opened today regardless of status (createdAt).
+  const whereOpenedToday: any = { createdAt: { gte: startOfDay } };
   const whereQueue: any = { status: { in: ["WAITING", "IN_PROGRESS"] } };
 
   if (branchId !== "all") {
-    whereBase.branchId = branchId;
-    whereMonth.branchId = branchId;
+    whereTodayRevenue.branchId = branchId;
+    whereMonthRevenue.branchId = branchId;
+    whereOpenedToday.branchId = branchId;
     whereQueue.branchId = branchId;
   }
 
   const [todayOrders, monthOrders, queueCount, memberCount] = await Promise.all([
-    // Revenue counts ONLY from PAID orders
     prisma.order.findMany({
-      where: { ...whereBase, status: "PAID" },
-      include: { payments: true },
+      where: whereTodayRevenue,
+      include: {
+        payments: true,
+        items: { include: { service: { include: { category: true } } } },
+        retailItems: { include: { retailProduct: true } },
+      },
     }),
-    prisma.order.findMany({
-      where: { ...whereMonth, status: "PAID" },
-      include: { payments: true },
-    }),
+    prisma.order.findMany({ where: whereMonthRevenue, include: { payments: true } }),
     prisma.order.count({ where: whereQueue }),
     prisma.customer.count(),
   ]);
 
-  // For the "Recent Orders" table, we might still want to see everything today
+  // Aggregate retail products sold today (by quantity) and service revenue by category.
+  const productAgg = new Map<string, number>();
+  const categoryAgg = new Map<string, number>();
+  for (const o of todayOrders) {
+    for (const ri of o.retailItems) {
+      const name = ri.retailProduct.name;
+      productAgg.set(name, (productAgg.get(name) ?? 0) + ri.quantity);
+    }
+    for (const it of o.items) {
+      const cat = it.service.category?.name ?? "ไม่ระบุหมวด";
+      categoryAgg.set(cat, (categoryAgg.get(cat) ?? 0) + it.price);
+    }
+  }
+  const productData = Array.from(productAgg, ([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
+  const categoryData = Array.from(categoryAgg, ([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+
   const allTodayOrders = await prisma.order.findMany({
-    where: { ...whereBase, status: { not: "CANCELLED" } },
+    where: { ...whereOpenedToday, status: { not: "CANCELLED" } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -67,7 +92,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         </h1>
 
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <DailyExportButton branches={branches.map(b => ({ id: b.id, name: b.name }))} />
+          <DailyExportButton />
           <BranchSelector branches={branches} currentBranchId={branchId} />
         </div>
       </div>
@@ -84,6 +109,27 @@ export default async function DashboardPage({ searchParams }: Props) {
             {card.sub && <div style={{ fontSize: "0.7rem", color: "#aaa", marginTop: 2 }}>{card.sub}</div>}
           </div>
         ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+        <div className="card">
+          <h3 style={{ margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>🛍️ สินค้าที่ขายได้วันนี้ (จำนวนชิ้น)</h3>
+          <DashboardBarChart
+            data={productData}
+            color="#C4863B"
+            valueSuffix=" ชิ้น"
+            emptyText="วันนี้ยังไม่มีการขายสินค้า"
+          />
+        </div>
+        <div className="card">
+          <h3 style={{ margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>💇 ยอดขายตามหมวดหมู่บริการวันนี้</h3>
+          <DashboardBarChart
+            data={categoryData}
+            color="#6B7C45"
+            valuePrefix="฿"
+            emptyText="วันนี้ยังไม่มียอดบริการ"
+          />
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>

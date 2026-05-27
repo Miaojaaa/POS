@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { exportMonthlyByBranchXlsx, type OrderForExport, type BranchInfo } from "@/lib/excel";
+import { exportMonthlyXlsx, type OrderForExport } from "@/lib/excel";
 import WaterfallChart from "@/components/reports/WaterfallChart";
 import DonutChart from "@/components/reports/DonutChart";
 import TrendChart, { type DailyRow } from "@/components/reports/TrendChart";
@@ -25,9 +25,9 @@ type ReportData = {
 type ViewMode = "default" | "waterfall" | "donut" | "trend" | "compare";
 
 const TAB_LABELS: Record<ViewMode, string> = {
-  default: "ข้อมูลดิบ",
-  waterfall: "Waterfall",
-  donut: "Donut",
+  default: "ภาพรวม",
+  waterfall: "กำไร",
+  donut: "top 5 บริการ",
   trend: "Trend",
   compare: "Compare",
 };
@@ -40,14 +40,6 @@ export default function RevenuePage() {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [view, setView] = useState<ViewMode>("default");
-  const [branches, setBranches] = useState<BranchInfo[]>([]);
-
-  useEffect(() => {
-    fetch("/api/branches")
-      .then(r => r.ok ? r.json() : [])
-      .then((rows: BranchInfo[]) => { if (Array.isArray(rows)) setBranches(rows); })
-      .catch(() => {});
-  }, []);
 
   async function load() {
     setLoading(true);
@@ -69,7 +61,7 @@ export default function RevenuePage() {
         alert("ไม่สามารถดึงข้อมูลออร์เดอร์ได้");
         return;
       }
-      exportMonthlyByBranchXlsx(orders, branches, { month, year }, `รายงานรายได้-${year}-${String(month).padStart(2, "0")}.xlsx`);
+      exportMonthlyXlsx(orders, { month, year }, `รายงานรายได้-${year}-${String(month).padStart(2, "0")}.xlsx`);
     } catch (err) {
       console.error("Export error:", err);
       alert(`ส่งออกไม่สำเร็จ — ${err instanceof Error ? err.message : String(err)}`);

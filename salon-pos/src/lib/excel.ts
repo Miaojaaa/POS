@@ -14,12 +14,10 @@ export type OrderForExport = {
   vat: number;
   roundingAdjustment?: number;
   total: number;             // final total customer paid
-  items: { service: { name: string }; price: number }[];
+  items: { service: { name: string; category?: { name: string } | null }; price: number }[];
   retailItems: { retailProduct: { name: string }; quantity: number; price: number }[];
   payments: { method: string; amount: number }[];
 };
-
-export type BranchInfo = { id: string; name: string };
 
 const METHOD_LABEL: Record<string, string> = {
   CASH: "เงินสด",
@@ -31,19 +29,6 @@ const METHOD_LABEL: Record<string, string> = {
 
 const MONEY_FMT = "#,##0.00";
 
-function safeSheetName(name: string, used: Set<string>): string {
-  let base = name.replace(/[:\\/?*[\]]/g, "_").slice(0, 31);
-  if (!base) base = "Sheet";
-  let candidate = base;
-  let n = 2;
-  while (used.has(candidate)) {
-    const suffix = ` (${n++})`;
-    candidate = base.slice(0, 31 - suffix.length) + suffix;
-  }
-  used.add(candidate);
-  return candidate;
-}
-
 function ymd(d: Date): string {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -52,22 +37,17 @@ function ymd(d: Date): string {
 }
 
 /**
- * Build one worksheet for a single branch's orders.
+ * Single-sheet layout used by both daily and monthly exports.
  *
- * Layout: each order is split into rows — one combined services row (qty="-")
- * plus one row per retail line (qty=quantity). All money columns are
- * proportionally allocated by `line_raw / (subtotal + retailSubtotal)` so
- * summing any column vertically equals the corresponding order total.
- * Payment columns expand to `2 × max(payments)` so split payments stay readable.
+ * Columns: [วันที่?] สาขา · รายการ · หมวดหมู่ย่อยบริการ · ช่าง · ส่วนลด ·
+ * Net Total · SC · VAT · ค่าปัดเศษ · ยอด · (วิธีชำระ × N)
  *
- * Readability tweaks (limited by community `xlsx` 0.18.5):
- *   • Number format `#,##0.00` on all money cells
- *   • Autofilter on the header
- *   • Frozen top row + frozen "customer" column
- *   • Sensible column widths
- *   • Distinct footer row with column totals
+ * Each order becomes one row for services (qty merged into the label join)
+ * plus one row per retail line ("name xQTY"). Money columns are proportionally
+ * allocated by `line_raw / (subtotal + retailSubtotal)` so vertical sums of
+ * any money column equal the corresponding order total.
  */
-function buildBranchSheet(
+function buildServicesSheet(
   orders: OrderForExport[],
   opts: { includeDate: boolean },
 ): XLSX.WorkSheet {
@@ -75,7 +55,7 @@ function buildBranchSheet(
   const header: string[] = [];
   if (opts.includeDate) header.push("วันที่");
   header.push(
-    "ลูกค้า", "รายการ", "จำนวน", "ช่าง",
+    "สาขา", "รายการ", "หมวดหมู่ย่อยบริการ", "ช่าง",
     "ส่วนลด (฿)", "Net Total (฿)", "Service Charge 3% (฿)", "VAT 7% (฿)", "ค่าปัดเศษ (฿)", "ยอด (฿)",
   );
   for (let i = 0; i < maxPayments; i++) {
@@ -90,19 +70,26 @@ function buildBranchSheet(
 
   for (const o of orders) {
     const rawTotal = o.subtotal + o.retailSubtotal;
-    const lines: { label: string; qty: number | string; raw: number }[] = [];
+    const branchName = o.branch?.name ?? "";
+    const subCats = Array.from(new Set(
+      o.items
+        .map(i => i.service.category?.name)
+        .filter((n): n is string => Boolean(n)),
+    )).join(", ");
+
+    const lines: { label: string; raw: number; subCat: string }[] = [];
     if (o.items.length > 0) {
       lines.push({
         label: o.items.map(i => i.service.name).join(", "),
-        qty: "-",
         raw: o.subtotal,
+        subCat: subCats,
       });
     }
     for (const ri of o.retailItems) {
       lines.push({
-        label: ri.retailProduct.name,
-        qty: ri.quantity,
+        label: `${ri.retailProduct.name} x${ri.quantity}`,
         raw: ri.price * ri.quantity,
+        subCat: "",
       });
     }
     if (lines.length === 0) continue;
@@ -123,9 +110,9 @@ function buildBranchSheet(
       const row: (string | number)[] = [];
       if (opts.includeDate) row.push(dateStr);
       row.push(
-        o.customerName,
+        branchName,
         line.label,
-        line.qty,
+        line.subCat,
         o.technician.name,
         Number(discountLine.toFixed(2)),
         Number(netLine.toFixed(2)),
@@ -156,7 +143,6 @@ function buildBranchSheet(
     }
   }
 
-  // Footer
   if (orders.length > 0) {
     rows.push([]);
     const footer: (string | number)[] = [];
@@ -179,13 +165,12 @@ function buildBranchSheet(
 
   const sheet = XLSX.utils.aoa_to_sheet(rows);
 
-  // Column widths
   const cols: { wch: number }[] = [];
-  if (opts.includeDate) cols.push({ wch: 12 });
+  if (opts.includeDate) cols.push({ wch: 12 }); // วันที่
   cols.push(
-    { wch: 20 }, // ลูกค้า
+    { wch: 16 }, // สาขา
     { wch: 38 }, // รายการ
-    { wch: 8 },  // จำนวน
+    { wch: 20 }, // หมวดหมู่ย่อยบริการ
     { wch: 16 }, // ช่าง
     { wch: 12 }, // ส่วนลด
     { wch: 13 }, // Net Total
@@ -195,18 +180,14 @@ function buildBranchSheet(
     { wch: 13 }, // ยอด
   );
   for (let i = 0; i < maxPayments; i++) {
-    cols.push({ wch: 12 }); // วิธีชำระ
-    cols.push({ wch: 14 }); // ยอดชำระ
+    cols.push({ wch: 12 });
+    cols.push({ wch: 14 });
   }
   sheet["!cols"] = cols;
 
-  // Apply number format to money columns
+  // Money columns: discount..total are at base indices 4..9, shifted by 1 when วันที่ is present
   const dateOffset = opts.includeDate ? 1 : 0;
-  // Static money columns are at indices 5..9 relative to (date?, customer, item, qty, tech) layout
-  // 0-indexed: [date?, customer(0+d), item(1+d), qty(2+d), tech(3+d),
-  //             discount(4+d), net(5+d), sc(6+d), vat(7+d), round(8+d), total(9+d), ...payments]
   const moneyColIndexes: number[] = [4, 5, 6, 7, 8, 9].map(c => c + dateOffset);
-  // Payment amount columns (every "ยอดชำระ"): they sit at total+2, total+4, ...
   const totalColIdx = 9 + dateOffset;
   for (let i = 0; i < maxPayments; i++) {
     moneyColIndexes.push(totalColIdx + 2 + i * 2);
@@ -223,71 +204,122 @@ function buildBranchSheet(
     }
   }
 
-  // Auto-filter on header
   const lastColLetter = XLSX.utils.encode_col(header.length - 1);
   sheet["!autofilter"] = { ref: `A1:${lastColLetter}1` };
 
-  // Freeze top row + the customer column (so date stays visible too if present)
-  const ySplit = 1;
+  // Freeze top row + the first non-date column (so สาขา stays anchored when scrolling).
   const xSplit = opts.includeDate ? 2 : 1;
-  const topLeftCell = `${XLSX.utils.encode_col(xSplit)}2`;
-  // xlsx 0.18 typings don't export the SheetView shape; cast through unknown.
   (sheet as { "!views"?: unknown[] })["!views"] = [{
-    state: "frozen", ySplit, xSplit, topLeftCell, activePane: "bottomRight",
+    state: "frozen", ySplit: 1, xSplit, topLeftCell: `${XLSX.utils.encode_col(xSplit)}2`, activePane: "bottomRight",
   }];
 
   return sheet;
 }
 
-/** Group helper. */
-function groupByBranch(orders: OrderForExport[]): Map<string, OrderForExport[]> {
-  const map = new Map<string, OrderForExport[]>();
+/**
+ * Build the retail-items sheet: one row per retail line sold across all
+ * orders, with optional date column for the monthly export.
+ */
+function buildRetailItemsSheet(
+  orders: OrderForExport[],
+  opts: { includeDate: boolean },
+): XLSX.WorkSheet {
+  const header: string[] = [];
+  if (opts.includeDate) header.push("วันที่");
+  header.push("สาขา", "ชื่อสินค้า", "จำนวน", "ราคา/หน่วย (฿)", "รวม (฿)", "ช่าง");
+
+  const rows: (string | number)[][] = [header];
+
+  let totalQty = 0;
+  let totalAmount = 0;
+
   for (const o of orders) {
-    if (!map.has(o.branchId)) map.set(o.branchId, []);
-    map.get(o.branchId)!.push(o);
+    const branchName = o.branch?.name ?? "";
+    const techName = o.technician.name;
+    const dateStr = ymd(new Date(o.completedAt || o.createdAt));
+    for (const ri of o.retailItems) {
+      const line = ri.price * ri.quantity;
+      const row: (string | number)[] = [];
+      if (opts.includeDate) row.push(dateStr);
+      row.push(
+        branchName,
+        ri.retailProduct.name,
+        ri.quantity,
+        Number(ri.price.toFixed(2)),
+        Number(line.toFixed(2)),
+        techName,
+      );
+      rows.push(row);
+      totalQty += ri.quantity;
+      totalAmount += line;
+    }
   }
-  return map;
+
+  if (rows.length > 1) {
+    rows.push([]);
+    const footer: (string | number)[] = [];
+    if (opts.includeDate) footer.push("");
+    footer.push("รวม", "", totalQty, "", Number(totalAmount.toFixed(2)), "");
+    rows.push(footer);
+  }
+
+  const sheet = XLSX.utils.aoa_to_sheet(rows);
+  const cols: { wch: number }[] = [];
+  if (opts.includeDate) cols.push({ wch: 12 });
+  cols.push(
+    { wch: 16 }, // สาขา
+    { wch: 38 }, // ชื่อสินค้า
+    { wch: 8 },  // จำนวน
+    { wch: 14 }, // ราคา/หน่วย
+    { wch: 14 }, // รวม
+    { wch: 16 }, // ช่าง
+  );
+  sheet["!cols"] = cols;
+
+  // Money columns: ราคา/หน่วย (col 3) and รวม (col 4), shifted by 1 when วันที่ is present
+  const dateOffset = opts.includeDate ? 1 : 0;
+  const moneyColIndexes = [3, 4].map(c => c + dateOffset);
+  for (let r = 1; r < rows.length; r++) {
+    for (const c of moneyColIndexes) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      const cell = sheet[addr];
+      if (cell && typeof cell.v === "number") {
+        cell.z = MONEY_FMT;
+        cell.t = "n";
+      }
+    }
+  }
+
+  const lastColLetter = XLSX.utils.encode_col(header.length - 1);
+  sheet["!autofilter"] = { ref: `A1:${lastColLetter}1` };
+  const xSplit = opts.includeDate ? 2 : 1;
+  (sheet as { "!views"?: unknown[] })["!views"] = [{
+    state: "frozen", ySplit: 1, xSplit, topLeftCell: `${XLSX.utils.encode_col(xSplit)}2`, activePane: "bottomRight",
+  }];
+
+  return sheet;
 }
 
-function buildWorkbook(
-  orders: OrderForExport[],
-  branches: BranchInfo[],
-  opts: { includeDate: boolean },
-): XLSX.WorkBook {
+function buildWorkbook(orders: OrderForExport[], opts: { includeDate: boolean }): XLSX.WorkBook {
   const wb = XLSX.utils.book_new();
-  const used = new Set<string>();
-  const byBranch = groupByBranch(orders);
-  for (const branch of branches) {
-    const list = byBranch.get(branch.id) || [];
-    const sheet = buildBranchSheet(list, opts);
-    XLSX.utils.book_append_sheet(wb, sheet, safeSheetName(branch.name, used));
-  }
+  XLSX.utils.book_append_sheet(wb, buildServicesSheet(orders, opts), "บริการ");
+  XLSX.utils.book_append_sheet(wb, buildRetailItemsSheet(orders, opts), "สินค้า");
   return wb;
 }
 
-/** Daily export — one sheet per branch, no date column (single day). */
-export function exportDailyByBranchXlsx(
-  orders: OrderForExport[],
-  branches: BranchInfo[],
-  date: Date,
-  filename?: string,
-) {
-  const wb = buildWorkbook(orders, branches, { includeDate: false });
+/** Daily export — บริการ + สินค้า sheets, no วันที่ column. */
+export function exportDailyXlsx(orders: OrderForExport[], date: Date, filename?: string) {
+  const wb = buildWorkbook(orders, { includeDate: false });
   XLSX.writeFile(wb, filename || `รายงานรายวัน-${ymd(date)}.xlsx`);
 }
 
-/** Monthly export — one sheet per branch, with a leading "วันที่" column. */
-export function exportMonthlyByBranchXlsx(
+/** Monthly export — same layout as daily, with a leading วันที่ column. */
+export function exportMonthlyXlsx(
   orders: OrderForExport[],
-  branches: BranchInfo[],
   period: { month: number; year: number },
   filename?: string,
 ) {
-  const wb = buildWorkbook(orders, branches, { includeDate: true });
+  const wb = buildWorkbook(orders, { includeDate: true });
   const name = filename || `รายงานรายเดือน-${period.year}-${String(period.month).padStart(2, "0")}.xlsx`;
   XLSX.writeFile(wb, name);
 }
-
-// Backwards-compat alias for callers still importing the old type name.
-// (Daily export button uses this — no behavior change.)
-export type DailyOrderForExport = OrderForExport;

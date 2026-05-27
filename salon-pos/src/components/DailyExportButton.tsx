@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { exportDailyByBranchXlsx, type BranchInfo, type DailyOrderForExport } from "@/lib/excel";
+import { exportDailyXlsx, type OrderForExport } from "@/lib/excel";
 
-type Props = { branches: BranchInfo[] };
-
-export default function DailyExportButton({ branches }: Props) {
+export default function DailyExportButton() {
   const [exporting, setExporting] = useState(false);
 
   async function handleClick() {
@@ -20,7 +18,7 @@ export default function DailyExportButton({ branches }: Props) {
         alert(`ดึงข้อมูลไม่สำเร็จ (HTTP ${res.status})`);
         return;
       }
-      const orders: DailyOrderForExport[] = await res.json();
+      const orders: OrderForExport[] = await res.json();
       if (!Array.isArray(orders)) {
         alert("รูปแบบข้อมูลผิดพลาด");
         return;
@@ -29,7 +27,7 @@ export default function DailyExportButton({ branches }: Props) {
         alert("ยังไม่มีออร์เดอร์ที่จ่ายแล้วในวันนี้");
         return;
       }
-      exportDailyByBranchXlsx(orders, branches, today);
+      exportDailyXlsx(orders, today);
     } catch (err) {
       console.error("Daily export error:", err);
       alert(`ส่งออกไม่สำเร็จ — ${err instanceof Error ? err.message : String(err)}`);
