@@ -307,9 +307,9 @@ function buildWorkbook(orders: OrderForExport[], opts: { includeDate: boolean })
   return wb;
 }
 
-/** Daily export — บริการ + สินค้า sheets, no วันที่ column. */
+/** Daily export — บริการ + สินค้า sheets, with leading วันที่ column. */
 export function exportDailyXlsx(orders: OrderForExport[], date: Date, filename?: string) {
-  const wb = buildWorkbook(orders, { includeDate: false });
+  const wb = buildWorkbook(orders, { includeDate: true });
   XLSX.writeFile(wb, filename || `รายงานรายวัน-${ymd(date)}.xlsx`);
 }
 
