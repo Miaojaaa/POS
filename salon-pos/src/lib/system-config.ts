@@ -152,6 +152,117 @@ export function buildReceiptNumber(seq: number, date: Date, cfg: ReceiptFormatCo
     : `${datePart}${seqStr}${cfg.prefix}`;
 }
 
+// ───── Receipt footer builder ─────
+//
+// The bottom of a receipt is a user-composed, ordered list of blocks (text / image /
+// divider). Each block carries its own visibility per receipt type, so e.g. a LINE-QR
+// can print on the thermal slip but be omitted from the formal A4 tax invoice.
+
+export type FooterBlockAlign = "left" | "center" | "right";
+export type FooterTextSize = "sm" | "md" | "lg";
+
+type FooterBlockBase = { showShort: boolean; showFull: boolean };
+export type FooterTextBlock = FooterBlockBase & {
+  type: "text";
+  text: string;
+  align: FooterBlockAlign;
+  size: FooterTextSize;
+  bold: boolean;
+};
+export type FooterImageBlock = FooterBlockBase & {
+  type: "image";
+  dataUrl: string;
+  align: FooterBlockAlign;
+  widthPct: number; // 10–100, percent of the receipt content width
+};
+export type FooterDividerBlock = FooterBlockBase & { type: "divider" };
+export type FooterBlock = FooterTextBlock | FooterImageBlock | FooterDividerBlock;
+
+// Legacy receipts hard-coded a centered "ขอบคุณที่ใช้บริการค่ะ" on the slip only;
+// keep that as the default so a salon that never customizes its footer is unchanged.
+export const DEFAULT_FOOTER_BLOCKS: FooterBlock[] = [
+  { type: "text", text: "ขอบคุณที่ใช้บริการค่ะ 🙏", align: "center", size: "md", bold: false, showShort: true, showFull: false },
+];
+
+const FOOTER_ALIGNS: FooterBlockAlign[] = ["left", "center", "right"];
+const FOOTER_SIZES: FooterTextSize[] = ["sm", "md", "lg"];
+const MAX_FOOTER_BLOCKS = 20;
+const MAX_FOOTER_TEXT_LEN = 500;
+
+function pickEnum<T>(valid: readonly T[], raw: unknown, fallback: T): T {
+  return valid.includes(raw as T) ? (raw as T) : fallback;
+}
+
+// Coerce arbitrary JSON (an API body or a stored config row) into a safe,
+// fully-populated FooterBlock[]. Unknown/invalid blocks are dropped; image blocks
+// without a real data URL are dropped. Caps count + text length to bound row size.
+export function normalizeFooterBlocks(raw: unknown): FooterBlock[] {
+  if (!Array.isArray(raw)) return [];
+  const out: FooterBlock[] = [];
+  for (const item of raw) {
+    if (out.length >= MAX_FOOTER_BLOCKS) break;
+    if (!item || typeof item !== "object") continue;
+    const b = item as Record<string, unknown>;
+    const showShort = b.showShort !== false; // default ⇒ visible
+    const showFull = b.showFull !== false;
+    if (b.type === "text") {
+      out.push({
+        type: "text",
+        text: typeof b.text === "string" ? b.text.slice(0, MAX_FOOTER_TEXT_LEN) : "",
+        align: pickEnum(FOOTER_ALIGNS, b.align, "center"),
+        size: pickEnum(FOOTER_SIZES, b.size, "md"),
+        bold: b.bold === true,
+        showShort, showFull,
+      });
+    } else if (b.type === "image") {
+      const dataUrl = typeof b.dataUrl === "string" ? b.dataUrl : "";
+      if (!dataUrl.startsWith("data:image/")) continue;
+      const wRaw = typeof b.widthPct === "number" ? b.widthPct : Number(b.widthPct);
+      const widthPct = Number.isFinite(wRaw) ? Math.min(100, Math.max(10, Math.round(wRaw))) : 60;
+      out.push({ type: "image", dataUrl, align: pickEnum(FOOTER_ALIGNS, b.align, "center"), widthPct, showShort, showFull });
+    } else if (b.type === "divider") {
+      out.push({ type: "divider", showShort, showFull });
+    }
+  }
+  return out;
+}
+
+// Shared <style> body for the rendered footer — embedded by both receipt builders
+// (src/lib/receipt.ts and the queue page's local copy) so the look can't drift.
+export const FOOTER_BLOCKS_CSS = `
+.rfooter { margin-top: 12px; }
+.rf-block { margin: 6px 0; }
+.rf-text { white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+.rf-img img { max-width: 100%; height: auto; object-fit: contain; }
+.rf-divider { border-top: 1px dashed #999; }
+.rf-sm { font-size: 11px; }
+.rf-md { font-size: 13px; }
+.rf-lg { font-size: 16px; }
+`.trim();
+
+function escapeFooterHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Render the footer block list to an HTML string for one receipt type. Returns "" when
+// nothing is visible so callers can drop the wrapper entirely. `white-space: pre-wrap`
+// in FOOTER_BLOCKS_CSS preserves user line breaks, so text is only entity-escaped.
+export function renderFooterBlocksHtml(blocks: FooterBlock[] | undefined, receiptType: "SHORT" | "FULL"): string {
+  if (!blocks || !blocks.length) return "";
+  const visible = blocks.filter(b => (receiptType === "SHORT" ? b.showShort : b.showFull));
+  const inner = visible.map(b => {
+    if (b.type === "text") {
+      if (!b.text.trim()) return "";
+      return `<div class="rf-block rf-text rf-${b.size}" style="text-align:${b.align};font-weight:${b.bold ? 700 : 400}">${escapeFooterHtml(b.text)}</div>`;
+    }
+    if (b.type === "image") {
+      return `<div class="rf-block rf-img" style="text-align:${b.align}"><img src="${b.dataUrl}" alt="" style="width:${b.widthPct}%"/></div>`;
+    }
+    return `<div class="rf-block rf-divider"></div>`;
+  }).join("");
+  return inner.trim() ? `<div class="rfooter">${inner}</div>` : "";
+}
+
 // Merges saved sidebar config with the canonical module list. Missing modules
 // (added in a later release) get appended enabled-by-default; SETTINGS is forced enabled.
 export function mergeSidebarConfig(saved: SidebarModuleConfig[] | null | undefined): SidebarModuleConfig[] {

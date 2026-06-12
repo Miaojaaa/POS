@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useBranch } from "@/context/BranchContext";
 import { buildReceiptHtml, type ReceiptBranding, type ReceiptData as PrintableReceipt } from "@/lib/receipt";
-import { DEFAULT_RECEIPT_FORMATS, buildReceiptNumber, type ReceiptFormats, type VatMode } from "@/lib/system-config";
+import { DEFAULT_RECEIPT_FORMATS, buildReceiptNumber, type ReceiptFormats, type VatMode, type FooterBlock } from "@/lib/system-config";
 
 type Branch = { id: string; name: string };
 type OrderRow = {
@@ -227,7 +227,7 @@ export default function HistoryPage() {
       fetch("/api/system-config").catch(() => null),
     ]);
     const brandingData = brandingRes && brandingRes.ok
-      ? await brandingRes.json().catch(() => null) as { shopName?: string; logoDataUrl?: string | null; address?: string; taxId?: string } | null
+      ? await brandingRes.json().catch(() => null) as { shopName?: string; logoDataUrl?: string | null; address?: string; taxId?: string; footerBlocks?: FooterBlock[] } | null
       : null;
     const sysCfg = sysCfgRes && sysCfgRes.ok
       ? await sysCfgRes.json().catch(() => null) as { receiptFormat?: ReceiptFormats } | null

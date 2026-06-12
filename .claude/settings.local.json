@@ -79,7 +79,8 @@
       "Bash(node -e \"const Database = require\\('better-sqlite3'\\); const fs = require\\('fs'\\); const db = new Database\\('./dev.db', { readonly: true }\\); const dbRow = db.prepare\\(\\\\\"SELECT * FROM 'Product' WHERE id='cmp9zrxrq000k7ovdqwlb2xuc'\\\\\"\\).get\\(\\); const snap = JSON.parse\\(fs.readFileSync\\('prisma/shared-catalog.json','utf8'\\)\\); const snapRow = snap.products.find\\(p => p.id === 'cmp9zrxrq000k7ovdqwlb2xuc'\\); console.log\\('DB row:'\\); console.log\\(JSON.stringify\\(dbRow, null, 2\\)\\); console.log\\('---Snap row:---'\\); console.log\\(JSON.stringify\\(snapRow, null, 2\\)\\);\")",
       "Bash(git push *)",
       "Bash(npx tsx *)",
-      "Bash(echo \"EXIT=$?\")"
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npx eslint *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\dudek\\OneDrive\\Desktop\\POS\\salon-pos\\src\\app\\api\\payroll\\items",

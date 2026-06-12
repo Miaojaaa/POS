@@ -8,9 +8,13 @@ import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import {
   DEFAULT_RECEIPT_FORMATS,
   buildReceiptNumber,
+  renderFooterBlocksHtml,
+  FOOTER_BLOCKS_CSS,
+  DEFAULT_FOOTER_BLOCKS,
   type ReceiptFormatConfig,
   type ReceiptFormats,
   type VatMode,
+  type FooterBlock,
 } from "@/lib/system-config";
 
 /* ─────────────────────────── types ─────────────────────────── */
@@ -100,6 +104,7 @@ type Branding = {
   address?: string | null;
   taxId?: string | null;
   receiptFormat?: { short?: ReceiptFormatConfig; full?: ReceiptFormatConfig };
+  footerBlocks?: FooterBlock[];
 };
 
 /* ─────────────────────────── helper: build receipt html ─────── */
@@ -114,6 +119,9 @@ function buildReceiptHtml(r: ReceiptData, mode: "SHORT" | "FULL", info: FullInvo
   const shopAddress = branding?.address?.trim() || COMPANY.address;
   const shopTaxId = branding?.taxId?.trim() || COMPANY.taxId;
   const logoUrl = branding?.logoDataUrl || null;
+  const footerBlocks = branding?.footerBlocks ?? DEFAULT_FOOTER_BLOCKS;
+  const footerShortHtml = renderFooterBlocksHtml(footerBlocks, "SHORT");
+  const footerFullHtml = renderFooterBlocksHtml(footerBlocks, "FULL");
 
   // Mirrors src/lib/receipt.ts logic — INCLUSIVE renders an informational VAT line
   // ("รวมในราคา") and falls back to extracting from base+SC if the stored vat is 0.
@@ -161,6 +169,7 @@ table.items th { font-size: 11px; color: #555; border-bottom: 1px solid #888; }
 .summary tr.net td { border-top: 1px solid #aaa; font-weight: 700; padding-top: 4px; }
 .summary tr.grand td { border-top: 2px solid #000; border-bottom: 2px solid #000; font-weight: 700; font-size: 13px; padding: 4px 0; }
 .vat-label { text-align: center; font-size: 11px; letter-spacing: 1px; border: 1px solid #999; padding: 3px; margin-top: 6px; font-weight: 700; }
+${FOOTER_BLOCKS_CSS}
 </style></head><body>
 ${logoUrl ? `<div class="logo"><img src="${logoUrl}" alt="logo"/></div>` : ""}
 <h2>${shopName}</h2>
@@ -194,7 +203,7 @@ ${r.order.customerPhone ? `<p class="sm">โทร: ${r.order.customerPhone}</p>
 ${r.payments.map(p => `<p>${METHOD_LABEL[p.method] ?? p.method}: ฿${fmt(p.amount)}</p>`).join("")}
 ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` : ""}
 <div class="vat-label">VAT INCLUDED</div>
-<p style="text-align:center;font-size:12px;margin-top:8px">ขอบคุณที่ใช้บริการค่ะ 🙏</p>
+${footerShortHtml}
 </body></html>`;
   }
 
@@ -294,6 +303,7 @@ ${r.change > 0 ? `<p class="b">เงินทอน: ฿${fmt(r.change)}</p>` :
       <div class="footer">
         เอกสารนี้พิมพ์จากระบบคอมพิวเตอร์ของ ${shopName} — ${receiptNo} (${variantLabel})
       </div>
+      ${footerFullHtml}
     </div>`;
   };
 
@@ -339,6 +349,7 @@ table.items td.r, table.items th.r { text-align: right; }
 .sig .line { border-top: 1px solid #999; margin-bottom: 6px; }
 .sig small { color: #666; }
 .footer { text-align: center; margin-top: 30px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 11px; color: #888; }
+${FOOTER_BLOCKS_CSS}
 </style></head><body>
 ${buildPage("ORIGINAL")}
 ${buildPage("COPY")}
@@ -423,6 +434,7 @@ export default function QueuePage() {
           address: b?.address ?? null,
           taxId: b?.taxId ?? null,
           receiptFormat: sc?.receiptFormat,
+          footerBlocks: b?.footerBlocks,
         });
         if (sc?.finance?.vatMode) setVatMode(sc.finance.vatMode);
       });

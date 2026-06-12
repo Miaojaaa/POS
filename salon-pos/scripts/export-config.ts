@@ -17,6 +17,7 @@ const SYNCED_KEYS = [
   "shop.logo",
   "shop.address",
   "shop.taxId",
+  "shop.receiptFooterBlocks",
   "theme.main",
   "theme.secondary",
   "theme.third",
