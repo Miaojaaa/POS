@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useBranch } from "@/context/BranchContext";
 import SearchInput from "@/components/SearchInput";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
+import CustomerDisplayButton from "@/components/CustomerDisplayButton";
+import { pushCustomerDisplay } from "@/lib/customer-display";
 import {
   DEFAULT_RECEIPT_FORMATS,
   buildReceiptNumber,
@@ -494,6 +496,7 @@ export default function QueuePage() {
     setSelectedTicket(null);
     setCustomerTickets([]);
     setRetailLines([]);
+    pushCustomerDisplay({ kind: "idle" });
   }
 
   function addRetail(p: RetailProduct) {
@@ -685,6 +688,28 @@ export default function QueuePage() {
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
   const currentChange = totalPaid - currentFinalTotal;
 
+  // While the checkout modal is open, mirror the bill + amount due to the customer
+  // display so it can show the live total and (if PromptPay is configured) the QR.
+  useEffect(() => {
+    if (!checkoutOrder) return;
+    const lines = [
+      ...checkoutOrder.items.map(i => ({ name: i.service.name, qty: 1, lineTotal: i.price })),
+      ...(checkoutOrder.retailItems || []).map(ri => ({ name: ri.retailProduct.name, qty: ri.quantity, lineTotal: ri.price * ri.quantity })),
+      ...retailLines.map(l => ({ name: l.name, qty: l.quantity, lineTotal: l.price * l.quantity })),
+    ];
+    const methodLabel = payments.length > 1
+      ? "หลายช่องทาง"
+      : payments.length === 1 ? (METHOD_LABEL[payments[0].method] ?? payments[0].method) : undefined;
+    pushCustomerDisplay({
+      kind: "payment",
+      customerName: checkoutOrder.customerName,
+      lines,
+      total: currentFinalTotal,
+      amountDue: currentFinalTotal,
+      methodLabel,
+    });
+  }, [checkoutOrder, retailLines, payments, currentFinalTotal]);
+
   async function handleCheckout() {
     if (!checkoutOrder) return;
     if (currentChange < -0.01) { showAlert("ยอดชำระไม่ครบ กรุณาตรวจสอบ"); return; }
@@ -734,6 +759,8 @@ export default function QueuePage() {
         vatMode,
       };
       closeCheckout();
+      // closeCheckout reset the display to idle; immediately show the thank-you screen.
+      pushCustomerDisplay({ kind: "thankyou", total: currentFinalTotal, change: Math.max(0, currentChange) });
       setReceipt(receiptPayload);
       setReceiptMode("SHORT");
       setTaxId("");
@@ -803,6 +830,7 @@ export default function QueuePage() {
     setTaxId("");
     setFullCustomerName("");
     setFullCustomerAddress("");
+    pushCustomerDisplay({ kind: "idle" });
   }
 
   /* ── order card ── */
@@ -884,6 +912,7 @@ export default function QueuePage() {
           </select>
           <Link href="/pos/new" className="btn-primary" style={{ textDecoration: "none" }}>+ รับออร์เดอร์ใหม่</Link>
           <Link href="/pos/history" className="btn-secondary" style={{ textDecoration: "none" }}>📜 ประวัติ Transaction</Link>
+          <CustomerDisplayButton />
           <button className="btn-secondary" onClick={load}>🔄 รีเฟรช</button>
         </div>
       </div>

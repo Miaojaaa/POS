@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizeFooterBlocks, DEFAULT_FOOTER_BLOCKS, type FooterBlock } from "@/lib/system-config";
+import { isValidPromptPayId } from "@/lib/promptpay";
 
 const SHOP_NAME_KEY = "shop.name";
 const SHOP_LOGO_KEY = "shop.logo";
 const SHOP_ADDRESS_KEY = "shop.address";
 const SHOP_TAX_ID_KEY = "shop.taxId";
+// PromptPay proxy id (phone / national id / e-wallet) used to render the dynamic
+// payment QR on the customer-facing display.
+const SHOP_PROMPTPAY_KEY = "shop.promptpayId";
 const THEME_MAIN_KEY = "theme.main";
 const THEME_SECONDARY_KEY = "theme.secondary";
 const THEME_THIRD_KEY = "theme.third";
@@ -17,7 +21,7 @@ const LEGACY_FOOTER_IMG_KEY = "shop.receiptFooter";
 const LEGACY_FOOTER_SHORT_KEY = "shop.receiptFooterShort";
 const LEGACY_FOOTER_FULL_KEY = "shop.receiptFooterFull";
 
-const ALL_KEYS = [SHOP_NAME_KEY, SHOP_LOGO_KEY, SHOP_ADDRESS_KEY, SHOP_TAX_ID_KEY, THEME_MAIN_KEY, THEME_SECONDARY_KEY, THEME_THIRD_KEY, SHOP_FOOTER_BLOCKS_KEY, LEGACY_FOOTER_IMG_KEY, LEGACY_FOOTER_SHORT_KEY, LEGACY_FOOTER_FULL_KEY];
+const ALL_KEYS = [SHOP_NAME_KEY, SHOP_LOGO_KEY, SHOP_ADDRESS_KEY, SHOP_TAX_ID_KEY, SHOP_PROMPTPAY_KEY, THEME_MAIN_KEY, THEME_SECONDARY_KEY, THEME_THIRD_KEY, SHOP_FOOTER_BLOCKS_KEY, LEGACY_FOOTER_IMG_KEY, LEGACY_FOOTER_SHORT_KEY, LEGACY_FOOTER_FULL_KEY];
 
 const DEFAULT_SHOP_NAME = "บริษัท ลานนาดีเซีย กรุ๊ป จำกัด";
 const DEFAULT_ADDRESS = "119/2 หมู่บ้านใจแก้เอราวัณ 23 หมู่ 3 ตำบล หนองหอย อำเภอ เมืองเชียงใหม่ จังหวัด เชียงใหม่ 50000";
@@ -71,6 +75,7 @@ function readBranding(map: Record<string, string>) {
     logoDataUrl: map[SHOP_LOGO_KEY] ?? null,
     address: map[SHOP_ADDRESS_KEY] ?? DEFAULT_ADDRESS,
     taxId: map[SHOP_TAX_ID_KEY] ?? DEFAULT_TAX_ID,
+    promptpayId: map[SHOP_PROMPTPAY_KEY] ?? null,
     theme: {
       main: map[THEME_MAIN_KEY] ?? DEFAULT_THEME.main,
       secondary: map[THEME_SECONDARY_KEY] ?? DEFAULT_THEME.secondary,
@@ -90,6 +95,7 @@ type PutBody = {
   logoDataUrl?: string | null;
   address?: string;
   taxId?: string;
+  promptpayId?: string | null;
   theme?: { main?: string; secondary?: string; third?: string };
   footerBlocks?: unknown;
 };
@@ -131,6 +137,21 @@ export async function PUT(req: NextRequest) {
       update: { value: taxId },
       create: { key: SHOP_TAX_ID_KEY, value: taxId },
     }));
+  }
+
+  if (body.promptpayId !== undefined) {
+    const raw = (body.promptpayId ?? "").replace(/\D/g, "");
+    if (raw === "") {
+      updates.push(prisma.systemConfig.deleteMany({ where: { key: SHOP_PROMPTPAY_KEY } }));
+    } else if (!isValidPromptPayId(raw)) {
+      return NextResponse.json({ error: "PromptPay ID ต้องเป็นเบอร์โทร 10 หลัก, เลขบัตรประชาชน 13 หลัก หรือ e-Wallet 15 หลัก" }, { status: 400 });
+    } else {
+      updates.push(prisma.systemConfig.upsert({
+        where: { key: SHOP_PROMPTPAY_KEY },
+        update: { value: raw },
+        create: { key: SHOP_PROMPTPAY_KEY, value: raw },
+      }));
+    }
   }
 
   if (body.logoDataUrl !== undefined) {

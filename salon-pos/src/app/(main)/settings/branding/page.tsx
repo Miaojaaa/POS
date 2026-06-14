@@ -14,6 +14,7 @@ type Branding = {
   logoDataUrl: string | null;
   address: string;
   taxId: string;
+  promptpayId: string | null;
   theme: Theme;
   footerBlocks: FooterBlock[];
 };
@@ -91,6 +92,7 @@ export default function BrandingSettingsPage() {
   const [shopName, setShopName] = useState("");
   const [address, setAddress] = useState("");
   const [taxId, setTaxId] = useState("");
+  const [promptpayId, setPromptpayId] = useState("");
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>(DEFAULT_THEME);
   const [footerBlocks, setFooterBlocks] = useState<FooterBlock[]>([]);
@@ -108,18 +110,20 @@ export default function BrandingSettingsPage() {
         setShopName(b.shopName);
         setAddress(b.address);
         setTaxId(b.taxId);
+        const pp = b.promptpayId ?? "";
+        setPromptpayId(pp);
         setLogoDataUrl(b.logoDataUrl);
         const t = b.theme ?? DEFAULT_THEME;
         setTheme(t);
         const blocks = normalizeFooterBlocks(b.footerBlocks ?? []);
         setFooterBlocks(blocks);
-        setInitial(JSON.stringify({ shopName: b.shopName, address: b.address, taxId: b.taxId, logoDataUrl: b.logoDataUrl, theme: t, footerBlocks: blocks }));
+        setInitial(JSON.stringify({ shopName: b.shopName, address: b.address, taxId: b.taxId, promptpayId: pp, logoDataUrl: b.logoDataUrl, theme: t, footerBlocks: blocks }));
       })
       .catch(() => setMsg({ kind: "err", text: "โหลดข้อมูลไม่สำเร็จ" }))
       .finally(() => setLoading(false));
   }, []);
 
-  const dirty = initial !== "" && JSON.stringify({ shopName, address, taxId, logoDataUrl, theme, footerBlocks }) !== initial;
+  const dirty = initial !== "" && JSON.stringify({ shopName, address, taxId, promptpayId, logoDataUrl, theme, footerBlocks }) !== initial;
 
   function pickFile() {
     fileRef.current?.click();
@@ -175,6 +179,7 @@ export default function BrandingSettingsPage() {
           shopName: shopName.trim(),
           address: address.trim(),
           taxId: trimmedTaxId,
+          promptpayId: promptpayId.trim(),
           logoDataUrl,
           theme,
           footerBlocks,
@@ -188,12 +193,14 @@ export default function BrandingSettingsPage() {
         setShopName(data.shopName);
         setAddress(data.address);
         setTaxId(data.taxId);
+        const newPp = data.promptpayId ?? "";
+        setPromptpayId(newPp);
         setLogoDataUrl(data.logoDataUrl);
         const newTheme = data.theme ?? theme;
         setTheme(newTheme);
         const newBlocks = normalizeFooterBlocks(data.footerBlocks ?? footerBlocks);
         setFooterBlocks(newBlocks);
-        setInitial(JSON.stringify({ shopName: data.shopName, address: data.address, taxId: data.taxId, logoDataUrl: data.logoDataUrl, theme: newTheme, footerBlocks: newBlocks }));
+        setInitial(JSON.stringify({ shopName: data.shopName, address: data.address, taxId: data.taxId, promptpayId: newPp, logoDataUrl: data.logoDataUrl, theme: newTheme, footerBlocks: newBlocks }));
         setMsg({ kind: "ok", text: "บันทึกสำเร็จ — ใบเสร็จ, Sidebar และธีมจะอัพเดตทันที" });
         window.dispatchEvent(new Event("branding-updated"));
       }
@@ -254,6 +261,22 @@ export default function BrandingSettingsPage() {
           />
           <div style={{ fontSize: "0.75rem", color: "#888", marginTop: 4 }}>
             ตัวเลข 13 หลัก — จะปรากฏที่หัวใบเสร็จทั้งสองแบบ
+          </div>
+        </div>
+
+        {/* PromptPay ID — drives the dynamic payment QR on the customer display */}
+        <div>
+          <label className="label">PromptPay ID (สำหรับ QR จ่ายเงินบนจอลูกค้า)</label>
+          <input
+            className="input"
+            value={promptpayId}
+            onChange={e => setPromptpayId(e.target.value.replace(/[^\d]/g, "").slice(0, 15))}
+            placeholder="เบอร์พร้อมเพย์ เช่น 0812345678"
+            inputMode="numeric"
+            style={{ fontFamily: "monospace", letterSpacing: 1 }}
+          />
+          <div style={{ fontSize: "0.75rem", color: "#888", marginTop: 4 }}>
+            เบอร์โทร 10 หลัก, เลขบัตรประชาชน/ผู้เสียภาษี 13 หลัก หรือ e-Wallet 15 หลัก — ระบบจะสร้าง QR พร้อมยอดเงินให้ลูกค้าสแกนบนจอที่ 2 อัตโนมัติ (เว้นว่างได้ถ้าไม่ใช้)
           </div>
         </div>
 
