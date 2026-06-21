@@ -10,8 +10,8 @@ const KEYS = ["shop.name", "shop.logo", "theme.main", "theme.secondary", "theme.
  * /api/branding after mount.
  *
  * Server-only — never import this from a "use client" file. The Prisma client
- * drags better-sqlite3 (which needs Node's `fs`) into the browser bundle.
- * Pure helpers live in `./branding-shared`.
+ * drags the Postgres driver (pg, which needs Node's `net`/`fs`) into the
+ * browser bundle. Pure helpers live in `./branding-shared`.
  */
 export async function getBranding(): Promise<Branding> {
   try {

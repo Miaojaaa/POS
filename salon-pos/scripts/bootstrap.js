@@ -27,10 +27,9 @@ function step(name, cmd, args, { warnOnly = false } = {}) {
 console.log("Salon POS bootstrap — sync this machine's DB to the repo snapshots.");
 
 // Prisma 7's `db push` already regenerates the client as part of the push.
-// On a DB that's already in sync this can fail with SQLite "cannot drop index"
-// noise — warnOnly lets the rest of bootstrap proceed since `prisma generate`
-// below will still refresh the client.
-step("Push schema → dev.db (creates/updates tables, no data loss; regenerates client)",
+// warnOnly lets the rest of bootstrap proceed even if push reports a no-op /
+// warning, since `prisma generate` below will still refresh the client.
+step("Push schema → PostgreSQL (creates/updates tables, no data loss; regenerates client)",
   "npx", ["prisma", "db", "push"], { warnOnly: true });
 
 // Ensure the client matches schema.prisma even if db push above no-op'd / warned.

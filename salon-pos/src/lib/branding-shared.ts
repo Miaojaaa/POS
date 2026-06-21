@@ -1,7 +1,7 @@
 // Pure, side-effect-free branding utilities safe to import from client code.
 // The server-only counterpart (`branding.ts`) reads from Prisma and must NOT
-// be imported by any "use client" file — doing so pulls better-sqlite3 into
-// the browser bundle and fails the build with `Can't resolve 'fs'`.
+// be imported by any "use client" file — doing so pulls the Postgres driver
+// (pg) into the browser bundle and fails the build with `Can't resolve 'fs'`.
 
 export const DEFAULT_THEME = {
   main: "#6B7C45",

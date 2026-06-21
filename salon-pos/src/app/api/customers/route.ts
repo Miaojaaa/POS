@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get("q");
   const customers = await prisma.customer.findMany({
     where: q
-      ? { OR: [{ name: { contains: q } }, { phone: { contains: q } }] }
+      ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { phone: { contains: q } }] }
       : {},
     orderBy: { name: "asc" },
     take: 50,

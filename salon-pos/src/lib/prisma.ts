@@ -1,19 +1,19 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import path from "path";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 function createPrisma() {
-  // Use absolute path to ensure consistency across different execution environments
-  const dbPath = path.resolve(process.cwd(), "dev.db");
-  const dbUrl = process.env.DATABASE_URL ?? `file:${dbPath}`;
-  
-  console.log(`[Prisma] Initializing with DB at: ${dbUrl}`);
-  
-  const adapter = new PrismaBetterSqlite3({ url: dbUrl });
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is not set — point it at your PostgreSQL instance");
+  }
+
+  console.log(`[Prisma] Initializing PostgreSQL adapter`);
+
+  const adapter = new PrismaPg({ connectionString });
   return new PrismaClient({ adapter });
 }
 
