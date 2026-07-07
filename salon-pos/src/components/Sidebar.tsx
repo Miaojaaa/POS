@@ -471,11 +471,11 @@ export default function Sidebar() {
           }}>
             <div style={{ textAlign: "center", marginBottom: "1rem" }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem", color: "var(--olive)" }}><Lock size={32} /></div>
-              <h3 style={{ margin: 0, color: "var(--olive)", fontSize: "1.1rem" }}>Owner Access</h3>
+              <h3 style={{ margin: 0, color: "var(--olive)", fontSize: "1.1rem" }}>ยืนยันสิทธิ์การจัดการ</h3>
               <p style={{ fontSize: "0.8rem", color: "#888", marginTop: 4 }}>
-                กรุณากรอก PIN ของ Owner เพื่อเข้าถึงเมนูนี้
+                กรุณากรอก PIN เพื่อเข้าถึงเมนูการตั้งค่า
                 <br />
-                (ปลดล็อค 5 นาที)
+                (ปลดล็อค 10 นาที)
               </p>
             </div>
             <input

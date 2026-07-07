@@ -401,82 +401,85 @@ export default function NewOrderPage() {
               {customerId && <div style={{ fontSize: "0.75rem", color: "var(--success-green)", marginTop: 4 }}>✓ สมาชิก</div>}
             </div>
 
-            {/* Technicians — multiple via dropdown + button */}
-            <div style={{ marginBottom: "0.75rem" }}>
-              <label className="label">ช่างผู้ดูแล * <span style={{ fontWeight: 400, color: "#888" }}>(เฉพาะสาขาที่เลือก)</span></label>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <select
-                  className="input"
-                  style={{ flex: 1, marginBottom: 0 }}
-                  value=""
-                  onChange={e => {
-                    const id = e.target.value;
-                    if (id && !technicianIds.includes(id)) {
-                      setTechnicianIds(prev => [...prev, id]);
-                    }
-                  }}
-                >
-                  <option value="">-- เลือกช่าง --</option>
-                  {availableTechs.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              </div>
-              {technicianIds.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.5rem" }}>
-                  {technicianIds.map((id) => {
-                    const u = users.find(u => u.id === id);
-                    return (
-                      <span key={id} style={tagStyle(true)}>
-                        {u?.name ?? id}
-                        <button
-                          onClick={() => removeTechnician(id)}
-                          style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 0, marginLeft: 2, fontSize: "1rem", lineHeight: 1 }}
-                        >×</button>
-                      </span>
-                    );
-                  })}
+            {/* Staff Selection Area */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
+              {/* Technicians */}
+              <div>
+                <label className="label">ช่างผู้ดูแล * <span style={{ fontWeight: 400, color: "#888" }}>(สาขาปัจจุบัน)</span></label>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                  <select
+                    className="input"
+                    style={{ flex: 1, marginBottom: 0 }}
+                    value=""
+                    onChange={e => {
+                      const id = e.target.value;
+                      if (id && !technicianIds.includes(id)) {
+                        setTechnicianIds(prev => [...prev, id]);
+                      }
+                    }}
+                  >
+                    <option value="">-- เลือกช่าง --</option>
+                    {availableTechs.map(u => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
                 </div>
-              )}
-            </div>
+                {technicianIds.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.5rem" }}>
+                    {technicianIds.map((id) => {
+                      const u = users.find(u => u.id === id);
+                      return (
+                        <span key={id} style={tagStyle(true)}>
+                          {u?.name ?? id}
+                          <button
+                            onClick={() => removeTechnician(id)}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 0, marginLeft: 2, fontSize: "1rem", lineHeight: 1 }}
+                          >×</button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
-            {/* Assistants — dropdown + button */}
-            <div style={{ marginBottom: "0.75rem" }}>
-              <label className="label">ผู้ช่วยช่าง <span style={{ fontWeight: 400, color: "#888" }}>(เฉพาะสาขาที่เลือก)</span></label>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <select
-                  className="input"
-                  style={{ flex: 1, marginBottom: 0 }}
-                  value=""
-                  onChange={e => {
-                    const id = e.target.value;
-                    if (id && !assistantIds.includes(id)) {
-                      setAssistantIds(prev => [...prev, id]);
-                    }
-                  }}
-                >
-                  <option value="">-- เลือกผู้ช่วย --</option>
-                  {availableAssists.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              </div>
-              {assistantIds.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.5rem" }}>
-                  {assistantIds.map(id => {
-                    const u = users.find(u => u.id === id);
-                    return (
-                      <span key={id} style={tagStyle(false)}>
-                        {u?.name ?? id}
-                        <button
-                          onClick={() => removeAssistant(id)}
-                          style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 0, marginLeft: 2, fontSize: "1rem", lineHeight: 1 }}
-                        >×</button>
-                      </span>
-                    );
-                  })}
+              {/* Assistants */}
+              <div>
+                <label className="label">ผู้ช่วยช่าง <span style={{ fontWeight: 400, color: "#888" }}>(สาขาปัจจุบัน)</span></label>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                  <select
+                    className="input"
+                    style={{ flex: 1, marginBottom: 0 }}
+                    value=""
+                    onChange={e => {
+                      const id = e.target.value;
+                      if (id && !assistantIds.includes(id)) {
+                        setAssistantIds(prev => [...prev, id]);
+                      }
+                    }}
+                  >
+                    <option value="">-- เลือกผู้ช่วย --</option>
+                    {availableAssists.map(u => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
                 </div>
-              )}
+                {assistantIds.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.5rem" }}>
+                    {assistantIds.map(id => {
+                      const u = users.find(u => u.id === id);
+                      return (
+                        <span key={id} style={tagStyle(false)}>
+                          {u?.name ?? id}
+                          <button
+                            onClick={() => removeAssistant(id)}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 0, marginLeft: 2, fontSize: "1rem", lineHeight: 1 }}
+                          >×</button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -505,9 +508,9 @@ export default function NewOrderPage() {
               />
               {showChemDropdown && (
                 <div style={{
-                  position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0,
-                  background: "white", border: "1px solid var(--beige-dark)", borderRadius: 8,
-                  zIndex: 20, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", maxHeight: 220, overflowY: "auto",
+                  position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+                  background: "white", border: "1px solid var(--beige-dark)", borderRadius: 12,
+                  zIndex: 20, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)", maxHeight: 220, overflowY: "auto",
                 }}>
                   {filteredChemProducts.map(prod => (
                     <div
@@ -562,7 +565,7 @@ export default function NewOrderPage() {
                 </div>
               </div>
             ) : (
-              <p style={{ color: "#aaa", fontSize: "0.85rem", margin: 0 }}>ค้นหาและกด + เพื่อเพิ่มเคมีที่ใช้</p>
+              <p style={{ color: "#aaa", fontSize: "0.85rem", margin: 0 }}>ยังไม่ได้เลือกเคมีสำหรับบริการนี้</p>
             )}
           </div>
 
@@ -585,9 +588,9 @@ export default function NewOrderPage() {
               />
               {showRetailDropdown && (
                 <div style={{
-                  position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0,
-                  background: "white", border: "1px solid var(--beige-dark)", borderRadius: 8,
-                  zIndex: 20, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", maxHeight: 220, overflowY: "auto",
+                  position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+                  background: "white", border: "1px solid var(--beige-dark)", borderRadius: 12,
+                  zIndex: 20, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)", maxHeight: 220, overflowY: "auto",
                 }}>
                   {filteredRetailProducts.map(prod => (
                     <div
@@ -647,7 +650,7 @@ export default function NewOrderPage() {
                 </div>
               </div>
             ) : (
-              <p style={{ color: "#aaa", fontSize: "0.85rem", margin: 0 }}>ค้นหาสินค้าและกดเพื่อเพิ่ม (ไม่บังคับ)</p>
+              <p style={{ color: "#aaa", fontSize: "0.85rem", margin: 0 }}>ยังไม่ได้เลือกสินค้า Retail</p>
             )}
           </div>
         </div>
@@ -660,11 +663,12 @@ export default function NewOrderPage() {
             </h3>
 
             {/* Category Tab Bar */}
-            <div style={{
-              display: "flex", gap: "0.4rem", overflowX: "auto", paddingBottom: "0.75rem",
-              marginBottom: "0.75rem", borderBottom: "1px solid var(--beige-dark)",
-              scrollbarWidth: "none", msOverflowStyle: "none",
-            }}>
+            <div style={{ position: "relative" }}>
+              <div style={{
+                display: "flex", gap: "0.4rem", overflowX: "auto", paddingBottom: "0.75rem",
+                marginBottom: "0.75rem", borderBottom: "1px solid var(--beige-dark)",
+                scrollbarWidth: "none", msOverflowStyle: "none",
+              }}>
               {visibleTabs.map(tab => {
                 const isActive = effectiveTab === tab;
                 return (
@@ -686,6 +690,8 @@ export default function NewOrderPage() {
                   </button>
                 );
               })}
+              </div>
+              <div style={{ position: "absolute", right: 0, top: 0, bottom: "0.75rem", width: "2.5rem", background: "linear-gradient(to right, transparent, white)", pointerEvents: "none" }} />
             </div>
 
             {/* Filtered Services */}
