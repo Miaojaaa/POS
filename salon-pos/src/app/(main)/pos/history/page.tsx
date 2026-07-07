@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import SearchInput from "@/components/SearchInput";
+import { History as HistoryIcon } from "lucide-react";
 import { useBranch } from "@/context/BranchContext";
 import { buildReceiptHtml, type ReceiptBranding, type ReceiptData as PrintableReceipt } from "@/lib/receipt";
 import { DEFAULT_RECEIPT_FORMATS, buildReceiptNumber, type ReceiptFormats, type VatMode, type FooterBlock } from "@/lib/system-config";
@@ -299,7 +301,9 @@ export default function HistoryPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📜 ประวัติ Transaction</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <HistoryIcon size={24} /> ประวัติ Transaction
+        </h1>
         <div style={{ fontSize: "0.875rem", color: "#666" }}>
           รายการที่แสดง: <strong>{filtered.length}</strong> · ยอดรวม PAID: <strong style={{ color: "var(--olive)" }}>฿{totalRevenue.toLocaleString()}</strong>
         </div>

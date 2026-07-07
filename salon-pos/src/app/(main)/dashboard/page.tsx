@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import BranchSelector from "@/components/BranchSelector";
 import DailyExportButton from "@/components/DailyExportButton";
 import DynamicDashboardBarChart from "@/components/dashboard/DynamicDashboardBarChart";
+import { LayoutDashboard, ShoppingBag, Scissors, ClipboardList } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -87,8 +88,8 @@ export default async function DashboardPage({ searchParams }: Props) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
-          ภาพรวมร้านวันนี้
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <LayoutDashboard size={24} /> ภาพรวมร้านวันนี้
         </h1>
 
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
@@ -113,7 +114,9 @@ export default async function DashboardPage({ searchParams }: Props) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="card">
-          <h3 style={{ margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>🛍️ สินค้าที่ขายได้วันนี้ (จำนวนชิ้น)</h3>
+          <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>
+            <ShoppingBag size={18} /> สินค้าที่ขายได้วันนี้ (จำนวนชิ้น)
+          </h3>
           <DynamicDashboardBarChart
             data={productData}
             color="#C4863B"
@@ -122,7 +125,9 @@ export default async function DashboardPage({ searchParams }: Props) {
           />
         </div>
         <div className="card">
-          <h3 style={{ margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>💇 ยอดขายตามหมวดหมู่บริการวันนี้</h3>
+          <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>
+            <Scissors size={18} /> ยอดขายตามหมวดหมู่บริการวันนี้
+          </h3>
           <DynamicDashboardBarChart
             data={categoryData}
             color="#6B7C45"
@@ -134,7 +139,9 @@ export default async function DashboardPage({ searchParams }: Props) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
         <div className="card">
-          <h3 style={{ margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>📋 ออร์เดอร์ล่าสุดวันนี้</h3>
+          <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>
+            <ClipboardList size={18} /> ออร์เดอร์ล่าสุดวันนี้
+          </h3>
           {allTodayOrders.length === 0 ? (
             <p style={{ color: "#aaa", fontSize: "0.875rem" }}>ยังไม่มีออร์เดอร์วันนี้</p>
           ) : (

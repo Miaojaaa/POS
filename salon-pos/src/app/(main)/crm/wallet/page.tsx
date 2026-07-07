@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Wallet, Banknote, History, Lock } from "lucide-react";
 
 type Customer = { id: string; name: string; phone: string; walletBalance: number };
 type Transaction = { id: string; amount: number; type: string; note?: string; createdAt: string };
@@ -82,7 +83,9 @@ export default function WalletPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", marginBottom: "1.5rem" }}>💰 Wallet สมาชิก</h1>
+      <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", marginBottom: "1.5rem" }}>
+        <Wallet size={24} /> Wallet สมาชิก
+      </h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "1rem" }}>
         <div>
@@ -122,7 +125,9 @@ export default function WalletPage() {
           {selected ? (
             <>
               <div className="card" style={{ marginBottom: "1rem" }}>
-                <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>จัดการยอดเงิน: {selected.name}</h3>
+                <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>
+                  <Banknote size={18} /> จัดการยอดเงิน: {selected.name}
+                </h3>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
                   <div>
                     <label className="label">ประเภท</label>
@@ -169,7 +174,9 @@ export default function WalletPage() {
               </div>
 
               <div className="card">
-                <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>ประวัติการทำรายการ</h3>
+                <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>
+                  <History size={18} /> ประวัติการทำรายการ
+                </h3>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
                   <thead>
                     <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
@@ -218,7 +225,9 @@ export default function WalletPage() {
       {showPinModal && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 320 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ยืนยันสิทธิ์ Manager</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <Lock size={18} /> ยืนยันสิทธิ์ Manager
+            </h3>
             <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>การเติมเงินเข้า Wallet ต้องใช้ Manager PIN ยืนยัน</p>
             <input 
               type="password" 

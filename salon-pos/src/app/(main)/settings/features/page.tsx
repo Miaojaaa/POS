@@ -3,12 +3,33 @@
 import { useEffect, useState } from "react";
 import {
   DEFAULT_SIDEBAR_CONFIG,
-  MODULE_ICONS,
   MODULE_LABELS,
   NON_HIDEABLE_MODULES,
   mergeSidebarConfig,
   type SidebarModuleConfig,
+  type SidebarModuleKey,
 } from "@/lib/system-config";
+
+import {
+  ClipboardList,
+  LayoutDashboard,
+  Users,
+  Package,
+  BarChart2,
+  UserCircle,
+  Settings,
+  Puzzle
+} from "lucide-react";
+
+const MODULE_ICONS: Record<SidebarModuleKey, React.ElementType> = {
+  POS: ClipboardList,
+  DASHBOARD: LayoutDashboard,
+  CRM: Users,
+  ERP: Package,
+  REPORTS: BarChart2,
+  HR: UserCircle,
+  SETTINGS: Settings,
+};
 
 export default function FeaturesSettingsPage() {
   const [items, setItems] = useState<SidebarModuleConfig[]>(DEFAULT_SIDEBAR_CONFIG);
@@ -80,8 +101,8 @@ export default function FeaturesSettingsPage() {
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0, marginBottom: "1.25rem" }}>
-        🧩 ฟีเจอร์ &amp; การจัดวาง Sidebar
+      <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0, marginBottom: "1.25rem" }}>
+        <Puzzle size={24} /> ฟีเจอร์ &amp; การจัดวาง Sidebar
       </h1>
 
       <div className="card" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -121,7 +142,12 @@ export default function FeaturesSettingsPage() {
                       aria-label="ลง"
                     >↓</button>
                   </div>
-                  <span style={{ fontSize: "1.2rem", width: 26, textAlign: "center" }}>{MODULE_ICONS[item.key]}</span>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 26, color: "var(--olive)" }}>
+                    {(() => {
+                      const Icon = MODULE_ICONS[item.key];
+                      return <Icon size={20} />;
+                    })()}
+                  </span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>{MODULE_LABELS[item.key]}</div>
                     {locked && (

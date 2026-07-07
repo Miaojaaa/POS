@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Banknote } from "lucide-react";
 
 type Expense = { id: string; category: string; description: string; amount: number; date: string; createdBy: { name: string } };
 
@@ -60,7 +61,9 @@ export default function ExpensesReportPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>💸 รายงานค่าใช้จ่าย</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <Banknote size={24} /> รายงานค่าใช้จ่าย
+        </h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button className="btn-primary" onClick={() => setShowModal(true)}>+ เพิ่มค่าใช้จ่าย</button>
           <select className="input" style={{ width: 120 }} value={month} onChange={e => setMonth(Number(e.target.value))}>

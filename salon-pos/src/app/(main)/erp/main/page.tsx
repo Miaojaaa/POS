@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Package, Search, AlertTriangle, CheckCircle2, Edit2, Save, X } from "lucide-react";
 import SearchInput from "@/components/SearchInput";
 
 type StockItem = {
@@ -86,7 +87,9 @@ export default function MainStockPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📦 คลังหลัก (Main Warehouse)</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <Package size={24} /> คลังหลัก (Main Warehouse)
+        </h1>
         <div style={{ fontSize: "0.875rem", background: "white", padding: "0.5rem 1rem", borderRadius: 8, fontWeight: 700 }}>
           มูลค่าสต็อก: ฿{totalValue.toLocaleString()}
         </div>

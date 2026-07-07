@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBranch } from "@/context/BranchContext";
+import { Package, FlaskConical, ShoppingBag, Settings, Lock } from "lucide-react";
 
 type Category = "ALL" | "CHEMICAL" | "RETAIL";
 
@@ -304,7 +306,9 @@ export default function ProductsPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📦 จัดการสต๊อก</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <Package size={24} /> จัดการสต๊อก
+        </h1>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           {selectedProductId && (
             <>
@@ -392,7 +396,9 @@ export default function ProductsPage() {
       {/* Chemicals table */}
       {showChem && chemicals.length > 0 && (
         <div className="card" style={{ marginBottom: "1rem" }}>
-          <h3 style={{ margin: "0 0 0.75rem", fontSize: "0.95rem", color: "var(--olive)" }}>🧪 เคมี (สำหรับใช้กับลูกค้า)</h3>
+          <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.75rem", fontSize: "0.95rem", color: "var(--olive)" }}>
+            <FlaskConical size={18} /> เคมี (สำหรับใช้กับลูกค้า)
+          </h3>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
             <thead>
               <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
@@ -450,7 +456,9 @@ export default function ProductsPage() {
       {/* Retail table */}
       {showRetail && retails.length > 0 && (
         <div className="card">
-          <h3 style={{ margin: "0 0 0.75rem", fontSize: "0.95rem", color: "var(--olive)" }}>🛍️ Retail (สินค้าขายให้ลูกค้า)</h3>
+          <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.75rem", fontSize: "0.95rem", color: "var(--olive)" }}>
+            <ShoppingBag size={18} /> Retail (สินค้าขายให้ลูกค้า)
+          </h3>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
             <thead>
               <tr style={{ borderBottom: "2px solid var(--beige-dark)", color: "#666" }}>
@@ -663,7 +671,9 @@ export default function ProductsPage() {
       {adjustTarget && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 400 }}>
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>⚙️ ปรับสต๊อก: {adjustTarget.name}</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
+              <Settings size={18} /> ปรับสต๊อก: {adjustTarget.name}
+            </h3>
             <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>
               สต๊อกปัจจุบัน: <strong>{adjustTarget.stock}</strong> ชิ้น
             </p>
@@ -701,7 +711,9 @@ export default function ProductsPage() {
       {showPinModal && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 340 }}>
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>🔐 Manager PIN</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
+              <Lock size={18} /> Manager PIN
+            </h3>
             <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>
               การแก้ไขสต๊อก/สินค้าต้องใช้ Manager PIN
             </p>

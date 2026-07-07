@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useBranch } from "@/context/BranchContext";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
+import { User, FlaskConical, ShoppingBag, Scissors, ClipboardPlus, FileText, Lock } from "lucide-react";
 // import CustomerDisplayButton from "@/components/CustomerDisplayButton";
 // import { pushCustomerDisplay } from "@/lib/customer-display";
 
@@ -351,8 +352,8 @@ export default function NewOrderPage() {
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
-          📋 รับออร์เดอร์ใหม่
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <ClipboardPlus size={24} /> รับออร์เดอร์ใหม่
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           {/* <CustomerDisplayButton /> */}
@@ -374,7 +375,9 @@ export default function NewOrderPage() {
         {/* Left: Customer + Staff + Chemicals */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div className="card">
-            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>👤 ข้อมูลลูกค้า</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>
+              <User size={18} /> ข้อมูลลูกค้า
+            </h3>
 
             <div style={{ marginBottom: "0.75rem" }}>
               <label className="label">เบอร์โทรศัพท์</label>
@@ -483,7 +486,9 @@ export default function NewOrderPage() {
 
           {/* Chemical search card */}
           <div className="card">
-            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>🧪 เคมีที่ใช้ (ถาดสี)</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>
+              <FlaskConical size={18} /> เคมีที่ใช้ (ถาดสี)
+            </h3>
 
             {/* Search input with dropdown */}
             <div style={{ position: "relative", marginBottom: "0.75rem" }}>
@@ -562,7 +567,9 @@ export default function NewOrderPage() {
 
           {/* Retail product card */}
           <div className="card">
-            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>🛍️ สินค้า Retail</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>
+              <ShoppingBag size={18} /> สินค้า Retail
+            </h3>
 
             <div style={{ position: "relative", marginBottom: "0.75rem" }}>
               <input
@@ -647,7 +654,9 @@ export default function NewOrderPage() {
         {/* Right: Services + Summary */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div className="card">
-            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>💇 เลือกบริการ</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>
+              <Scissors size={18} /> เลือกบริการ
+            </h3>
 
             {/* Category Tab Bar */}
             <div style={{
@@ -714,7 +723,9 @@ export default function NewOrderPage() {
           {/* Order Summary with inline price edit */}
           <div className="card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <h3 style={{ margin: 0, fontSize: "1rem", color: "var(--olive)" }}>📄 สรุปออร์เดอร์</h3>
+              <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: 0, fontSize: "1rem", color: "var(--olive)" }}>
+                <FileText size={18} /> สรุปออร์เดอร์
+              </h3>
               {priceUnlocked ? (
                 <span style={{ fontSize: "0.75rem", color: "var(--success-green)", fontWeight: 600 }}>🔓 แก้ราคาได้</span>
               ) : (
@@ -824,7 +835,9 @@ export default function NewOrderPage() {
       {showMemberModal && customerDetail && (
         <div className="modal-overlay" onClick={() => setShowMemberModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>👤 ข้อมูลสมาชิก</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <User size={18} /> ข้อมูลสมาชิก
+            </h3>
             <div style={{ marginBottom: "0.75rem" }}>
               <strong>{customerDetail.name}</strong>
               <span style={{ marginLeft: 8, fontSize: "0.8rem", background: "#eee", padding: "2px 8px", borderRadius: 12 }}>
@@ -885,7 +898,9 @@ export default function NewOrderPage() {
       {showPinModal && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 340 }}>
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>🔐 Manager PIN</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
+              <Lock size={18} /> Manager PIN
+            </h3>
             <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>
               กรอก Manager PIN เพื่อปลดล็อกการแก้ไขราคา
             </p>

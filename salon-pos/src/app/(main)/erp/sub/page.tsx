@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useBranch } from "@/context/BranchContext";
+import { Store } from "lucide-react";
 import SearchInput from "@/components/SearchInput";
 
 type Branch = { id: string; name: string };
@@ -33,7 +34,9 @@ export default function SubStockPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>🏪 คลังหน้าร้าน (Sub Warehouse)</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <Store size={24} /> คลังหน้าร้าน (Sub Warehouse)
+        </h1>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <label style={{ fontSize: "0.9rem", fontWeight: 600, color: "#666" }}>เลือกสาขา:</label>
           <select 

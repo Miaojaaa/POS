@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import type { CommissionMode } from "@/lib/system-config";
 import { useBranch } from "@/context/BranchContext";
+import { BarChart3 } from "lucide-react";
 
 const roleMap: Record<string, string> = {
   MANAGER: "ผู้จัดการ",
@@ -147,7 +148,9 @@ export default function KPIPage() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
-          <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📊 KPI ช่าง</h1>
+          <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+            <BarChart3 size={24} /> KPI ช่าง
+          </h1>
           {lastUpdated && (
             <span style={{ fontSize: "0.75rem", color: "#888" }}>
               อัปเดตล่าสุด: {lastUpdated.toLocaleTimeString()}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Users, UserPlus } from "lucide-react";
 
 type Customer = { 
   id: string; 
@@ -107,7 +108,9 @@ export default function MembersPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>👥 สมาชิก / ลูกค้า</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <Users size={24} /> สมาชิก / ลูกค้า
+        </h1>
         <button className="btn-primary" onClick={openAddModal}>+ เพิ่มสมาชิก</button>
       </div>
 
@@ -165,7 +168,9 @@ export default function MembersPage() {
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 400 }}>
-            <h3 style={{ margin: "0 0 1.25rem", color: "var(--olive)" }}>{editingId ? "แก้ไขข้อมูลสมาชิก" : "เพิ่มสมาชิกใหม่"}</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1.25rem", color: "var(--olive)" }}>
+              <UserPlus size={18} /> {editingId ? "แก้ไขข้อมูลสมาชิก" : "เพิ่มสมาชิกใหม่"}
+            </h3>
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div>
                 <label className="label">ชื่อลูกค้า</label>

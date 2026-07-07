@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DEFAULT_SIDEBAR_CONFIG,
-  MODULE_ICONS,
   MODULE_LABELS,
   mergeSidebarConfig,
   type SidebarModuleConfig,
@@ -13,6 +12,32 @@ import {
 } from "@/lib/system-config";
 import { OWNER_LOCKED_MODULES, useOwnerLock } from "@/context/OwnerLockContext";
 import { useBranding } from "@/context/BrandingContext";
+import { 
+  ClipboardList, 
+  LayoutDashboard, 
+  Users, 
+  Package, 
+  BarChart2, 
+  UserCircle, 
+  Settings,
+  Scissors,
+  Lock,
+  Unlock,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp
+} from "lucide-react";
+
+const MODULE_ICONS: Record<SidebarModuleKey, React.ElementType> = {
+  POS: ClipboardList,
+  DASHBOARD: LayoutDashboard,
+  CRM: Users,
+  ERP: Package,
+  REPORTS: BarChart2,
+  HR: UserCircle,
+  SETTINGS: Settings,
+};
 
 type MenuChild = { href: string; label: string };
 type MenuItem = {
@@ -228,7 +253,7 @@ export default function Sidebar() {
           zIndex: 2,
         }}
       >
-        {collapsed ? "›" : "‹"}
+        {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
 
       <div style={{
@@ -247,7 +272,7 @@ export default function Sidebar() {
         }}>
           {logoDataUrl
             ? <img src={logoDataUrl} alt="logo" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
-            : <span style={{ fontSize: collapsed ? 20 : 28 }}>✂️</span>}
+            : <Scissors size={collapsed ? 20 : 28} style={{ color: "var(--olive)" }} />}
         </div>
         {!collapsed && (
           <>
@@ -262,7 +287,7 @@ export default function Sidebar() {
       <nav style={{ flex: 1, marginTop: "0.75rem", overflowY: "auto", overflowX: "hidden" }}>
         {menuItems.map((item, idx) => {
           const label = MODULE_LABELS[item.key];
-          const icon = MODULE_ICONS[item.key];
+          const Icon = MODULE_ICONS[item.key];
           const isLocked = OWNER_LOCKED_MODULES.has(item.key);
           const showLockedUI = isLocked && !isUnlocked;
 
@@ -296,7 +321,7 @@ export default function Sidebar() {
                         alignItems: "center",
                         gap: "0.35rem",
                       }}>
-                        {isUnlocked ? "🔓" : "🔒"} Owner Only
+                        {isUnlocked ? <Unlock size={14} /> : <Lock size={14} />} Owner Only
                       </span>
                       {isUnlocked ? (
                         <button
@@ -352,7 +377,7 @@ export default function Sidebar() {
                       cursor: "pointer",
                     }}
                   >
-                    <span>{icon}</span>
+                    <span><Icon size={20} /></span>
                     {!collapsed && <span>{label}</span>}
                     {!collapsed && <span style={{ marginLeft: "auto", fontSize: "0.75rem" }}>🔒</span>}
                   </button>
@@ -363,7 +388,7 @@ export default function Sidebar() {
                     title={collapsed ? label : undefined}
                     style={collapsed ? { justifyContent: "center", padding: "0.625rem 0", gap: 0 } : undefined}
                   >
-                    <span>{icon}</span>
+                    <span><Icon size={20} /></span>
                     {!collapsed && <span>{label}</span>}
                   </Link>
                 )
@@ -393,12 +418,12 @@ export default function Sidebar() {
                           textAlign: "left",
                         }}
                       >
-                        <span>{icon}</span>
+                        <span><Icon size={20} /></span>
                         {!collapsed && <span style={{ flex: 1 }}>{label}</span>}
                         {!collapsed && (
                           showLockedUI
-                            ? <span style={{ fontSize: "0.75rem" }}>🔒</span>
-                            : <span style={{ fontSize: "0.75rem" }}>{isOpen ? "▾" : "▸"}</span>
+                            ? <Lock size={14} />
+                            : (isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />)
                         )}
                       </button>
                       {isOpen && !showLockedUI && (

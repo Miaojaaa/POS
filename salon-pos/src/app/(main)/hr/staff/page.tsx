@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBranch } from "@/context/BranchContext";
+import { Users, Unlock, UserPlus, AlertTriangle } from "lucide-react";
 import PinRevealModal from "@/components/PinRevealModal";
 
 type Branch = { id: string; name: string };
@@ -218,7 +219,9 @@ export default function StaffPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>พนักงาน</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <Users size={24} /> พนักงาน
+        </h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <select 
             className="input" 
@@ -313,7 +316,9 @@ export default function StaffPage() {
       {showUnlockModal && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 320 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ปลดล็อกสิทธิ์แก้ไข</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <Unlock size={18} /> ปลดล็อกสิทธิ์แก้ไข
+            </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div>
                 <label className="label">รหัส Owner PIN</label>
@@ -349,7 +354,9 @@ export default function StaffPage() {
             >
               ×
             </button>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>{editingId ? "แก้ไขข้อมูลพนักงาน" : "เพิ่มพนักงาน"}</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <UserPlus size={18} /> {editingId ? "แก้ไขข้อมูลพนักงาน" : "เพิ่มพนักงาน"}
+            </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div>
                 <label className="label">ชื่อ</label>
@@ -450,7 +457,9 @@ export default function StaffPage() {
       {showExitConfirm && (
         <div className="modal-overlay" style={{ zIndex: 1100 }}>
           <div className="modal" style={{ maxWidth: 320, textAlign: "center" }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ยืนยันการยกเลิก?</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <AlertTriangle size={18} /> ยืนยันการยกเลิก?
+            </h3>
             <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "1.5rem" }}>
               ข้อมูลที่คุณแก้ไขยังไม่ได้บันทึก ต้องการยกเลิกการแก้ไขใช่หรือไม่?
             </p>

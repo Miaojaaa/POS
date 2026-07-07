@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useBranch } from "@/context/BranchContext";
+import { Settings, PlusCircle, FolderPlus, Edit, Trash2, Lock } from "lucide-react";
 
 type Service = { id: string; name: string; price: number; duration: number; isActive: boolean };
 type Category = { id: string; name: string; groupId: string | null; services: Service[] };
@@ -318,7 +320,9 @@ export default function ServicesPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>⚙️ จัดการบริการ</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <Settings size={24} /> จัดการบริการ
+        </h1>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           {!isEditing ? (
             <>
@@ -496,7 +500,9 @@ export default function ServicesPage() {
         return (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 440 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>เพิ่มบริการ</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <PlusCircle size={18} /> เพิ่มบริการ
+            </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
 
               {/* Group selector */}
@@ -615,7 +621,9 @@ export default function ServicesPage() {
       {showAddGroup && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 360 }}>
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>เพิ่มหมวดหมู่ใหญ่</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
+              <FolderPlus size={18} /> เพิ่มหมวดหมู่ใหญ่
+            </h3>
             <p style={{ fontSize: "0.8rem", color: "#888", marginBottom: "1rem" }}>เช่น &quot;💇 ผม&quot;, &quot;💅 เล็บ&quot; — ใส่อีโมจิด้านหน้าเพื่อให้แสดงเป็น tab ใน POS</p>
             <input
               className="input"
@@ -640,7 +648,9 @@ export default function ServicesPage() {
       {editGroupTarget && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 360 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>แก้ไขหมวดหมู่ใหญ่</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <Edit size={18} /> แก้ไขหมวดหมู่ใหญ่
+            </h3>
             <input
               className="input"
               value={editGroupName}
@@ -663,7 +673,9 @@ export default function ServicesPage() {
       {deleteGroupTarget && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 380 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "#c53030" }}>ลบหมวดหมู่ใหญ่</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "#c53030" }}>
+              <Trash2 size={18} /> ลบหมวดหมู่ใหญ่
+            </h3>
             {deleteGroupTarget.categories.length > 0 ? (
               <>
                 <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>
@@ -693,7 +705,9 @@ export default function ServicesPage() {
       {addCatGroupId && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 360 }}>
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>เพิ่มหมวดหมู่ย่อย</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
+              <FolderPlus size={18} /> เพิ่มหมวดหมู่ย่อย
+            </h3>
             <p style={{ fontSize: "0.8rem", color: "#888", marginBottom: "1rem" }}>
               เพิ่มในกลุ่ม: <strong>{groups.find(g => g.id === addCatGroupId)?.name}</strong>
             </p>
@@ -720,7 +734,9 @@ export default function ServicesPage() {
       {editCatTarget && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 360 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>แก้ไข / ย้ายหมวดหมู่ย่อย</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <Edit size={18} /> แก้ไข / ย้ายหมวดหมู่ย่อย
+            </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div>
                 <label className="label">ชื่อ</label>
@@ -757,7 +773,9 @@ export default function ServicesPage() {
       {deleteCatTarget && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 380 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "#c53030" }}>ลบหมวดหมู่ย่อย</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "#c53030" }}>
+              <Trash2 size={18} /> ลบหมวดหมู่ย่อย
+            </h3>
             {deleteCatTarget.services.length > 0 ? (
               <>
                 <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>
@@ -786,7 +804,9 @@ export default function ServicesPage() {
       {showPinModal && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 320 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ยืนยันสิทธิ์ Owner</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <Lock size={18} /> ยืนยันสิทธิ์ Owner
+            </h3>
             <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>กรุณากรอก PIN ของ Owner เพื่อเข้าสู่โหมดแก้ไข</p>
             <input
               type="password"

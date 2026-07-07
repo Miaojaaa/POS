@@ -69,15 +69,7 @@ export const MODULE_LABELS: Record<SidebarModuleKey, string> = {
   SETTINGS: "ตั้งค่า",
 };
 
-export const MODULE_ICONS: Record<SidebarModuleKey, string> = {
-  POS: "📋",
-  DASHBOARD: "🏠",
-  CRM: "👥",
-  ERP: "📦",
-  REPORTS: "📊",
-  HR: "👤",
-  SETTINGS: "⚙️",
-};
+
 
 // ───── Receipt / tax-invoice number format ─────
 //

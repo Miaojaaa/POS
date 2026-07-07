@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import type { CommissionMode } from "@/lib/system-config";
 import { useBranch } from "@/context/BranchContext";
+import { Banknote, AlertTriangle, RefreshCw, Lock } from "lucide-react";
 
 type PayrollItem = {
   id: string;
@@ -213,7 +214,9 @@ export default function PayrollPage() {
       )}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>💸 เงินเดือน &amp; ค่าคอม</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <Banknote size={24} /> เงินเดือน &amp; ค่าคอม
+        </h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           {run?.status === "CONFIRMED" && (
             <button
@@ -395,7 +398,9 @@ export default function PayrollPage() {
       {showKPIWarning && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 460 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--alert-red)" }}>⚠️ พบช่างที่ KPI ต่ำกว่าเกณฑ์</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--alert-red)" }}>
+              <AlertTriangle size={18} /> พบช่างที่ KPI ต่ำกว่าเกณฑ์
+            </h3>
             <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "1rem" }}>
               ช่างต่อไปนี้มีจำนวนออร์เดอร์ต่ำกว่า 50% ของค่าเฉลี่ยทีมในเดือนนี้:
             </p>
@@ -422,7 +427,9 @@ export default function PayrollPage() {
       {showConfirmWarning && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 400 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "#854d0e" }}>⚠️ ยืนยันการปิดยอดเงินเดือน?</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "#854d0e" }}>
+              <AlertTriangle size={18} /> ยืนยันการปิดยอดเงินเดือน?
+            </h3>
             <p style={{ fontSize: "0.9rem", color: "#666", lineHeight: 1.5 }}>
               เมื่อยืนยันแล้ว รายการเงินเดือนของเดือน {month}/{year + 543} จะถูกล็อก <br/>
               หากมีการแก้ไขงานหรือลบออร์เดอร์ย้อนหลัง จะไม่ส่งผลต่อยอดในเดือนนี้อีก <br/>
@@ -439,7 +446,9 @@ export default function PayrollPage() {
       {showPinModal && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 320 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ป้อน Owner PIN</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <Lock size={18} /> ป้อน Owner PIN
+            </h3>
             <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "1rem" }}>กรุณาระบุ PIN ของเจ้าของร้านเพื่ออนุมัติการจ่ายเงินเดือน</p>
             <input
               type="password"
@@ -464,7 +473,9 @@ export default function PayrollPage() {
       {showRecalcPin && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 360 }}>
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>🔄 คำนวณค่าคอมใหม่</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
+              <RefreshCw size={18} /> คำนวณค่าคอมใหม่
+            </h3>
             <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "1rem", lineHeight: 1.5 }}>
               จะ regen รอบเงินเดือนของเดือน {month}/{year + 543} ตามรูปแบบค่าคอมล่าสุดในหน้าตั้งค่า
               <strong style={{ color: "#854d0e" }}> ยอดที่ยืนยันไว้จะถูกแทนที่ และสถานะกลับเป็นฉบับร่าง</strong>

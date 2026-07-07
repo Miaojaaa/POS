@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Store, PlusCircle, Lock, Unlock, Save, X, Search, Edit } from "lucide-react";
 import SearchInput from "@/components/SearchInput";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 
@@ -175,7 +176,9 @@ export default function RetailStockPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>คลังสินค้า Retail</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <Store size={24} /> คลังสินค้า Retail
+        </h1>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           {unlocked ? (
             <button
@@ -326,7 +329,9 @@ export default function RetailStockPage() {
       {quickAdd && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 380 }}>
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>เพิ่มสินค้าใหม่ (จากบาร์โค้ด)</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
+              <PlusCircle size={18} /> เพิ่มสินค้าใหม่ (จากบาร์โค้ด)
+            </h3>
             <p style={{ fontSize: "0.85rem", color: "#666", marginBottom: "0.75rem" }}>
               ไม่พบสินค้าที่มีบาร์โค้ดนี้ — กรอกชื่อกับราคาเพื่อบันทึกเป็นสินค้าใหม่
             </p>
@@ -392,7 +397,9 @@ export default function RetailStockPage() {
       {showPinModal && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 340 }}>
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>Manager PIN</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
+              <Lock size={18} /> Manager PIN
+            </h3>
             <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>
               การแก้ไขสต๊อก Retail ต้องใช้ Manager PIN
             </p>

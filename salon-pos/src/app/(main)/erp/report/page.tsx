@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { BarChart3, AlertTriangle } from "lucide-react";
 
 export default async function StockReportPage() {
   const products = await prisma.product.findMany({
@@ -16,7 +17,9 @@ export default async function StockReportPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", marginBottom: "1.5rem" }}>📊 รายงานสต็อกรวม (ทุกสาขา)</h1>
+      <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", marginBottom: "1.5rem" }}>
+        <BarChart3 size={24} /> รายงานสต็อกรวม (ทุกสาขา)
+      </h1>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
         <div className="card" style={{ textAlign: "center" }}>

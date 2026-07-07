@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Ticket, Tags, PlusCircle, History } from "lucide-react";
 
 type Service = { id: string; name: string; price: number };
 type TicketDef = {
@@ -123,12 +124,16 @@ export default function TicketsPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", marginBottom: "1.5rem" }}>🎫 คูปอง / Ticket</h1>
+      <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", marginBottom: "1.5rem" }}>
+        <Ticket size={24} /> คูปอง / Ticket
+      </h1>
 
       {/* Manage ticket definitions */}
       <div className="card" style={{ marginBottom: "1rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ margin: 0, fontSize: "1rem", color: "var(--olive)" }}>ประเภทคูปองทั้งหมด ({Array.isArray(defs) ? defs.length : 0})</h3>
+          <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: 0, fontSize: "1rem", color: "var(--olive)" }}>
+            <Tags size={18} /> ประเภทคูปองทั้งหมด ({Array.isArray(defs) ? defs.length : 0})
+          </h3>
           <button
             className={showCreate ? "btn-danger" : "btn-primary"}
             style={{ fontSize: "0.8rem", padding: "0.375rem 0.875rem" }}
@@ -294,7 +299,9 @@ export default function TicketsPage() {
           {selected ? (
             <>
               <div className="card">
-                <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ออก Ticket ให้ {selected.name}</h3>
+                <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+                  <PlusCircle size={18} /> ออก Ticket ให้ {selected.name}
+                </h3>
                 <div style={{ marginBottom: "0.75rem" }}>
                   <label className="label">ประเภทคูปอง</label>
                   <select className="input" value={issueDefId} onChange={e => setIssueDefId(e.target.value)}>
@@ -309,13 +316,13 @@ export default function TicketsPage() {
                   <input type="number" className="input" min={1} value={qty} onChange={e => setQty(Number(e.target.value))} />
                 </div>
                 <button className="btn-primary" style={{ width: "100%" }} onClick={issueTicket} disabled={!issueDefId || qty < 1}>
-                  🎫 ออก Ticket
+                  <Ticket size={18} /> ออก Ticket
                 </button>
               </div>
 
               <div className="card">
-                <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>
-                  Ticket ที่ยังไม่ได้ใช้ ({active.length})
+                <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>
+                  <Ticket size={18} /> Ticket คงเหลือของ {selected.name} ({active.length})
                 </h3>
                 {active.length === 0 ? (
                   <p style={{ color: "#aaa", fontSize: "0.875rem" }}>ไม่มี</p>
@@ -329,7 +336,9 @@ export default function TicketsPage() {
 
                 {used.length > 0 && (
                   <>
-                    <h3 style={{ margin: "1rem 0 0.75rem", fontSize: "0.9rem", color: "#888" }}>ใช้ไปแล้ว ({used.length})</h3>
+                    <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "1rem 0 0.75rem", fontSize: "0.9rem", color: "#888" }}>
+                      <History size={16} /> ใช้ไปแล้ว ({used.length})
+                    </h3>
                     {used.slice(0, 5).map(t => (
                       <div key={t.id} style={{ padding: "0.5rem 0.75rem", background: "#f5f5f5", borderRadius: 8, marginBottom: "0.5rem", fontSize: "0.8rem", color: "#888" }}>
                         <s>{t.ticketDef.name}</s>

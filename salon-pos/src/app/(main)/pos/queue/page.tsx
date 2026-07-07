@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useBranch } from "@/context/BranchContext";
+import { ClipboardList, CreditCard, Lock } from "lucide-react";
 import SearchInput from "@/components/SearchInput";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import CustomerDisplayButton from "@/components/CustomerDisplayButton";
@@ -897,7 +898,9 @@ export default function QueuePage() {
     <div>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📋 คิวลูกค้า</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <ClipboardList size={24} /> คิวลูกค้า
+        </h1>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
           <select 
             className="input" 
@@ -938,7 +941,9 @@ export default function QueuePage() {
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 680, width: "95vw", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <h3 style={{ margin: 0, color: "var(--olive)" }}>💳 ชำระเงิน — {checkoutOrder.customerName}</h3>
+              <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: 0, color: "var(--olive)" }}>
+                <CreditCard size={18} /> ชำระเงิน — {checkoutOrder.customerName}
+              </h3>
               <button onClick={closeCheckout} style={{ background: "none", border: "none", fontSize: "1.4rem", cursor: "pointer", color: "#aaa", lineHeight: 1 }}>×</button>
             </div>
 
@@ -1317,7 +1322,9 @@ export default function QueuePage() {
       {showPinModal && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 340 }}>
-            <h3 style={{ margin: "0 0 0.5rem", color: "var(--olive)" }}>🔐 Manager PIN</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
+              <Lock size={18} /> Manager PIN
+            </h3>
             <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>กรอก Manager PIN เพื่ออนุมัติส่วนลด</p>
             <input type="password" className="input" placeholder="PIN 4-6 หลัก" value={pin}
               onChange={e => setPin(e.target.value)} onKeyDown={e => e.key === "Enter" && verifyPin()}

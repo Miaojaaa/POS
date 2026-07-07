@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBranch } from "@/context/BranchContext";
+import { ArrowRightLeft, Send } from "lucide-react";
 import SearchInput from "@/components/SearchInput";
 import PinVerifyModal, { PinVerifyResult } from "@/components/PinVerifyModal";
 
@@ -142,7 +143,9 @@ export default function TransfersPage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>🔄 โอนสินค้า Main → คลังหน้าร้าน</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <ArrowRightLeft size={24} /> โอนสินค้า Main → คลังหน้าร้าน
+        </h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <select
             className="input"
@@ -205,7 +208,9 @@ export default function TransfersPage() {
       {showForm && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 540 }}>
-            <h3 style={{ margin: "0 0 1rem", color: "var(--olive)" }}>ขอโอนสินค้าจากคลังหลัก</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
+              <Send size={18} /> ขอโอนสินค้าจากคลังหลัก
+            </h3>
 
             <div style={{ marginBottom: "1rem" }}>
               <label className="label">โอนไปสาขา</label>

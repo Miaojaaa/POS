@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CircleDollarSign } from "lucide-react";
 import {
   DEFAULT_FINANCE,
   DEFAULT_RECEIPT_FORMATS,
@@ -99,8 +100,8 @@ export default function FinanceSettingsPage() {
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0, marginBottom: "1.25rem" }}>
-        💰 การเงิน
+      <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0, marginBottom: "1.25rem" }}>
+        <CircleDollarSign size={24} /> การเงิน
       </h1>
 
       <div className="card" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>

@@ -7,6 +7,7 @@ import {
   type FooterBlockAlign,
   type FooterTextSize,
 } from "@/lib/system-config";
+import { Store } from "lucide-react";
 
 type Theme = { main: string; secondary: string; third: string };
 type Branding = {
@@ -213,8 +214,8 @@ export default function BrandingSettingsPage() {
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0, marginBottom: "1.25rem" }}>
-        🏷️ ข้อมูลร้าน
+      <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0, marginBottom: "1.25rem" }}>
+        <Store size={24} /> ข้อมูลร้าน
       </h1>
 
       <div className="card" style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>

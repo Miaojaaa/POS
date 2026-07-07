@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { LineChart, BarChart3, PieChart, Trophy, Scissors } from "lucide-react";
 import { type DailyRow } from "@/components/reports/TrendChart";
 import { exportMonthlyXlsx, type OrderForExport } from "@/lib/excel";
 
@@ -77,7 +78,9 @@ export default function RevenuePage() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>📈 รายได้ & ต้นทุน</h1>
+        <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0 }}>
+          <LineChart size={24} /> รายได้ &amp; ต้นทุน
+        </h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <select className="input" style={{ width: 120 }} value={month} onChange={e => setMonth(Number(e.target.value))}>
             {Array.from({ length: 12 }, (_, i) => (
@@ -129,7 +132,9 @@ export default function RevenuePage() {
       ) : data ? (
         view === "waterfall" ? (
           <div className="card">
-            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>📊 รายได้ → กำไร (Waterfall)</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>
+              <BarChart3 size={18} /> รายได้ → กำไร (Waterfall)
+            </h3>
             <WaterfallChart
               totalNet={data.totalNet}
               totalChemCost={data.totalChemCost}
@@ -139,17 +144,23 @@ export default function RevenuePage() {
           </div>
         ) : view === "donut" ? (
           <div className="card">
-            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>🍩 สัดส่วนรายได้ตามบริการ (Top 5)</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>
+              <PieChart size={18} /> สัดส่วนรายได้ตามบริการ (Top 5)
+            </h3>
             <DonutChart topServices={data.topServices} />
           </div>
         ) : view === "trend" ? (
           <div className="card">
-            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>📈 แนวโน้มรายวัน</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>
+              <LineChart size={18} /> แนวโน้มรายวัน
+            </h3>
             <TrendChart daily={data.daily || []} month={month} year={year} />
           </div>
         ) : view === "compare" ? (
           <div className="card">
-            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>📊 เปรียบเทียบช่วงเวลา</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.75rem", fontSize: "1rem", color: "var(--olive)" }}>
+              <BarChart3 size={18} /> เปรียบเทียบช่วงเวลา
+            </h3>
             <CompareChart />
           </div>
         ) : (
@@ -204,7 +215,9 @@ export default function RevenuePage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <div className="card">
-              <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>🏆 Top 5 บริการยอดนิยม (฿)</h3>
+              <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>
+                <Trophy size={18} /> Top 5 บริการยอดนิยม (฿)
+              </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {data.topServices.map((s, i) => {
                   const maxRevenue = data.topServices[0]?.revenue || 1;
@@ -234,7 +247,9 @@ export default function RevenuePage() {
             </div>
 
             <div className="card">
-              <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>✂️ ช่างที่สร้างรายได้สูงสุด (฿)</h3>
+              <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", fontSize: "1rem", color: "var(--olive)" }}>
+                <Scissors size={18} /> ช่างที่สร้างรายได้สูงสุด (฿)
+              </h3>
               {data.topTechs.map((t, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f5f5f5", fontSize: "0.875rem" }}>
                   <span>{i + 1}. {t.name} ({t.count} ออร์เดอร์)</span>
