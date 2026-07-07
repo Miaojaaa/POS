@@ -241,7 +241,7 @@ export default function TransfersPage() {
                         const cap = target?.mainQty ?? 0;
                         return { ...it, productId: sel.id, productName: sel.label, quantity: Math.min(Math.max(1, it.quantity), Math.max(1, cap)) };
                       }))}
-                      placeholder="🔍 ค้นหาสินค้า..."
+                      placeholder="ค้นหาสินค้า..."
                     />
                     {picked && (
                       <div style={{ fontSize: "0.75rem", color: "#666", marginTop: 4, paddingLeft: 4 }}>

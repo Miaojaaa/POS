@@ -312,11 +312,11 @@ export default function HistoryPage() {
       {/* Quick category filter pills */}
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
         {([
-          { key: "ALL", label: "ทั้งหมด", emoji: "📋" },
-          { key: "HAIR", label: "ผม", emoji: "💇" },
-          { key: "NAIL", label: "เล็บ", emoji: "💅" },
-          { key: "SPA", label: "สปา", emoji: "🧖" },
-          { key: "OTHER", label: "อื่นๆ", emoji: "✨" },
+          { key: "ALL", label: "ทั้งหมด", emoji: "" },
+          { key: "HAIR", label: "ผม", emoji: "" },
+          { key: "NAIL", label: "เล็บ", emoji: "" },
+          { key: "SPA", label: "สปา", emoji: "" },
+          { key: "OTHER", label: "อื่นๆ", emoji: "" },
         ] as const).map(g => {
           const active = groupFilter === g.key;
           const count = g.key === "ALL"

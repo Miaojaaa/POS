@@ -43,7 +43,7 @@ export default function DailyExportButton() {
       disabled={exporting}
       style={{ background: "#16a34a" }}
     >
-      {exporting ? "กำลังส่งออก..." : "📥 Export รายวัน"}
+      {exporting ? "กำลังส่งออก..." : "Export รายวัน"}
     </button>
   );
 }

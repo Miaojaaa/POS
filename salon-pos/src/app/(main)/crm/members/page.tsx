@@ -118,7 +118,7 @@ export default function MembersPage() {
         <div style={{ marginBottom: "1.25rem" }}>
           <input 
             className="input" 
-            placeholder="🔍 ค้นหาด้วยชื่อ หรือ เบอร์โทรศัพท์..." 
+            placeholder="ค้นหาด้วยชื่อ หรือ เบอร์โทรศัพท์..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

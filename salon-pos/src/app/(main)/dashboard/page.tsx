@@ -177,13 +177,13 @@ export default async function DashboardPage({ searchParams }: Props) {
               + รับออร์เดอร์ใหม่
             </a>
             <a href="/pos/queue" className="btn-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
-              📋 ดูคิวลูกค้า
+              ดูคิวลูกค้า
             </a>
             <a href="/crm/members" className="btn-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
-              👥 จัดการสมาชิก
+              จัดการสมาชิก
             </a>
             <a href="/erp/main" className="btn-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
-              📦 ดูสต็อก
+              ดูสต็อก
             </a>
           </div>
         </div>

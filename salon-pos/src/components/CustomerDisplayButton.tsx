@@ -26,7 +26,7 @@ export default function CustomerDisplayButton({ style }: { style?: React.CSSProp
         title="เปิดหน้าจอแสดงผลสำหรับลูกค้า (จอที่ 2)"
         style={style}
       >
-        🖥️ เปิดจอลูกค้า
+        เปิดจอลูกค้า
       </button>
       {hint && (
         <div style={{

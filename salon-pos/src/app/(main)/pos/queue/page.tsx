@@ -914,9 +914,9 @@ export default function QueuePage() {
             ))}
           </select>
           <Link href="/pos/new" className="btn-primary" style={{ textDecoration: "none" }}>+ รับออร์เดอร์ใหม่</Link>
-          <Link href="/pos/history" className="btn-secondary" style={{ textDecoration: "none" }}>📜 ประวัติ Transaction</Link>
+          <Link href="/pos/history" className="btn-secondary" style={{ textDecoration: "none" }}>ประวัติ Transaction</Link>
           <CustomerDisplayButton />
-          <button className="btn-secondary" onClick={load}>🔄 รีเฟรช</button>
+          <button className="btn-secondary" onClick={load}>รีเฟรช</button>
         </div>
       </div>
 
@@ -930,7 +930,7 @@ export default function QueuePage() {
         </div>
         <div>
           <h2 style={{ fontSize: "1rem", fontWeight: 700, color: "#856404", background: "#FFF3CD", padding: "0.5rem 1rem", borderRadius: 8, marginBottom: "0.75rem" }}>
-            💳 รอชำระเงิน ({pendingPayment.length})
+            รอชำระเงิน ({pendingPayment.length})
           </h2>
           {pendingPayment.length === 0 ? <p style={{ color: "#aaa", fontSize: "0.875rem" }}>ไม่มี</p> : pendingPayment.map(o => <OrderCard key={o.id} order={o} />)}
         </div>

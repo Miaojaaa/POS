@@ -9,6 +9,8 @@ type Category = { id: string; name: string; groupId: string | null; services: Se
 type Group = { id: string; name: string; sortOrder: number; categories: Category[] };
 type EditDraft = Record<string, { name: string; price: string }>;
 
+const stripEmoji = (s: string) => s.replace(/[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E6}-\u{1F1FF}\u2728\u2B50\uFE0F]/gu, '').trim();
+
 export default function ServicesPage() {
   const [groups, setGroups] = useState<Group[]>([]);
 
@@ -332,7 +334,7 @@ export default function ServicesPage() {
                 disabled={allServices.length === 0}
                 style={{ opacity: allServices.length === 0 ? 0.5 : 1 }}
               >
-                ✏️ แก้ไขบริการ
+                แก้ไขบริการ
               </button>
               <button className="btn-primary" onClick={() => {
                 setForm({ name: "", price: "", duration: "60", categoryId: "" });
@@ -352,7 +354,7 @@ export default function ServicesPage() {
                 onClick={saveAllChanges}
                 disabled={!hasChanges || saving}
               >
-                {saving ? "กำลังบันทึก..." : "💾 บันทึกทั้งหมด"}
+                {saving ? "กำลังบันทึก..." : "บันทึกทั้งหมด"}
               </button>
               <button className="btn-secondary" onClick={cancelEdit} disabled={saving}>ยกเลิก</button>
             </>
@@ -395,14 +397,14 @@ export default function ServicesPage() {
                 style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.95rem", padding: "4px 8px" }}
                 title="แก้ไขชื่อ"
               >
-                ✏️
+                <Edit size={16} />
               </button>
               <button
                 onClick={() => { setDeleteGroupTarget(group); setDeleteGroupError(""); }}
                 style={{ background: "none", border: "none", cursor: "pointer", color: "#e53e3e", fontSize: "0.95rem", padding: "4px 8px" }}
                 title="ลบหมวดหมู่ใหญ่"
               >
-                🗑️
+                <Trash2 size={16} />
               </button>
             </div>
           </div>
@@ -416,7 +418,7 @@ export default function ServicesPage() {
             <div key={cat.id} style={{ marginBottom: "1rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
                 <h3 style={{ margin: 0, color: "var(--olive-dark, #555)", fontSize: "0.95rem", fontWeight: 600 }}>
-                  {cat.name} <span style={{ color: "#999", fontWeight: 400, fontSize: "0.8rem" }}>({cat.services.length})</span>
+                  {stripEmoji(cat.name)} <span style={{ color: "#999", fontWeight: 400, fontSize: "0.8rem" }}>({cat.services.length})</span>
                 </h3>
                 {isEditing && (
                   <div style={{ display: "flex", gap: "0.25rem" }}>
@@ -425,14 +427,14 @@ export default function ServicesPage() {
                       style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", padding: "2px 6px" }}
                       title="แก้ไข / ย้ายกลุ่ม"
                     >
-                      ✏️
+                      <Edit size={16} />
                     </button>
                     <button
                       onClick={() => { setDeleteCatTarget(cat); setDeleteCatError(""); }}
                       style={{ background: "none", border: "none", cursor: "pointer", color: "#e53e3e", fontSize: "0.85rem", padding: "2px 6px" }}
                       title="ลบหมวดหมู่ย่อย"
                     >
-                      🗑️
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 )}
@@ -543,7 +545,7 @@ export default function ServicesPage() {
                         style={{ ...iconBtn, color: "#e53e3e" }}
                         onClick={() => { setDeleteGroupTarget(selectedGroup); setDeleteGroupError(""); }}
                         title="ลบหมวดหมู่ใหญ่นี้"
-                      >🗑️</button>
+                      ><Trash2 size={16} /></button>
                     )}
                   </div>
                 )}
@@ -589,7 +591,7 @@ export default function ServicesPage() {
                         style={{ ...iconBtn, color: "#e53e3e" }}
                         onClick={() => { setDeleteCatTarget(selectedCat); setDeleteCatError(""); }}
                         title="ลบหมวดหมู่ย่อยนี้"
-                      >🗑️</button>
+                      ><Trash2 size={16} /></button>
                     )}
                   </div>
                 )}
@@ -624,7 +626,7 @@ export default function ServicesPage() {
             <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
               <FolderPlus size={18} /> เพิ่มหมวดหมู่ใหญ่
             </h3>
-            <p style={{ fontSize: "0.8rem", color: "#888", marginBottom: "1rem" }}>เช่น &quot;💇 ผม&quot;, &quot;💅 เล็บ&quot; — ใส่อีโมจิด้านหน้าเพื่อให้แสดงเป็น tab ใน POS</p>
+            <p style={{ fontSize: "0.8rem", color: "#888", marginBottom: "1rem" }}>เช่น &quot;ผม&quot;, &quot;เล็บ&quot; — ใส่อีโมจิด้านหน้าเพื่อให้แสดงเป็น tab ใน POS</p>
             <input
               className="input"
               placeholder="ชื่อหมวดหมู่ใหญ่"

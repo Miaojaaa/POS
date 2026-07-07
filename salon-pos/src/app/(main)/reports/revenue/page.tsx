@@ -96,7 +96,7 @@ export default function RevenuePage() {
             disabled={exporting || !data || data.orderCount === 0}
             style={{ background: "#16a34a" }}
           >
-            {exporting ? "กำลังส่งออก..." : "📥 Export Excel"}
+            {exporting ? "กำลังส่งออก..." : "Export Excel"}
           </button>
         </div>
       </div>

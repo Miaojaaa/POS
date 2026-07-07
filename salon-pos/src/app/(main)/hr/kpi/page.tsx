@@ -168,7 +168,7 @@ export default function KPIPage() {
             {loading ? "..." : "🔄"}
           </button>
           <select className="input" style={{ width: 140 }} value={branchFilter} onChange={e => setBranchFilter(e.target.value)}>
-            <option value="ALL">🏢 ทุกสาขา</option>
+            <option value="ALL">ทุกสาขา</option>
             {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
           <select className="input" style={{ width: 120 }} value={month} onChange={e => setMonth(Number(e.target.value))}>

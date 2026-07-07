@@ -367,7 +367,7 @@ export default function EditOrderPage() {
               <FlaskConical size={18} /> เคมีที่ใช้
             </h3>
             <div style={{ position: "relative", marginBottom: "0.75rem" }}>
-              <input className="input" style={{ marginBottom: 0, paddingLeft: "2rem" }} placeholder="🔍 ค้นหาชื่อเคมี..."
+              <input className="input" style={{ marginBottom: 0, paddingLeft: "2rem" }} placeholder="ค้นหาชื่อเคมี..."
                 value={chemSearch} onChange={e => setChemSearch(e.target.value)}
                 onFocus={() => setChemFocused(true)} onBlur={() => setTimeout(() => setChemFocused(false), 150)} autoComplete="off" />
               {showChemDropdown && (
@@ -407,7 +407,7 @@ export default function EditOrderPage() {
               <ShoppingBag size={18} /> สินค้า Retail
             </h3>
             <div style={{ position: "relative", marginBottom: "0.75rem" }}>
-              <input className="input" style={{ marginBottom: 0, paddingLeft: "2rem" }} placeholder="🔍 ค้นหาสินค้า retail..."
+              <input className="input" style={{ marginBottom: 0, paddingLeft: "2rem" }} placeholder="ค้นหาสินค้า retail..."
                 value={retailSearch} onChange={e => setRetailSearch(e.target.value)}
                 onFocus={() => setRetailFocused(true)} onBlur={() => setTimeout(() => setRetailFocused(false), 150)} autoComplete="off" />
               {showRetailDropdown && (
@@ -478,10 +478,10 @@ export default function EditOrderPage() {
                 <FileText size={18} /> สรุปออร์เดอร์
               </h3>
               {priceUnlocked ? (
-                <span style={{ fontSize: "0.75rem", color: "var(--success-green)", fontWeight: 600 }}>🔓 แก้ราคาได้</span>
+                <span style={{ fontSize: "0.75rem", color: "var(--success-green)", fontWeight: 600 }}>แก้ราคาได้</span>
               ) : (
                 <button onClick={() => setShowPinModal(true)} style={{ fontSize: "0.75rem", color: "#888", background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "3px 8px", cursor: "pointer" }}>
-                  🔐 ปลดล็อกแก้ราคา
+                  ปลดล็อกแก้ราคา
                 </button>
               )}
             </div>

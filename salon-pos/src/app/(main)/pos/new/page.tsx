@@ -80,10 +80,11 @@ export default function NewOrderPage() {
 
   // Category tab filter — groups loaded from /api/service-groups
   const [selectedTab, setSelectedTab] = useState<string>("ทั้งหมด");
+  const stripEmoji = (s: string) => s.replace(/[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E6}-\u{1F1FF}\u2728\u2B50\uFE0F]/gu, '').trim();
   const tabGroups: Record<string, string[]> = Object.fromEntries(
-    serviceGroups.map(g => [g.name, g.categories.map(c => c.name)])
+    serviceGroups.map(g => [stripEmoji(g.name), g.categories.map(c => stripEmoji(c.name))])
   );
-  const tabNames = ["ทั้งหมด", ...serviceGroups.map(g => g.name)];
+  const tabNames = ["ทั้งหมด", ...serviceGroups.map(g => stripEmoji(g.name))];
 
   useEffect(() => {
     const fetchData = async (url: string, setter: (data: any) => void) => {
@@ -309,7 +310,7 @@ export default function NewOrderPage() {
   // Branch-specific service restrictions
   // "second" branch → only Hair (ผม) categories
   const branchAllowedGroups: Record<string, string[] | null> = {
-    "second": ["💇 ผม"],
+    "second": ["ผม"],
   };
   const allowedGroups = branchAllowedGroups[selectedBranchId] ?? null; // null = all groups
   const allowedCategories = allowedGroups
@@ -317,7 +318,7 @@ export default function NewOrderPage() {
     : null; // null = all categories
 
   const branchFilteredServices = allowedCategories
-    ? services.filter(svc => allowedCategories.includes(svc.category.name))
+    ? services.filter(svc => allowedCategories.includes(stripEmoji(svc.category.name)))
     : services;
 
   const servicesByCategory = branchFilteredServices.reduce<Record<string, Service[]>>((acc, svc) => {
@@ -495,7 +496,7 @@ export default function NewOrderPage() {
               <input
                 className="input"
                 style={{ marginBottom: 0, paddingLeft: "2rem" }}
-                placeholder="🔍 ค้นหาชื่อเคมี..."
+                placeholder="ค้นหาชื่อเคมี..."
                 value={chemSearch}
                 onChange={e => setChemSearch(e.target.value)}
                 onFocus={() => setChemFocused(true)}
@@ -575,7 +576,7 @@ export default function NewOrderPage() {
               <input
                 className="input"
                 style={{ marginBottom: 0, paddingLeft: "2rem" }}
-                placeholder="🔍 ค้นหาสินค้า retail..."
+                placeholder="ค้นหาสินค้า retail..."
                 value={retailSearch}
                 onChange={e => setRetailSearch(e.target.value)}
                 onFocus={() => setRetailFocused(true)}
@@ -710,7 +711,7 @@ export default function NewOrderPage() {
                             transition: "all 0.15s ease",
                           }}
                         >
-                          {svc.name} (฿{svc.price.toLocaleString()})
+                          {stripEmoji(svc.name)} (฿{svc.price.toLocaleString()})
                         </button>
                       );
                     })}
@@ -727,13 +728,13 @@ export default function NewOrderPage() {
                 <FileText size={18} /> สรุปออร์เดอร์
               </h3>
               {priceUnlocked ? (
-                <span style={{ fontSize: "0.75rem", color: "var(--success-green)", fontWeight: 600 }}>🔓 แก้ราคาได้</span>
+                <span style={{ fontSize: "0.75rem", color: "var(--success-green)", fontWeight: 600 }}>แก้ราคาได้</span>
               ) : (
                 <button
                   onClick={() => setShowPinModal(true)}
                   style={{ fontSize: "0.75rem", color: "#888", background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "3px 8px", cursor: "pointer" }}
                 >
-                  🔐 ปลดล็อกแก้ราคา
+                  ปลดล็อกแก้ราคา
                 </button>
               )}
             </div>
