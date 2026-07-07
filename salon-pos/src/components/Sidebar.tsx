@@ -379,7 +379,7 @@ export default function Sidebar() {
                   >
                     <span><Icon size={20} /></span>
                     {!collapsed && <span>{label}</span>}
-                    {!collapsed && <span style={{ marginLeft: "auto", fontSize: "0.75rem" }}>🔒</span>}
+                    {!collapsed && <span style={{ marginLeft: "auto", fontSize: "0.75rem", display: "flex", alignItems: "center" }}><Lock size={14} /></span>}
                   </button>
                 ) : (
                   <Link
@@ -470,7 +470,7 @@ export default function Sidebar() {
             boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
           }}>
             <div style={{ textAlign: "center", marginBottom: "1rem" }}>
-              <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🔒</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem", color: "var(--olive)" }}><Lock size={32} /></div>
               <h3 style={{ margin: 0, color: "var(--olive)", fontSize: "1.1rem" }}>Owner Access</h3>
               <p style={{ fontSize: "0.8rem", color: "#888", marginTop: 4 }}>
                 กรุณากรอก PIN ของ Owner เพื่อเข้าถึงเมนูนี้
