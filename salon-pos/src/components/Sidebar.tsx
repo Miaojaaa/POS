@@ -67,7 +67,7 @@ const MENU_DEFINITIONS: Record<SidebarModuleKey, MenuItem> = {
   SETTINGS: {
     key: "SETTINGS",
     children: [
-      { href: "/settings/branding", label: "แบรนด์ร้าน/ใบเสร็จ" },
+      { href: "/settings/branding", label: "ข้อมูลร้าน" },
       { href: "/settings/finance", label: "การเงิน" },
       { href: "/settings/features", label: "ฟีเจอร์ & Sidebar" },
       { href: "/settings/services", label: "บริการ" },

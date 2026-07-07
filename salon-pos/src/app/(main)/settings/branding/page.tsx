@@ -214,7 +214,7 @@ export default function BrandingSettingsPage() {
   return (
     <div style={{ maxWidth: 720 }}>
       <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--olive)", margin: 0, marginBottom: "1.25rem" }}>
-        🏷️ แบรนด์ร้าน / ใบเสร็จ
+        🏷️ ข้อมูลร้าน
       </h1>
 
       <div className="card" style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
