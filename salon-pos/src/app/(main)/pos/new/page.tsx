@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useBranch } from "@/context/BranchContext";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
-import CustomerDisplayButton from "@/components/CustomerDisplayButton";
-import { pushCustomerDisplay } from "@/lib/customer-display";
+// import CustomerDisplayButton from "@/components/CustomerDisplayButton";
+// import { pushCustomerDisplay } from "@/lib/customer-display";
 
 type Branch = { id: string; name: string };
 type Service = { id: string; name: string; price: number; duration: number; category: { name: string } };
@@ -279,7 +279,7 @@ export default function NewOrderPage() {
         branchId: selectedBranchId,
       }),
     });
-    if (res.ok) { pushCustomerDisplay({ kind: "idle" }); router.push("/pos/queue"); }
+    if (res.ok) { /* pushCustomerDisplay({ kind: "idle" }); */ router.push("/pos/queue"); }
     else { setAlertMsg("เกิดข้อผิดพลาด กรุณาลองใหม่"); }
     setSaving(false);
   }
@@ -289,22 +289,21 @@ export default function NewOrderPage() {
   const chemCost = selectedChems.reduce((s, c) => s + c.totalCost, 0);
   const grandTotal = subtotal + retailSubtotal;
 
-  // Mirror the live order to the customer-facing display (2nd screen). Empty cart
-  // returns the display to its welcome screen.
-  useEffect(() => {
-    const lines = [
-      ...selectedItems.map(i => ({ name: i.serviceName, qty: 1, lineTotal: i.price })),
-      ...selectedRetail.map(r => ({ name: r.name, qty: r.quantity, lineTotal: r.price * r.quantity })),
-    ];
-    if (lines.length === 0) { pushCustomerDisplay({ kind: "idle" }); return; }
-    pushCustomerDisplay({
-      kind: "cart",
-      heading: "รายการของคุณ",
-      customerName: customerName.trim() || undefined,
-      lines,
-      total: grandTotal,
-    });
-  }, [selectedItems, selectedRetail, customerName, grandTotal]);
+  // Customer display feature turned off here for optimization
+  // useEffect(() => {
+  //   const lines = [
+  //     ...selectedItems.map(i => ({ name: i.serviceName, qty: 1, lineTotal: i.price })),
+  //     ...selectedRetail.map(r => ({ name: r.name, qty: r.quantity, lineTotal: r.price * r.quantity })),
+  //   ];
+  //   if (lines.length === 0) { pushCustomerDisplay({ kind: "idle" }); return; }
+  //   pushCustomerDisplay({
+  //     kind: "cart",
+  //     heading: "รายการของคุณ",
+  //     customerName: customerName.trim() || undefined,
+  //     lines,
+  //     total: grandTotal,
+  //   });
+  // }, [selectedItems, selectedRetail, customerName, grandTotal]);
 
   // Branch-specific service restrictions
   // "second" branch → only Hair (ผม) categories
@@ -356,7 +355,7 @@ export default function NewOrderPage() {
           📋 รับออร์เดอร์ใหม่
         </h1>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <CustomerDisplayButton />
+          {/* <CustomerDisplayButton /> */}
           <label style={{ fontSize: "0.9rem", fontWeight: 600, color: "#666" }}>เลือกสาขา:</label>
           <select 
             className="input" 
