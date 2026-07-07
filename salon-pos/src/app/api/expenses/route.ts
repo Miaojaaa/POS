@@ -24,13 +24,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const fallbackUser = await prisma.user.findFirst({ where: { role: { contains: "OWNER" } } });
-  const expense = await prisma.expense.create({
+  if (!body.createdById && !fallbackUser?.id) return NextResponse.json({ error: "ไม่พบข้อมูลผู้ทำรายการ" }, { status: 400 });
+    const expense = await prisma.expense.create({
     data: {
       category: body.category,
       description: body.description,
       amount: body.amount,
       date: body.date,
-      createdById: body.createdById || fallbackUser?.id || "",
+      createdById: body.createdById || fallbackUser?.id,
     },
   });
   return NextResponse.json(expense);

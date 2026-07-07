@@ -45,6 +45,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
 
   const body = await req.json();
+  if (!body.technicianId || !body.items || body.items.length === 0) {
+    return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน (ช่าง, รายการ)" }, { status: 400 });
+  }
   const {
     customerName, customerPhone, customerId,
     technicianId, assistantIds = [],
@@ -60,7 +63,8 @@ export async function POST(req: NextRequest) {
   let retailSubtotal = 0;
 
   for (const item of items) {
-    subtotal += Math.round(Number(item.price));
+    const itemPrice = Math.max(0, Math.round(Number(item.price)));
+      subtotal += itemPrice;
   }
   for (const chem of chemicals) {
     chemicalCost += Math.round(Number(chem.totalCost));

@@ -36,7 +36,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const order = await prisma.order.update({
       where: { id },
       data: {
-        ...body,
+        status: body.status,
+        notes: body.notes,
         completedAt: body.status === "DONE" ? new Date() : undefined,
         updatedAt: new Date(),
       },

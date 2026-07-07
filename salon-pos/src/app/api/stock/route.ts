@@ -40,9 +40,7 @@ export async function GET(req: NextRequest) {
     console.error("GET stock error:", err);
     return NextResponse.json({ 
       error: "Failed to fetch stock",
-      details: err.message,
-      code: err.code
-    }, { status: 500 });
+      }, { status: 500 });
   }
 }
 
@@ -65,8 +63,6 @@ export async function PUT(req: NextRequest) {
     console.error("PUT stock error:", err);
     return NextResponse.json({ 
       error: "Failed to update stock",
-      details: err.message,
-      code: err.code
-    }, { status: 500 });
+      }, { status: 500 });
   }
 }

@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const users = await prisma.user.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, role: true, email: true, phone: true, pin: true, baseSalary: true, positionAllowance: true, isActive: true, branchId: true },
+      select: { id: true, name: true, role: true, email: true, phone: true, baseSalary: true, positionAllowance: true, isActive: true, branchId: true },
       orderBy: { name: "asc" },
     });
     return NextResponse.json(users);
@@ -15,9 +15,7 @@ export async function GET() {
     console.error("GET users error:", err);
     return NextResponse.json({
       error: "Failed to fetch users",
-      details: err.message,
-      code: err.code
-    }, { status: 500 });
+      }, { status: 500 });
   }
 }
 
@@ -61,8 +59,6 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({
       error: "ไม่สามารถเพิ่มพนักงานได้",
-      details: err.message,
-      code: err.code
-    }, { status: 500 });
+      }, { status: 500 });
   }
 }

@@ -59,7 +59,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (err.code === "P2002") {
       return NextResponse.json({ error: "อีเมลนี้มีผู้ใช้งานแล้ว" }, { status: 400 });
     }
-    return NextResponse.json({ error: `ไม่สามารถแก้ไขข้อมูลได้: ${err.message || err}` }, { status: 500 });
+    return NextResponse.json({ error: `ไม่สามารถแก้ไขข้อมูลได้` }, { status: 500 });
   }
 }
 

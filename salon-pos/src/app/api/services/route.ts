@@ -12,9 +12,23 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const { name, price, duration, categoryId } = await req.json();
-  const service = await prisma.service.create({
-    data: { name, price: Number(price), duration: Number(duration), categoryId },
-    include: { category: true },
-  });
-  return NextResponse.json(service);
+  if (!name || Number(price) < 0 || !categoryId) {
+    return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วนหรือไม่ถูกต้อง" }, { status: 400 });
+  }
+
+  try {
+    const service = await prisma.service.create({
+      data: {
+        name,
+        price: Number(price),
+        duration: Number(duration),
+        categoryId,
+      },
+    });
+
+    return NextResponse.json(service);
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "เกิดข้อผิดพลาดในการสร้างบริการ" }, { status: 500 });
+  }
 }

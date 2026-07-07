@@ -16,16 +16,25 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const customer = await prisma.customer.create({
-    data: {
-      name: body.name,
-      phone: body.phone,
-      birthdate: body.birthdate || null,
-      allergyHistory: body.allergyHistory || null,
-      memberLevel: body.memberLevel || "BASIC",
-    },
-  });
-  return NextResponse.json(customer);
+  if (!body.name || !body.phone) {
+    return NextResponse.json({ error: "กรุณาระบุชื่อและเบอร์โทรศัพท์" }, { status: 400 });
+  }
+  
+  try {
+    const customer = await prisma.customer.create({
+      data: {
+        name: body.name,
+        phone: body.phone,
+        birthdate: body.birthdate || null,
+        allergyHistory: body.allergyHistory || null,
+        memberLevel: body.memberLevel || "BASIC",
+      },
+    });
+    return NextResponse.json(customer);
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "เกิดข้อผิดพลาดในการสร้างลูกค้า" }, { status: 500 });
+  }
 }
 
 export async function PUT(req: NextRequest) {

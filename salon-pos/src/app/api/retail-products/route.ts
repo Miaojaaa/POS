@@ -10,7 +10,7 @@ export async function GET() {
     return NextResponse.json(items);
   } catch (error: any) {
     console.error("Error in GET /api/retail-products:", error);
-    return new NextResponse(JSON.stringify({ error: error.message }), {
+    return new NextResponse(JSON.stringify({ error: "เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

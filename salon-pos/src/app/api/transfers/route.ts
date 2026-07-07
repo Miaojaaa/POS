@@ -27,9 +27,7 @@ export async function GET(req: NextRequest) {
     console.error("GET transfers error:", err);
     return NextResponse.json({ 
       error: "Failed to fetch transfers",
-      details: err.message,
-      code: err.code 
-    }, { status: 500 });
+      }, { status: 500 });
   }
 }
 
@@ -60,9 +58,7 @@ export async function POST(req: NextRequest) {
     console.error("POST transfers error:", err);
     return NextResponse.json({ 
       error: "Failed to create transfer",
-      details: err.message,
-      code: err.code 
-    }, { status: 500 });
+      }, { status: 500 });
   }
 }
 
@@ -108,8 +104,6 @@ export async function PATCH(req: NextRequest) {
     console.error("PATCH transfers error:", err);
     return NextResponse.json({ 
       error: "Failed to update transfer",
-      details: err.message,
-      code: err.code 
-    }, { status: 500 });
+      }, { status: 500 });
   }
 }

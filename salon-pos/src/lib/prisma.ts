@@ -13,9 +13,18 @@ function createPrisma() {
 
   console.log(`[Prisma] Initializing PostgreSQL adapter`);
 
+  // Note: PrismaPg adapter handles connections via connectionString directly.
+  // Optional: For advanced connection pooling with PrismaPg, configure pool options in connection string or adapter config.
   const adapter = new PrismaPg({ connectionString });
   return new PrismaClient({ adapter });
 }
+
+// Cleanup on exit
+process.on('beforeExit', () => {
+  if (globalForPrisma.prisma) {
+    globalForPrisma.prisma.$disconnect();
+  }
+});
 
 export const prisma = globalForPrisma.prisma ?? createPrisma();
 
