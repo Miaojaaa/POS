@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBranch } from "@/context/BranchContext";
-import { Package, FlaskConical, ShoppingBag, Settings, Lock } from "lucide-react";
+import { Package, FlaskConical, ShoppingBag, Settings } from "lucide-react";
 
 type Category = "ALL" | "CHEMICAL" | "RETAIL";
 
@@ -57,12 +57,7 @@ export default function ProductsPage() {
   const [adjustDelta, setAdjustDelta] = useState<number | "">("");
   const [adjustNote, setAdjustNote] = useState("");
 
-  // Manager PIN gate
-  const [unlocked, setUnlocked] = useState(false);
-  const [showPinModal, setShowPinModal] = useState(false);
-  const [pin, setPin] = useState("");
-  const [pinError, setPinError] = useState("");
-  const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
+
 
   async function load() {
     const [c, r] = await Promise.all([
@@ -76,29 +71,7 @@ export default function ProductsPage() {
   useEffect(() => { load(); }, []);
 
   function gate(action: () => void) {
-    if (unlocked) action();
-    else { setPendingAction(() => action); setShowPinModal(true); }
-  }
-
-  async function verifyPin() {
-    setPinError("");
-    const res = await fetch("/api/verify-pin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "MANAGER", pin }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      setUnlocked(true);
-      setShowPinModal(false);
-      setPin("");
-      if (pendingAction) {
-        pendingAction();
-        setPendingAction(null);
-      }
-    } else {
-      setPinError("Manager PIN ไม่ถูกต้อง");
-    }
+    action();
   }
 
   function openAddForm() {
@@ -328,25 +301,9 @@ export default function ProductsPage() {
               </button>
             </>
           )}
-          {unlocked ? (
-            <button
-              className="btn-secondary"
-              onClick={() => setUnlocked(false)}
-            >
-              ล็อกสิทธิ์แก้ไข
-            </button>
-          ) : (
-            <button
-              className="btn-secondary"
-              onClick={() => { setPin(""); setPinError(""); setPendingAction(null); setShowPinModal(true); }}
-            >
-              ปลดล็อกสิทธิ์แก้ไข
-            </button>
-          )}
           <button
             className="btn-primary"
             onClick={openAddForm}
-            style={{ opacity: unlocked ? 1 : 0.6 }}
           >
             + เพิ่มสินค้า
           </button>
@@ -379,19 +336,7 @@ export default function ProductsPage() {
         })}
       </div>
 
-      {!unlocked ? (
-        <div className="card" style={{ marginBottom: "1rem", background: "#fff8e1", border: "1px solid #facc15" }}>
-          <p style={{ margin: 0, fontSize: "0.85rem", color: "#854d0e" }}>
-            ⚠️ กดปุ่ม <strong>ปลดล็อกสิทธิ์แก้ไข</strong> ก่อน เพื่อเพิ่ม/ปรับสต๊อก/แก้ไข/ลบสินค้า
-          </p>
-        </div>
-      ) : (
-        <div className="card" style={{ marginBottom: "1rem", background: "#dcfce7", border: "1px solid #86efac" }}>
-          <p style={{ margin: 0, fontSize: "0.85rem", color: "#15803d" }}>
-            ปลดล็อกแล้ว — สามารถเพิ่ม/ปรับสต๊อก/แก้ไข/ลบสินค้าได้
-          </p>
-        </div>
-      )}
+
 
       {/* Chemicals table */}
       {showChem && chemicals.length > 0 && (
@@ -657,7 +602,7 @@ export default function ProductsPage() {
                 const canSave = isEditing ? changedForEdit : filledForCreate;
                 return (
                   <button className="btn-primary" style={{ flex: 1 }} onClick={saveProduct} disabled={!canSave}>
-                    บันทึก {!unlocked && "(ต้องใช้ PIN)"}
+                    บันทึก
                   </button>
                 );
               })()}
@@ -697,7 +642,7 @@ export default function ProductsPage() {
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
               <button className="btn-primary" style={{ flex: 1 }} onClick={applyRetailAdjust}
                 disabled={adjustDelta === "" || Number(adjustDelta) === 0}>
-                ✓ บันทึก {!unlocked && "(ต้องใช้ PIN)"}
+                ✓ บันทึก
               </button>
               <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setAdjustTarget(null); setAdjustDelta(""); setAdjustNote(""); }}>
                 ยกเลิก
@@ -707,30 +652,7 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Manager PIN Modal */}
-      {showPinModal && (
-        <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: 340 }}>
-            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 0.5rem", color: "var(--olive)" }}>
-              <Lock size={18} /> Manager PIN
-            </h3>
-            <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>
-              การแก้ไขสต๊อก/สินค้าต้องใช้ Manager PIN
-            </p>
-            <input type="password" className="input" placeholder="PIN 4-6 หลัก" value={pin}
-              onChange={e => setPin(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && verifyPin()}
-              autoFocus />
-            {pinError && <div style={{ color: "var(--alert-red)", fontSize: "0.875rem", marginTop: "0.5rem" }}>{pinError}</div>}
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={verifyPin}>ยืนยัน</button>
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPinModal(false); setPin(""); setPinError(""); setPendingAction(null); }}>
-                ยกเลิก
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

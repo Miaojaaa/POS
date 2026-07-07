@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBranch } from "@/context/BranchContext";
-import { Users, Unlock, UserPlus, AlertTriangle } from "lucide-react";
+import { Users, UserPlus, AlertTriangle } from "lucide-react";
 import PinRevealModal from "@/components/PinRevealModal";
 
 type Branch = { id: string; name: string };
@@ -31,11 +31,7 @@ export default function StaffPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0, positionAllowance: 0, branchId: "main" });
 
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [unlockPin, setUnlockPin] = useState("");
-  const [ownerPinStr, setOwnerPinStr] = useState("");
 
   const [revealPin, setRevealPin] = useState<{ name: string; pin: string } | null>(null);
 
@@ -74,11 +70,6 @@ export default function StaffPage() {
   }, []);
 
   function handleAddClick() {
-    if (!isUnlocked) {
-      alert("กรุณาปลดล็อกสิทธิ์ก่อนเพิ่มพนักงาน");
-      setShowUnlockModal(true);
-      return;
-    }
     setEditingId(null);
     setForm({ name: "", email: "", password: "changeme123", role: "TECHNICIAN", phone: "", baseSalary: 0, positionAllowance: 0, branchId: branches[0]?.id || "main" });
     setShowForm(true);
@@ -91,12 +82,11 @@ export default function StaffPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!ownerPinStr) { alert("กรุณาปลดล็อกสิทธิ์ก่อน"); return; }
     const targetUser = users.find(u => u.id === id);
     if (!targetUser) return;
     if (confirm(`คุณต้องการลบรายชื่อพนักงาน: ${targetUser.name} ใช่หรือไม่?`)) {
       try {
-        const res = await fetch(`/api/users/${id}?ownerPin=${ownerPinStr}`, { method: "DELETE" });
+        const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
         if (res.ok) {
           setShowForm(false);
           fetch("/api/users").then(r => r.json()).then(data => { if (Array.isArray(data)) setUsers(data); });
@@ -116,36 +106,17 @@ export default function StaffPage() {
     }
   }
 
-  async function handleUnlock() {
-    try {
-      const res = await fetch("/api/verify-pin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "OWNER", pin: unlockPin }),
-      });
-      if (res.ok) {
-        setIsUnlocked(true);
-        setOwnerPinStr(unlockPin);
-        setShowUnlockModal(false);
-        setUnlockPin("");
-      } else {
-        alert("รหัส PIN ไม่ถูกต้อง");
-      }
-    } catch {
-      alert("ไม่สามารถเชื่อมต่อระบบตรวจสอบ PIN ได้");
-    }
-  }
+
 
   async function handleSave() {
     if (!form.name || !form.email) { alert("กรุณากรอกชื่อและอีเมล"); return; }
 
     try {
       if (editingId) {
-        if (!ownerPinStr) { alert("กรุณาปลดล็อกด้วย Owner PIN ก่อน"); return; }
         const res = await fetch(`/api/users/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, ownerPin: ownerPinStr }),
+          body: JSON.stringify({ ...form }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -167,7 +138,7 @@ export default function StaffPage() {
         const res = await fetch("/api/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, ownerPin: ownerPinStr }),
+          body: JSON.stringify({ ...form }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -235,19 +206,9 @@ export default function StaffPage() {
             ))}
           </select>
 
-          {!isUnlocked ? (
-            <button className="btn-secondary" onClick={() => setShowUnlockModal(true)}>
-              ปลดล็อกสิทธิ์แก้ไข
-            </button>
-          ) : (
-            <button className="btn-secondary" onClick={() => { setIsUnlocked(false); setOwnerPinStr(""); }}>
-              ล็อกสิทธิ์แก้ไข
-            </button>
-          )}
           <button
             className="btn-primary"
             onClick={handleAddClick}
-            style={{ opacity: isUnlocked ? 1 : 0.6 }}
           >
             + เพิ่มพนักงาน
           </button>
@@ -264,12 +225,12 @@ export default function StaffPage() {
               <th style={{ textAlign: "left", padding: "8px 12px" }}>อีเมล</th>
               <th style={{ textAlign: "right", padding: "8px 12px" }}>เงินเดือนพื้นฐาน</th>
               <th style={{ textAlign: "right", padding: "8px 12px" }}>ค่าตำแหน่ง</th>
-              {isUnlocked && <th style={{ textAlign: "center", padding: "8px 12px", width: 80 }}>จัดการ</th>}
+              <th style={{ textAlign: "center", padding: "8px 12px", width: 80 }}>จัดการ</th>
             </tr>
           </thead>
           <tbody>
             {sortedUsers.length === 0 ? (
-              <tr><td colSpan={isUnlocked ? 7 : 6} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่พบพนักงาน</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>ไม่พบพนักงาน</td></tr>
             ) : sortedUsers.map(u => (
               <tr key={u.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                 <td style={{ padding: "8px 12px", fontWeight: 500 }}>{u.name}</td>
@@ -294,7 +255,6 @@ export default function StaffPage() {
                 <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600, color: (u.positionAllowance || 0) > 0 ? "var(--olive)" : "#aaa" }}>
                   ฿{(u.positionAllowance || 0).toLocaleString()}
                 </td>
-                {isUnlocked && (
                   <td style={{ padding: "8px 12px", textAlign: "center" }}>
                     <button
                       onClick={() => handleEditClick(u)}
@@ -306,40 +266,13 @@ export default function StaffPage() {
                       แก้ไข
                     </button>
                   </td>
-                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {showUnlockModal && (
-        <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: 320 }}>
-            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
-              <Unlock size={18} /> ปลดล็อกสิทธิ์แก้ไข
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <div>
-                <label className="label">รหัส Owner PIN</label>
-                <input
-                  type="password"
-                  placeholder="ใส่รหัส"
-                  className="input"
-                  value={unlockPin}
-                  onChange={e => setUnlockPin(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleUnlock()}
-                  autoFocus
-                />
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={handleUnlock}>ยืนยัน</button>
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowUnlockModal(false)}>ยกเลิก</button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {showForm && (
         <div className="modal-overlay">

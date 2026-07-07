@@ -5,12 +5,7 @@ import { verifyPin, roleNeedsPin, generateUniquePin } from "@/lib/auth";
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
-    const { name, email, phone, role, baseSalary, positionAllowance, ownerPin } = await req.json();
-
-    if (!ownerPin) return NextResponse.json({ error: "ต้องใช้ Owner PIN" }, { status: 400 });
-
-    const ok = await verifyPin("OWNER", ownerPin);
-    if (!ok) return NextResponse.json({ error: "Owner PIN ไม่ถูกต้อง" }, { status: 401 });
+    const { name, email, phone, role, baseSalary, positionAllowance } = await req.json();
 
     // If the new role grants OWNER/MANAGER privilege and the user has no PIN
     // yet, mint one. Existing PINs are left alone — promoting a user shouldn't
@@ -71,12 +66,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
-    const ownerPin = req.nextUrl.searchParams.get("ownerPin");
-    
-    if (!ownerPin) return NextResponse.json({ error: "ต้องใช้ Owner PIN" }, { status: 400 });
-
-    const ok = await verifyPin("OWNER", ownerPin);
-    if (!ok) return NextResponse.json({ error: "Owner PIN ไม่ถูกต้อง" }, { status: 401 });
 
     await prisma.user.update({
       where: { id },

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useBranch } from "@/context/BranchContext";
-import { Settings, PlusCircle, FolderPlus, Edit, Trash2, Lock } from "lucide-react";
+import { Settings, PlusCircle, FolderPlus, Edit, Trash2 } from "lucide-react";
 
 type Service = { id: string; name: string; price: number; duration: number; isActive: boolean };
 type Category = { id: string; name: string; groupId: string | null; services: Service[] };
@@ -31,10 +31,7 @@ export default function ServicesPage() {
   const [initialDraft, setInitialDraft] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
-  // PIN modal
-  const [showPinModal, setShowPinModal] = useState(false);
-  const [pin, setPin] = useState("");
-  const [pinError, setPinError] = useState("");
+
 
   // Group: add/edit/delete
   const [showAddGroup, setShowAddGroup] = useState(false);
@@ -78,7 +75,7 @@ export default function ServicesPage() {
   /* ---- Bulk Edit ---- */
 
   function startEditMode() {
-    setShowPinModal(true);
+    enterEditMode();
   }
 
   function enterEditMode() {
@@ -131,21 +128,7 @@ export default function ServicesPage() {
 
   /* ---- PIN verify ---- */
 
-  async function verifyPin() {
-    setPinError("");
-    const res = await fetch("/api/verify-pin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "OWNER", pin }),
-    });
-    if (res.ok) {
-      setShowPinModal(false);
-      setPin("");
-      enterEditMode();
-    } else {
-      setPinError("PIN ไม่ถูกต้อง");
-    }
-  }
+
 
   /* ---- Group CRUD ---- */
 
@@ -802,31 +785,6 @@ export default function ServicesPage() {
         </div>
       )}
 
-      {/* PIN modal */}
-      {showPinModal && (
-        <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: 320 }}>
-            <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)" }}>
-              <Lock size={18} /> ยืนยันสิทธิ์ Owner
-            </h3>
-            <p style={{ fontSize: "0.875rem", color: "#666", marginBottom: "1rem" }}>กรุณากรอก PIN ของ Owner เพื่อเข้าสู่โหมดแก้ไข</p>
-            <input
-              type="password"
-              className="input"
-              placeholder="กรอก PIN"
-              value={pin}
-              onChange={e => setPin(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && verifyPin()}
-              autoFocus
-            />
-            {pinError && <p style={{ color: "var(--alert-red)", fontSize: "0.75rem", marginTop: 4 }}>{pinError}</p>}
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.25rem" }}>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={verifyPin}>ยืนยัน</button>
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPinModal(false); setPin(""); setPinError(""); }}>ยกเลิก</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
