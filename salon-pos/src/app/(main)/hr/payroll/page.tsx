@@ -97,7 +97,7 @@ export default function PayrollPage() {
     load();
     const onFocus = () => load(true);
     window.addEventListener("focus", onFocus);
-    const interval = setInterval(() => load(true), 8000);
+    const interval = setInterval(() => load(true), 3600000); // Auto-refresh every 1 hour
     return () => {
       window.removeEventListener("focus", onFocus);
       clearInterval(interval);
@@ -224,6 +224,15 @@ export default function PayrollPage() {
               🔄 คำนวณใหม่
             </button>
           )}
+          <button 
+            className="btn-secondary" 
+            style={{ padding: "6px 10px", fontSize: "1rem" }} 
+            onClick={() => load()}
+            title="รีเฟรช"
+            disabled={loading}
+          >
+            {loading ? "..." : "🔄"}
+          </button>
           <select className="input" style={{ width: 140 }} value={branchFilter} onChange={e => setBranchFilter(e.target.value)}>
             <option value="ALL">🏢 ทุกสาขา</option>
             {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}

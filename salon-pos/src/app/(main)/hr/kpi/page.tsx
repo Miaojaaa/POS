@@ -123,7 +123,7 @@ export default function KPIPage() {
 
   useEffect(() => {
     load();
-    const timer = setInterval(() => load(true), 30000); // Auto-refresh every 30 seconds
+    const timer = setInterval(() => load(true), 86400000); // Auto-refresh every 1 day
     return () => clearInterval(timer);
   }, [load]);
 

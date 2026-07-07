@@ -27,7 +27,7 @@
 body {
   background: var(--beige);
   color: var(--text-dark);
-  font-family: 'Sarabun', 'Noto Sans Thai', Arial, sans-serif;
+  font-family: var(--font-sarabun), 'Noto Sans Thai', Arial, sans-serif;
   margin: 0;
 }
 

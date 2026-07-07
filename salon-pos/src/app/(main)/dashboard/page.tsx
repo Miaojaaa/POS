@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import BranchSelector from "@/components/BranchSelector";
 import DailyExportButton from "@/components/DailyExportButton";
-import DashboardBarChart from "@/components/dashboard/DashboardBarChart";
+import DynamicDashboardBarChart from "@/components/dashboard/DynamicDashboardBarChart";
 
 export const dynamic = "force-dynamic";
 
@@ -114,7 +114,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
         <div className="card">
           <h3 style={{ margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>🛍️ สินค้าที่ขายได้วันนี้ (จำนวนชิ้น)</h3>
-          <DashboardBarChart
+          <DynamicDashboardBarChart
             data={productData}
             color="#C4863B"
             valueSuffix=" ชิ้น"
@@ -123,7 +123,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         </div>
         <div className="card">
           <h3 style={{ margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>💇 ยอดขายตามหมวดหมู่บริการวันนี้</h3>
-          <DashboardBarChart
+          <DynamicDashboardBarChart
             data={categoryData}
             color="#6B7C45"
             valuePrefix="฿"

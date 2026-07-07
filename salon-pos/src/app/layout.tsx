@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
+import { Sarabun } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import { BrandingProvider } from "@/context/BrandingContext";
 import { getBranding } from "@/lib/branding";
 import { themeStyleBody } from "@/lib/branding-shared";
+
+const sarabun = Sarabun({
+  subsets: ["thai", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-sarabun",
+});
 
 export const metadata: Metadata = {
   title: "ระบบบริหารจัดการร้านเสริมสวย",
@@ -18,11 +26,8 @@ export const dynamic = "force-dynamic";
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const branding = await getBranding();
   return (
-    <html lang="th" className="h-full">
+    <html lang="th" className={`h-full ${sarabun.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         {/* Inline theme vars BEFORE first paint so the page never flashes the
             globals.css defaults on the way to the user's chosen palette. */}
         <style dangerouslySetInnerHTML={{ __html: themeStyleBody(branding.theme) }} />
