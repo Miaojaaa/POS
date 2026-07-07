@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import BranchSelector from "@/components/BranchSelector";
 import DailyExportButton from "@/components/DailyExportButton";
 import DynamicDashboardBarChart from "@/components/dashboard/DynamicDashboardBarChart";
-import { LayoutDashboard, ShoppingBag, Scissors, ClipboardList } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Scissors, ClipboardList, Rocket, Plus, Users, UserCircle, Package } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -171,19 +171,21 @@ export default async function DashboardPage({ searchParams }: Props) {
         </div>
 
         <div className="card">
-          <h3 style={{ margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>🚀 เมนูด่วน</h3>
+          <h3 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", color: "var(--olive)", fontSize: "1rem" }}>
+            <Rocket size={18} /> เมนูด่วน
+          </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-            <a href="/pos/new" className="btn-primary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
-              + รับออร์เดอร์ใหม่
+            <a href="/pos/new" className="btn-primary" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", textDecoration: "none" }}>
+              <Plus size={16} /> รับออร์เดอร์ใหม่
             </a>
-            <a href="/pos/queue" className="btn-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
-              ดูคิวลูกค้า
+            <a href="/pos/queue" className="btn-secondary" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", textDecoration: "none" }}>
+              <Users size={16} /> ดูคิวลูกค้า
             </a>
-            <a href="/crm/members" className="btn-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
-              จัดการสมาชิก
+            <a href="/crm/members" className="btn-secondary" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", textDecoration: "none" }}>
+              <UserCircle size={16} /> จัดการสมาชิก
             </a>
-            <a href="/erp/main" className="btn-secondary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
-              ดูสต็อก
+            <a href="/erp/main" className="btn-secondary" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", textDecoration: "none" }}>
+              <Package size={16} /> ดูสต็อก
             </a>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useBranch } from "@/context/BranchContext";
-import { ClipboardList, CreditCard, Lock } from "lucide-react";
+import { ClipboardList, CreditCard, Lock, Scissors } from "lucide-react";
 import SearchInput from "@/components/SearchInput";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import CustomerDisplayButton from "@/components/CustomerDisplayButton";
