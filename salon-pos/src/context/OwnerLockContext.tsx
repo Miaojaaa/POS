@@ -8,7 +8,7 @@ export const OWNER_LOCKED_MODULES = new Set(["REPORTS", "HR", "SETTINGS"]);
 // Route prefixes that require Owner unlock
 export const OWNER_LOCKED_ROUTES = ["/reports", "/hr", "/settings"];
 
-const LOCK_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+const LOCK_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 const STORAGE_KEY = "owner_unlock_until";
 
 interface OwnerLockContextValue {
