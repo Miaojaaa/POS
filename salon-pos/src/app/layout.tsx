@@ -8,7 +8,7 @@ import { themeStyleBody } from "@/lib/branding-shared";
 
 const sarabun = Sarabun({
   subsets: ["thai", "latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
   variable: "--font-sarabun",
 });
