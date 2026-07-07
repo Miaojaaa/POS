@@ -27,7 +27,7 @@ export default function DailyExportButton() {
         alert("ยังไม่มีออร์เดอร์ที่จ่ายแล้วในวันนี้");
         return;
       }
-      exportDailyXlsx(orders, today);
+      await exportDailyXlsx(orders, today);
     } catch (err) {
       console.error("Daily export error:", err);
       alert(`ส่งออกไม่สำเร็จ — ${err instanceof Error ? err.message : String(err)}`);

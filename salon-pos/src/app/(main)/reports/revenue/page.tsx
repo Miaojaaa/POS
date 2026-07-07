@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { type DailyRow } from "@/components/reports/TrendChart";
 import { exportMonthlyXlsx, type OrderForExport } from "@/lib/excel";
-import WaterfallChart from "@/components/reports/WaterfallChart";
-import DonutChart from "@/components/reports/DonutChart";
-import TrendChart, { type DailyRow } from "@/components/reports/TrendChart";
-import CompareChart from "@/components/reports/CompareChart";
+
+const WaterfallChart = dynamic(() => import("@/components/reports/WaterfallChart"), { ssr: false, loading: () => <div>กำลังโหลดกราฟ...</div> });
+const DonutChart = dynamic(() => import("@/components/reports/DonutChart"), { ssr: false, loading: () => <div>กำลังโหลดกราฟ...</div> });
+const TrendChart = dynamic(() => import("@/components/reports/TrendChart"), { ssr: false, loading: () => <div>กำลังโหลดกราฟ...</div> });
+const CompareChart = dynamic(() => import("@/components/reports/CompareChart"), { ssr: false, loading: () => <div>กำลังโหลดกราฟ...</div> });
+
 
 type ReportData = {
   totalRevenue: number;
@@ -61,7 +65,7 @@ export default function RevenuePage() {
         alert("ไม่สามารถดึงข้อมูลออร์เดอร์ได้");
         return;
       }
-      exportMonthlyXlsx(orders, { month, year }, `รายงานรายได้-${year}-${String(month).padStart(2, "0")}.xlsx`);
+      await exportMonthlyXlsx(orders, { month, year }, `รายงานรายได้-${year}-${String(month).padStart(2, "0")}.xlsx`);
     } catch (err) {
       console.error("Export error:", err);
       alert(`ส่งออกไม่สำเร็จ — ${err instanceof Error ? err.message : String(err)}`);

@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+// XLSX is dynamically imported in the export functions to reduce bundle size
 
 export type OrderForExport = {
   branchId: string;
@@ -48,9 +48,10 @@ function ymd(d: Date): string {
  * any money column equal the corresponding order total.
  */
 function buildServicesSheet(
+  XLSX: any,
   orders: OrderForExport[],
   opts: { includeDate: boolean },
-): XLSX.WorkSheet {
+): any {
   const maxPayments = Math.max(1, ...orders.map(o => o.payments.length));
   const header: string[] = [];
   if (opts.includeDate) header.push("วันที่");
@@ -221,9 +222,10 @@ function buildServicesSheet(
  * orders, with optional date column for the monthly export.
  */
 function buildRetailItemsSheet(
+  XLSX: any,
   orders: OrderForExport[],
   opts: { includeDate: boolean },
-): XLSX.WorkSheet {
+): any {
   const header: string[] = [];
   if (opts.includeDate) header.push("วันที่");
   header.push("สาขา", "ชื่อสินค้า", "จำนวน", "ราคา/หน่วย (฿)", "รวม (฿)", "ช่าง");
@@ -300,26 +302,28 @@ function buildRetailItemsSheet(
   return sheet;
 }
 
-function buildWorkbook(orders: OrderForExport[], opts: { includeDate: boolean }): XLSX.WorkBook {
+function buildWorkbook(XLSX: any, orders: OrderForExport[], opts: { includeDate: boolean }): any {
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, buildServicesSheet(orders, opts), "บริการ");
-  XLSX.utils.book_append_sheet(wb, buildRetailItemsSheet(orders, opts), "สินค้า");
+  XLSX.utils.book_append_sheet(wb, buildServicesSheet(XLSX, orders, opts), "บริการ");
+  XLSX.utils.book_append_sheet(wb, buildRetailItemsSheet(XLSX, orders, opts), "สินค้า");
   return wb;
 }
 
 /** Daily export — บริการ + สินค้า sheets, with leading วันที่ column. */
-export function exportDailyXlsx(orders: OrderForExport[], date: Date, filename?: string) {
-  const wb = buildWorkbook(orders, { includeDate: true });
+export async function exportDailyXlsx(orders: OrderForExport[], date: Date, filename?: string) {
+  const XLSX = await import("xlsx");
+  const wb = buildWorkbook(XLSX, orders, { includeDate: true });
   XLSX.writeFile(wb, filename || `รายงานรายวัน-${ymd(date)}.xlsx`);
 }
 
 /** Monthly export — same layout as daily, with a leading วันที่ column. */
-export function exportMonthlyXlsx(
+export async function exportMonthlyXlsx(
   orders: OrderForExport[],
   period: { month: number; year: number },
   filename?: string,
 ) {
-  const wb = buildWorkbook(orders, { includeDate: true });
+  const XLSX = await import("xlsx");
+  const wb = buildWorkbook(XLSX, orders, { includeDate: true });
   const name = filename || `รายงานรายเดือน-${period.year}-${String(period.month).padStart(2, "0")}.xlsx`;
   XLSX.writeFile(wb, name);
 }

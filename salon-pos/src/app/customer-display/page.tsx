@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import QRCode from "qrcode";
+
 import {
   CUSTOMER_DISPLAY_KEY,
   readCustomerDisplay,
@@ -75,9 +75,13 @@ export default function CustomerDisplayPage() {
     }
     let cancelled = false;
     const payload = buildPromptPayPayload(branding.promptpayId, state.amountDue);
-    QRCode.toDataURL(payload, { errorCorrectionLevel: "M", margin: 1, width: 520 })
-      .then(url => { if (!cancelled) setQr(url); })
-      .catch(() => { if (!cancelled) setQr(null); });
+    import("qrcode").then((QRCodeModule) => {
+      if (cancelled) return;
+      const QRCode = QRCodeModule.default || QRCodeModule;
+      QRCode.toDataURL(payload, { errorCorrectionLevel: "M", margin: 1, width: 520 })
+        .then(url => { if (!cancelled) setQr(url); })
+        .catch(() => { if (!cancelled) setQr(null); });
+    });
     return () => { cancelled = true; };
   }, [state, branding?.promptpayId]);
 
